@@ -1,17 +1,25 @@
 #include "Runner.h"
 
 #include <vector>
+#include <Windows.h>
 
 #include "MyStrategy.h"
 
 using namespace model;
 using namespace std;
 
+static void startServer()
+{
+	ShellExecute(NULL, NULL, L"local-runner-debug.bat", NULL, L"..\\..\\local-runner", SW_HIDE);
+	Sleep(500);
+}
+
 int main(int argc, char* argv[]) {
     if (argc == 4) {
         Runner runner(argv[1], argv[2], argv[3]);
         runner.run();
     } else {
+		startServer();
         Runner runner("127.0.0.1", "31001", "0000000000000000");
         runner.run();
     }
