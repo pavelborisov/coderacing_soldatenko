@@ -71,6 +71,7 @@
   #include <fcntl.h>
 #endif
 #ifdef WIN32
+  #define _WINSOCK_DEPRECATED_NO_WARNINGS
   #include <io.h>
   #include <winsock2.h>
   #include <Ws2tcpip.h>
@@ -509,6 +510,9 @@ protected:
     fd_set               m_errorFds;          /// error file descriptor set
 };
 
+#ifdef WIN32
+  #undef _WINSOCK_DEPRECATED_NO_WARNINGS
+#endif
 
 #endif /*  __SOCKET_H__  */
 
