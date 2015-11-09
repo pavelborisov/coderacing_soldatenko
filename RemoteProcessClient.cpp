@@ -786,7 +786,7 @@ template <typename E> vector<vector<E> > RemoteProcessClient::readEnumArray2D() 
 
 template <typename E> void RemoteProcessClient::writeEnum(E value) {
     vector<signed char> bytes;
-    bytes.push_back(value);
+    bytes.push_back(static_cast<signed char>(value));
     this->writeBytes(bytes);
 }
 
