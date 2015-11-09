@@ -43,3 +43,5 @@ obj
 xuserdata
 *.xcuserdatad
 
+Debug
+Release
