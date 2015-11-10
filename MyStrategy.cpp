@@ -7,6 +7,7 @@
 #include <cstdlib>
 
 #include "engine/Vector2D.h"
+#include "engine/Point2D.h"
 
 using namespace model;
 using namespace std;

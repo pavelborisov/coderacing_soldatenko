@@ -179,5 +179,8 @@
     <ClInclude Include="engine\Vector2D.h">
       <Filter>Header Files\engine</Filter>
     </ClInclude>
+    <ClInclude Include="engine\Point2D.h">
+      <Filter>Header Files\engine</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
