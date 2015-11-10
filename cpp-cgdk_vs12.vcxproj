@@ -111,6 +111,7 @@
     <ClCompile Include="csimplesocket\SimpleSocket.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="engine\Vector2D.h" />
     <ClInclude Include="model\Bonus.h" />
     <ClInclude Include="model\BonusType.h" />
     <ClInclude Include="model\Car.h" />
