@@ -93,6 +93,12 @@
     <ClCompile Include="model\World.cpp">
       <Filter>Source Files\model</Filter>
     </ClCompile>
+    <ClCompile Include="engine\Vector2D.cpp">
+      <Filter>Source Files\engine</Filter>
+    </ClCompile>
+    <ClCompile Include="engine\Point2D.cpp">
+      <Filter>Source Files\engine</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="MyStrategy.h">

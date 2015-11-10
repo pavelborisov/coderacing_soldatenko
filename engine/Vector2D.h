@@ -1,10 +1,14 @@
 #pragma once
 
+#define _USE_MATH_DEFINES
+
 #include <math.h>
 #include <string>
 #include <assert.h>
 
 namespace Engine {
+
+	class CPoint2D;
 
 	class CVector2D {
 	public:
@@ -12,8 +16,7 @@ namespace Engine {
 		CVector2D(double _x, double _y) : x(_x), y(_y) {}
 		CVector2D(double x1, double y1, double x2, double y2) : x(x2 - x1), y(y2 - y1) {}
 		CVector2D(const CVector2D& v) : x(v.x), y(v.y) {}
-		// TODO: CPoint2D
-		//CVector2D(const CPoint2D& p1, const CPoint2D& p2)
+		CVector2D(const CPoint2D& p1, const CPoint2D& p2);
 
 		double GetX() const { return x; }
 		double GetY() const { return y; }

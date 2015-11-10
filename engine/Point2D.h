@@ -2,11 +2,11 @@
 
 #include <math.h>
 #include <string>
-
-// TODO: Возможна циклическая зависимость, сделать forward declaration и спрятать методы с CVector2D в .cpp-шник
-#include "Vector2D.h"
+#include <assert.h>
 
 namespace Engine {
+
+	class CVector2D;
 
 	class CPoint2D {
 	public:
@@ -19,12 +19,7 @@ namespace Engine {
 		double GetY() const { return y; };
 		void SetY(double _y) { y = _y; }
 
-		CPoint2D& Add(const CVector2D& vector)
-		{
-			SetX(GetX() + vector.GetX());
-			SetY(GetY() + vector.GetY());
-			return *this;
-		}
+		CPoint2D& Add(const CVector2D& vector);
 
 		CPoint2D& Add(double x, double y)
 		{
@@ -33,12 +28,7 @@ namespace Engine {
 			return *this;
 		}
 
-		CPoint2D& Subtract(const CVector2D& vector)
-		{
-			SetX(GetX() - vector.GetX());
-			SetY(GetY() - vector.GetY());
-			return *this;
-		}
+		CPoint2D& Subtract(const CVector2D& vector);
 
 		CPoint2D& Subtract(double x, double y)
 		{

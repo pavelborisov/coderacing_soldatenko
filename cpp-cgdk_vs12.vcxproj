@@ -89,6 +89,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="engine\Point2D.cpp" />
+    <ClCompile Include="engine\Vector2D.cpp" />
     <ClCompile Include="model\Bonus.cpp" />
     <ClCompile Include="model\Car.cpp" />
     <ClCompile Include="model\CircularUnit.cpp" />
