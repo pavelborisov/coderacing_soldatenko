@@ -118,12 +118,11 @@ namespace Engine {
 			double dot = GetX() * vector.GetX() + GetY() * vector.GetY();
 			double det = GetX() * vector.GetY() - GetY() * vector.GetX();
 			double angle = atan2(det, dot);
-			const double pi = 3.14159265358979323846;
-			if (angle > pi) {
-				angle -= 2 * pi;
+			if (angle > M_PI) {
+				angle -= 2 * M_PI;
 			}
-			if (angle < -pi) {
-				angle += 2 * pi;
+			if (angle < -M_PI) {
+				angle += 2 * M_PI;
 			}
 			return angle;
 		}
