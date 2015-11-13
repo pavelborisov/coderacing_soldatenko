@@ -5,6 +5,7 @@
 
 #include <cmath>
 #include <cstdlib>
+#include "Log.h"
 
 using namespace model;
 using namespace std;
@@ -15,8 +16,6 @@ MyStrategy::MyStrategy()
 
 void MyStrategy::move(const Car& self, const World& world, const Game& game, Move& move)
 {
-	self;
-	world;
-	game;
+	CLog::Instance().Log(self, world, game, move);
 	move.setEnginePower(1.0);
 }
