@@ -89,8 +89,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="engine\Point2D.cpp" />
-    <ClCompile Include="engine\Vector2D.cpp" />
     <ClCompile Include="model\Bonus.cpp" />
     <ClCompile Include="model\Car.cpp" />
     <ClCompile Include="model\CircularUnit.cpp" />
@@ -113,8 +111,6 @@
     <ClCompile Include="csimplesocket\SimpleSocket.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="engine\Point2D.h" />
-    <ClInclude Include="engine\Vector2D.h" />
     <ClInclude Include="model\Bonus.h" />
     <ClInclude Include="model\BonusType.h" />
     <ClInclude Include="model\Car.h" />

@@ -25,12 +25,6 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav</Extensions>
     </Filter>
-    <Filter Include="Header Files\engine">
-      <UniqueIdentifier>{14e29f16-8be3-4648-8fbf-8b56b7563d7e}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\engine">
-      <UniqueIdentifier>{8690cbae-9409-40e0-97cd-77122bc14135}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="MyStrategy.cpp">
@@ -92,12 +86,6 @@
     </ClCompile>
     <ClCompile Include="model\World.cpp">
       <Filter>Source Files\model</Filter>
-    </ClCompile>
-    <ClCompile Include="engine\Vector2D.cpp">
-      <Filter>Source Files\engine</Filter>
-    </ClCompile>
-    <ClCompile Include="engine\Point2D.cpp">
-      <Filter>Source Files\engine</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -181,12 +169,6 @@
     </ClInclude>
     <ClInclude Include="model\World.h">
       <Filter>Header Files\model</Filter>
-    </ClInclude>
-    <ClInclude Include="engine\Vector2D.h">
-      <Filter>Header Files\engine</Filter>
-    </ClInclude>
-    <ClInclude Include="engine\Point2D.h">
-      <Filter>Header Files\engine</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
