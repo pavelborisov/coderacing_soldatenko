@@ -6,10 +6,11 @@
 #include "model\World.h"
 #include "model\Game.h"
 #include "model\Move.h"
+#include "Vec2D.h"
 using namespace std;
 using namespace model;
 
-CLog::CLog() : predTick(-1)
+CLog::CLog()
 {
 	const string logpath = "..\\log.txt";
 
@@ -24,21 +25,30 @@ CLog::~CLog()
 	logfile.close();
 }
 
-void CLog::Log(const Car& car, const World& world, const Game& /*game*/, Move& /*move*/)
+void CLog::LogTick(int tick)
 {
-	if (predTick != world.getTick())
-	{
-		logfile << endl << "Tick: " << world.getTick() << endl;
-		predTick = world.getTick();
-	}
+	logfile << endl << "Tick: " << tick << endl;
+}
 
-	logfile << "Car: " << car.getId()
+void CLog::LogCar(const Car& car, const char* name)
+{
+	logfile << name << ":"
+		<< " Id: " << car.getId()
 		<< " X: " << car.getX()
 		<< " Y: " << car.getY()
 		<< " Angle: " << car.getAngle()
 		<< " SpeedX: " << car.getSpeedX()
 		<< " SpeedY: " << car.getSpeedY()
 		<< endl;
+}
+
+void CLog::LogPosition(const CVec2D& position, const char* name)
+{
+	logfile << name << ":"
+		<< " X: " << position.X
+		<< " Y: " << position.Y
+		<< endl;
+
 }
 
 #endif

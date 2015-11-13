@@ -6,7 +6,6 @@
 #include <cmath>
 #include <cstdlib>
 #include "Log.h"
-#include "Vec2D.h"
 
 using namespace model;
 using namespace std;
@@ -21,11 +20,24 @@ void MyStrategy::move(const Car& self, const World& world, const Game& game, Mov
 		simulator.Initialize(game);
 	}
 	CLog& log = CLog::Instance();
+	log.LogTick(world.getTick());
+	CVec2D position = CVec2D(self.getX(), self.getY());
 
-	log.Log(self, world, game, move);
 	move.setEnginePower(1.0);
 
 	if (world.getTick() >= game.getInitialFreezeDurationTicks()) {
-		CVec2D nextPosition = simulator.Predict(self, world, move);
+		CVec2D prediction = simulator.Predict(self, world, move);
+
+		log.LogCar(self, "self");
+		log.LogPosition(prevPosition,              "Previous Position  ");
+		log.LogPosition(position,                  "Position           ");
+		log.LogPosition(prevPrediction,            "Previous Prediction");
+		log.LogPosition(prediction,                "Prediction         ");
+		log.LogPosition(position - prevPosition,   "Position shift     ");
+		log.LogPosition(position - prevPrediction, "Prediction error   ");
+
+		prevPrediction = prediction;
 	}
+
+	prevPosition = position;
 }

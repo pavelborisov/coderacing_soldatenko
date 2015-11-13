@@ -5,6 +5,7 @@
 
 #include "Strategy.h"
 #include "Simulator.h"
+#include "Vec2D.h"
 
 class MyStrategy : public Strategy {
 public:
@@ -14,6 +15,9 @@ public:
 
 private:
 	CSimulator simulator;
+	CVec2D prevPosition;
+	CVec2D prevPrediction;
+
 };
 
 #endif

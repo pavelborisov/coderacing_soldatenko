@@ -6,6 +6,7 @@ namespace model {
 	class Game;
 	class Move;
 }
+struct CVec2D;
 
 #ifdef LOGGING
 
@@ -18,11 +19,12 @@ public:
 		return singleInstance;
 	}
 
-	void Log(const model::Car& car, const model::World& world, const model::Game& game, model::Move& move);
+	void LogTick(int tick);
+	void LogCar(const model::Car& car, const char* name);
+	void LogPosition(const CVec2D& position, const char* name);
 
 private:
 	std::ofstream logfile;
-	int predTick;
 
 	CLog();
 	~CLog();
@@ -38,7 +40,9 @@ public:
 		return singleInstance;
 	}
 
-	void Log(const model::Car& /*car*/, const model::World& /*world*/, const model::Game& /*game*/, model::Move& /*move*/) {}
+	void LogTick(int /*tick*/) {}
+	void LogCar(const model::Car& /*car*/, const char* /*name*/) {}
+	void LogPosition(const CVec2D& /*position*/, const char* /*name*/) {}
 
 private:
 	CLog() {}
