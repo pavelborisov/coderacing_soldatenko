@@ -89,10 +89,12 @@ CMyCar CSimulator::Predict(const CMyCar& startCar, const model::World& /*world*/
 	car.WheelTurn += limit(move.getWheelTurn() - car.WheelTurn, game.getCarWheelTurnChangePerTick());
 	car.WheelTurn = limit(car.WheelTurn, 1.0);
 	// —начала считаетс€ "базова€" углова€ скорость. ќна будет одна на все подтики.
-	car.AngularSpeed -= car.MedianAngularSpeed;
-	car.MedianAngularSpeed = game.getCarAngularSpeedFactor() * car.WheelTurn
+	// NOTE: Ќа форуме была кака€-то иде€ типа вычитать из угловой скорости MedianAngularSpeed от прошлого тика.
+	// Ќо если просто посчитать новую "базовую" скорость и сделать начальную угловую скорость равную ей - то всЄ
+	// работает точно.
+	double medianAngularSpeed = game.getCarAngularSpeedFactor() * car.WheelTurn
 		* lengthwiseUnitVector.DotProduct(car.Speed);
-	car.AngularSpeed += car.MedianAngularSpeed;
+	car.AngularSpeed = medianAngularSpeed;
 
 	// ‘изика считаетс€ в несколько итераций.
 	for (int i = 0; i < subtickCount; i++) {
@@ -118,8 +120,7 @@ CMyCar CSimulator::Predict(const CMyCar& startCar, const model::World& /*world*/
 
 		// ќбновление угловой скорости.
 		// TODO: учесть rotationFrictionFactorDt
-		car.AngularSpeed = car.MedianAngularSpeed + (car.AngularSpeed - car.MedianAngularSpeed)
-			* rotationAirFrictionFactorDt;
+		car.AngularSpeed = medianAngularSpeed + (car.AngularSpeed - medianAngularSpeed) * rotationAirFrictionFactorDt;
 	}
 
 	return car;

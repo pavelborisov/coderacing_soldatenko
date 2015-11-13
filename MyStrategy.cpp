@@ -36,7 +36,7 @@ void MyStrategy::move(const Car& self, const World& world, const Game& game, Mov
 			move.setWheelTurn(0);
 		}
 
-		CMyCar car(self, game.getCarAngularSpeedFactor(), prevSelf);
+		CMyCar car(self);
 		CMyCar prediction = simulator.Predict(car, world, move);
 
 		log.LogTick(world.getTick());
