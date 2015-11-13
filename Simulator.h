@@ -1,6 +1,8 @@
 #pragma once
 
+#include <vector>
 #include "model/Game.h"
+#include "model/Car.h"
 #include "model/World.h"
 #include "model/Move.h"
 #include "MyCar.h"
@@ -15,6 +17,18 @@ public:
 
 private:
 	bool isInitialized;
-	model::Game game;
+	// Ускорения автомобилей (сила/масса).
+	std::vector<double> forwardAccelByType;
+	std::vector<double> rearAccelByType;
+	// Коэффициенты трения, с учётом dTime.
+	double lengthwiseFrictionFactorDt;
+	double crosswiseFrictionFactorDt;
+	double rotationFrictionFactorDt;
+	double movementAirFrictionFactorDt;
+	double rotationAirFrictionFactorDt;
+	// Другие необходимые константы из game, которые надо запомнить.
+	double powerChangePerTick;
+	double wheelTurnChangePerTick;
+	double angularSpeedFactor;
 
 };

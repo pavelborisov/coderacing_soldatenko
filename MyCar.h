@@ -8,11 +8,13 @@ struct CMyCar {
 	CVec2D Speed;
 	double Angle;
 	double AngularSpeed;
+	double MedianAngularSpeed;
 	double EnginePower;
 	double WheelTurn;
+	int Type;
 
 	CMyCar();
 	CMyCar(const CMyCar& car);
-	explicit CMyCar(const model::Car& car);
+	CMyCar(const model::Car& car, double angularSpeedFactor, const model::Car& previousTickCar);
 
 };
