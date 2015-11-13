@@ -11,6 +11,9 @@ struct CMyCar {
 	double MedianAngularSpeed;
 	double EnginePower;
 	double WheelTurn;
+	int NitroCount;
+	int NitroTicks;
+	int NitroCooldown;
 	int Type;
 
 	CMyCar();

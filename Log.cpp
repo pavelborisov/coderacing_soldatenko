@@ -41,6 +41,10 @@ void CLog::LogMyCar(const CMyCar& car, const char* name)
 		<< " AngularSpeed: " << car.AngularSpeed
 		<< " EnginePower: " << car.EnginePower
 		<< " WheelTurn: " << car.WheelTurn
+		<< " NitroCount:" << car.NitroCount
+		<< " NitroTicks:" << car.NitroTicks
+		<< " NitroCooldown:" << car.NitroCooldown
+		<< " Type:" << car.Type
 		<< endl;
 }
 

@@ -22,7 +22,20 @@ void MyStrategy::move(const Car& self, const World& world, const Game& game, Mov
 	CLog& log = CLog::Instance();
 
 	if (world.getTick() >= game.getInitialFreezeDurationTicks()) {
-		move.setEnginePower(-0.6);
+		move.setEnginePower(0.9);
+
+		if (world.getTick() == 195) {
+			move.setUseNitro(true);
+		}
+
+		if (world.getTick() >= 230 && world.getTick() < 300) {
+			move.setWheelTurn(1.0);
+		} else if (world.getTick() >= 300 && world.getTick() < 341) {
+			move.setWheelTurn(-1.0);
+		} else {
+			move.setWheelTurn(0);
+		}
+
 		CMyCar car(self, game.getCarAngularSpeedFactor(), prevSelf);
 		CMyCar prediction = simulator.Predict(car, world, move);
 
@@ -33,7 +46,7 @@ void MyStrategy::move(const Car& self, const World& world, const Game& game, Mov
 		log.LogVec2D(car.Position - prevPrediction.Position, "Position prediction error");
 		log.LogVec2D(car.Speed - prevPrediction.Speed, "Speed prediction error");
 		log.Log(car.Angle - prevPrediction.Angle, "Angle prediction error");
-		log.Log(car.AngularSpeed- prevPrediction.AngularSpeed, "Angular speed prediction error");
+		log.Log(car.AngularSpeed - prevPrediction.AngularSpeed, "Angular speed prediction error");
 
 		prevPrediction = prediction;
 	}

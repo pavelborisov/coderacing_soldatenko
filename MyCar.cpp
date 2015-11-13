@@ -8,6 +8,9 @@ CMyCar::CMyCar() :
 	MedianAngularSpeed(0),
 	EnginePower(0),
 	WheelTurn(0),
+	NitroCount(0),
+	NitroTicks(0),
+	NitroCooldown(0),
 	Type(0)
 {
 }
@@ -20,6 +23,9 @@ CMyCar::CMyCar(const CMyCar& car) :
 	MedianAngularSpeed(car.MedianAngularSpeed),
 	EnginePower(car.EnginePower),
 	WheelTurn(car.WheelTurn),
+	NitroCount(car.NitroCount),
+	NitroTicks(car.NitroTicks),
+	NitroCooldown(car.NitroCooldown),
 	Type(car.Type)
 {
 }
@@ -33,6 +39,9 @@ CMyCar::CMyCar(const model::Car& car, double angularSpeedFactor, const model::Ca
 	//MedianAngularSpeed(car.getMedianAngularSpeed),
 	EnginePower(car.getEnginePower()),
 	WheelTurn(car.getWheelTurn()),
+	NitroCount(car.getNitroChargeCount()),
+	NitroTicks(car.getRemainingNitroTicks()),
+	NitroCooldown(car.getRemainingNitroCooldownTicks()),
 	Type(car.getType())
 {
 	// TODO: Перенести этот подсчёт в симулятор. И избавиться от MedianAngularSpeed в CMyCar

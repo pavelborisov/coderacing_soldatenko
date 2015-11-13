@@ -17,6 +17,7 @@ public:
 
 private:
 	bool isInitialized;
+	model::Game game;
 	// Ускорения автомобилей (сила/масса).
 	std::vector<double> forwardAccelByType;
 	std::vector<double> rearAccelByType;
@@ -26,9 +27,5 @@ private:
 	double rotationFrictionFactorDt;
 	double movementAirFrictionFactorDt;
 	double rotationAirFrictionFactorDt;
-	// Другие необходимые константы из game, которые надо запомнить.
-	double powerChangePerTick;
-	double wheelTurnChangePerTick;
-	double angularSpeedFactor;
 
 };
