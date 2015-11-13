@@ -53,6 +53,8 @@ static const double limit(double val, double lim)
 
 CMyCar CSimulator::Predict(const CMyCar& startCar, const model::World& /*world*/, const model::Move& move) const
 {
+	// TODO: Тормоза - не совпадает.
+	// TODO: Коллизии. Со стенами, другими машинами, бонусами(!)
 	CMyCar car(startCar);
 
 	// Единичный вектор направленный туда, куда смотрит автомобиль.
@@ -119,7 +121,7 @@ CMyCar CSimulator::Predict(const CMyCar& startCar, const model::World& /*world*/
 		crosswiseUnitVector = CVec2D(lengthwiseUnitVector.Y, -lengthwiseUnitVector.X);
 
 		// Обновление угловой скорости.
-		// TODO: учесть rotationFrictionFactorDt
+		// TODO: Как учесть rotationFrictionFactorDt?
 		car.AngularSpeed = medianAngularSpeed + (car.AngularSpeed - medianAngularSpeed) * rotationAirFrictionFactorDt;
 	}
 
