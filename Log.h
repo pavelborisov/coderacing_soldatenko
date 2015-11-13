@@ -1,3 +1,5 @@
+#pragma once
+
 namespace model {
 	class Car;
 	class World;
