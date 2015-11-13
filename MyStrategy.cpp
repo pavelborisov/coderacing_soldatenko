@@ -20,20 +20,20 @@ void MyStrategy::move(const Car& self, const World& world, const Game& game, Mov
 		simulator.Initialize(game);
 	}
 	CLog& log = CLog::Instance();
-	log.LogTick(world.getTick());
-	CVec2D position = CVec2D(self.getX(), self.getY());
-
-	move.setEnginePower(1.0);
 
 	if (world.getTick() >= game.getInitialFreezeDurationTicks()) {
+		move.setEnginePower(-0.6);
 		CMyCar car(self, game.getCarAngularSpeedFactor(), prevSelf);
 		CMyCar prediction = simulator.Predict(car, world, move);
 
+		log.LogTick(world.getTick());
 		log.LogMyCar(prevPrediction, "Previous prediction");
 		log.LogMyCar(car,            "Current            ");
 		log.LogMyCar(prediction,     "Prediction         ");
 		log.LogVec2D(car.Position - prevPrediction.Position, "Position prediction error");
 		log.LogVec2D(car.Speed - prevPrediction.Speed, "Speed prediction error");
+		log.Log(car.Angle - prevPrediction.Angle, "Angle prediction error");
+		log.Log(car.AngularSpeed- prevPrediction.AngularSpeed, "Angular speed prediction error");
 
 		prevPrediction = prediction;
 	}

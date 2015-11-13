@@ -23,6 +23,8 @@ public:
 	void LogTick(int tick);
 	void LogMyCar(const CMyCar& car, const char* name);
 	void LogVec2D(const CVec2D& position, const char* name);
+	template<typename T>
+	void Log(const T& value, const char* name) { logfile << name << ": " << value << endl; }
 
 private:
 	std::ofstream logfile;
@@ -44,6 +46,8 @@ public:
 	void LogTick(int /*tick*/) {}
 	void LogMyCar(const CMyCar& /*car*/, const char* /*name*/) {}
 	void LogVec2D(const CVec2D& /*position*/, const char* /*name*/) {}
+	template<typename T>
+	void Log(const T& /*value*/, const char* /*name*/) {}
 
 private:
 	CLog() {}

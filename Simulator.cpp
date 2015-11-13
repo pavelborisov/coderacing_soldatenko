@@ -66,15 +66,15 @@ CMyCar CSimulator::Predict(const CMyCar& startCar, const model::World& /*world*/
 	CVec2D crosswiseUnitVector(lengthwiseUnitVector.Y, -lengthwiseUnitVector.X);
 
 	// Обновляем мощность двигателя.
-	car.EnginePower += limit(move.getEnginePower(), powerChangePerTick);
-	car.EnginePower = limit(car.EnginePower, 1.0); // TODO: Когда будет учитыватьяс нитро - надо изменить ограничение.
+	car.EnginePower += limit(move.getEnginePower() - car.EnginePower, powerChangePerTick);
+	car.EnginePower = limit(car.EnginePower, 1.0); // TODO: Когда будет учитываться нитро - надо изменить ограничение.
 	// Вектор ускорения. Будет постоянный для всех итераций физики.
 	CVec2D accelerationDt = car.EnginePower >= 0 ?
 		lengthwiseUnitVector * forwardAccelByType[car.Type] * car.EnginePower * dTime:
 		lengthwiseUnitVector * rearAccelByType[car.Type] * car.EnginePower * dTime;
 
 	// Обновляем угол поворота колёс.
-	car.WheelTurn += limit(move.getWheelTurn(), wheelTurnChangePerTick);
+	car.WheelTurn += limit(move.getWheelTurn() - car.WheelTurn, wheelTurnChangePerTick);
 	car.WheelTurn = limit(car.WheelTurn, 1.0);
 	// Сначала считается "базовая" угловая скорость. Она будет одна на все подтики.
 	car.AngularSpeed -= car.MedianAngularSpeed;
