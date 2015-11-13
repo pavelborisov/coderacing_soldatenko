@@ -4,12 +4,16 @@
 #define _MY_STRATEGY_H_
 
 #include "Strategy.h"
+#include "Simulator.h"
 
 class MyStrategy : public Strategy {
 public:
-    MyStrategy();
+	MyStrategy();
 
-    void move(const model::Car& self, const model::World& world, const model::Game& game, model::Move& move);
+	void move(const model::Car& self, const model::World& world, const model::Game& game, model::Move& move);
+
+private:
+	CSimulator simulator;
 };
 
 #endif

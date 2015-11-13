@@ -105,6 +105,7 @@
     <ClCompile Include="MyStrategy.cpp" />
     <ClCompile Include="RemoteProcessClient.cpp" />
     <ClCompile Include="Runner.cpp" />
+    <ClCompile Include="Simulator.cpp" />
     <ClCompile Include="Strategy.cpp" />
     <ClCompile Include="csimplesocket\ActiveSocket.cpp" />
     <ClCompile Include="csimplesocket\HTTPActiveSocket.cpp" />
@@ -134,6 +135,7 @@
     <ClInclude Include="MyStrategy.h" />
     <ClInclude Include="RemoteProcessClient.h" />
     <ClInclude Include="Runner.h" />
+    <ClInclude Include="Simulator.h" />
     <ClInclude Include="Strategy.h" />
     <ClInclude Include="csimplesocket\ActiveSocket.h" />
     <ClInclude Include="csimplesocket\Host.h" />
