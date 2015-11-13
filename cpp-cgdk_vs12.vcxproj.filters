@@ -87,6 +87,9 @@
     <ClCompile Include="model\World.cpp">
       <Filter>Source Files\model</Filter>
     </ClCompile>
+    <ClCompile Include="Vec2D.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="MyStrategy.h">
@@ -169,6 +172,9 @@
     </ClInclude>
     <ClInclude Include="model\World.h">
       <Filter>Header Files\model</Filter>
+    </ClInclude>
+    <ClInclude Include="Vec2D.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

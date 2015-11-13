@@ -109,6 +109,7 @@
     <ClCompile Include="csimplesocket\HTTPActiveSocket.cpp" />
     <ClCompile Include="csimplesocket\PassiveSocket.cpp" />
     <ClCompile Include="csimplesocket\SimpleSocket.cpp" />
+    <ClCompile Include="Vec2D.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="model\Bonus.h" />
@@ -138,6 +139,7 @@
     <ClInclude Include="csimplesocket\PassiveSocket.h" />
     <ClInclude Include="csimplesocket\SimpleSocket.h" />
     <ClInclude Include="csimplesocket\StatTimer.h" />
+    <ClInclude Include="Vec2D.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
