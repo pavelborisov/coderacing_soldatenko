@@ -15,7 +15,10 @@ bool CSimulator::IsInitialized() const
 	return isInitialized;
 }
 
-CVec2D CSimulator::Predict(const model::Car& car, const model::World& /*world*/, const model::Move& /*move*/) const
+CMyCar CSimulator::Predict(const CMyCar& car, const model::World& /*world*/, const model::Move& /*move*/) const
 {
-	return CVec2D(car.getX(), car.getY());
+	CMyCar predictedCar(car);
+	predictedCar.Position = car.Position + car.Speed;
+
+	return predictedCar;
 }

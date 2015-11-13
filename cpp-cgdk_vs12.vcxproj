@@ -102,6 +102,7 @@
     <ClCompile Include="model\RectangularUnit.cpp" />
     <ClCompile Include="model\Unit.cpp" />
     <ClCompile Include="model\World.cpp" />
+    <ClCompile Include="MyCar.cpp" />
     <ClCompile Include="MyStrategy.cpp" />
     <ClCompile Include="RemoteProcessClient.cpp" />
     <ClCompile Include="Runner.cpp" />
@@ -132,6 +133,7 @@
     <ClInclude Include="model\TileType.h" />
     <ClInclude Include="model\Unit.h" />
     <ClInclude Include="model\World.h" />
+    <ClInclude Include="MyCar.h" />
     <ClInclude Include="MyStrategy.h" />
     <ClInclude Include="RemoteProcessClient.h" />
     <ClInclude Include="Runner.h" />

@@ -6,6 +6,7 @@ namespace model {
 	class Game;
 	class Move;
 }
+struct CMyCar; 
 struct CVec2D;
 
 #ifdef LOGGING
@@ -20,8 +21,8 @@ public:
 	}
 
 	void LogTick(int tick);
-	void LogCar(const model::Car& car, const char* name);
-	void LogPosition(const CVec2D& position, const char* name);
+	void LogMyCar(const CMyCar& car, const char* name);
+	void LogVec2D(const CVec2D& position, const char* name);
 
 private:
 	std::ofstream logfile;
@@ -41,8 +42,8 @@ public:
 	}
 
 	void LogTick(int /*tick*/) {}
-	void LogCar(const model::Car& /*car*/, const char* /*name*/) {}
-	void LogPosition(const CVec2D& /*position*/, const char* /*name*/) {}
+	void LogMyCar(const CMyCar& /*car*/, const char* /*name*/) {}
+	void LogVec2D(const CVec2D& /*position*/, const char* /*name*/) {}
 
 private:
 	CLog() {}

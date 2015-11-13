@@ -26,18 +26,16 @@ void MyStrategy::move(const Car& self, const World& world, const Game& game, Mov
 	move.setEnginePower(1.0);
 
 	if (world.getTick() >= game.getInitialFreezeDurationTicks()) {
-		CVec2D prediction = simulator.Predict(self, world, move);
+		CMyCar car(self);
+		CMyCar prediction = simulator.Predict(car, world, move);
 
-		log.LogCar(self, "self");
-		log.LogPosition(prevPosition,              "Previous Position  ");
-		log.LogPosition(position,                  "Position           ");
-		log.LogPosition(prevPrediction,            "Previous Prediction");
-		log.LogPosition(prediction,                "Prediction         ");
-		log.LogPosition(position - prevPosition,   "Position shift     ");
-		log.LogPosition(position - prevPrediction, "Prediction error   ");
+		log.LogMyCar(car,            "Current            ");
+		log.LogMyCar(prevPrediction, "Previous prediction");
+		log.LogMyCar(prediction,     "Prediction         ");
+		log.LogVec2D(car.Position - prevPrediction.Position, "Position prediction error");
 
 		prevPrediction = prediction;
 	}
 
-	prevPosition = position;
+	prevSelf = self;
 }

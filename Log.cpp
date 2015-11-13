@@ -2,10 +2,10 @@
 
 #ifdef LOGGING
 
-#include "model\Car.h"
-#include "model\World.h"
-#include "model\Game.h"
-#include "model\Move.h"
+#include "model/World.h"
+#include "model/Game.h"
+#include "model/Move.h"
+#include "MyCar.h"
 #include "Vec2D.h"
 using namespace std;
 using namespace model;
@@ -30,25 +30,26 @@ void CLog::LogTick(int tick)
 	logfile << endl << "Tick: " << tick << endl;
 }
 
-void CLog::LogCar(const Car& car, const char* name)
+void CLog::LogMyCar(const CMyCar& car, const char* name)
 {
 	logfile << name << ":"
-		<< " Id: " << car.getId()
-		<< " X: " << car.getX()
-		<< " Y: " << car.getY()
-		<< " Angle: " << car.getAngle()
-		<< " SpeedX: " << car.getSpeedX()
-		<< " SpeedY: " << car.getSpeedY()
+		<< " X: " << car.Position.X
+		<< " Y: " << car.Position.Y
+		<< " SpeedX: " << car.Speed.X
+		<< " SpeedY: " << car.Speed.Y
+		<< " Angle: " << car.Angle
+		<< " AngularSpeed: " << car.AngularSpeed
+		<< " EnginePower: " << car.EnginePower
+		<< " WheelTurn: " << car.WheelTurn
 		<< endl;
 }
 
-void CLog::LogPosition(const CVec2D& position, const char* name)
+void CLog::LogVec2D(const CVec2D& position, const char* name)
 {
 	logfile << name << ":"
 		<< " X: " << position.X
 		<< " Y: " << position.Y
 		<< endl;
-
 }
 
 #endif

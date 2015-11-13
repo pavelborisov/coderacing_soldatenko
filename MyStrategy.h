@@ -5,6 +5,7 @@
 
 #include "Strategy.h"
 #include "Simulator.h"
+#include "MyCar.h"
 #include "Vec2D.h"
 
 class MyStrategy : public Strategy {
@@ -15,8 +16,8 @@ public:
 
 private:
 	CSimulator simulator;
-	CVec2D prevPosition;
-	CVec2D prevPrediction;
+	model::Car prevSelf;
+	CMyCar prevPrediction;
 
 };
 

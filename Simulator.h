@@ -1,10 +1,9 @@
 #pragma once
 
-#include "model\Game.h"
-#include "model\Car.h"
-#include "model\World.h"
-#include "model\Move.h"
-#include "Vec2D.h"
+#include "model/Game.h"
+#include "model/World.h"
+#include "model/Move.h"
+#include "MyCar.h"
 
 class CSimulator {
 public:
@@ -12,7 +11,7 @@ public:
 	void Initialize(const model::Game& game);
 	bool IsInitialized() const;
 
-	CVec2D Predict(const model::Car& car, const model::World& world, const model::Move& move) const;
+	CMyCar Predict(const CMyCar& car, const model::World& world, const model::Move& move) const;
 
 private:
 	bool isInitialized;
