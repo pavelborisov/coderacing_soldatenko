@@ -90,8 +90,8 @@ void MyStrategy::move(const Car& self, const World& world, const Game& game, Mov
 		logIfDiffers(car.Type, prevPrediction.Type, "Type", log);
 
 		CDrawPluginSwitcher drawSwitcher(draw);
-		draw.DrawCircle(car.Position, 20);
-		draw.DrawCircle(prediction.Position, 20);
+		draw.FillCircle(car.Position, 10);
+		draw.FillCircle(prediction.Position, 5);
 
 		prevPrediction = prediction;
 	}

@@ -37,6 +37,8 @@ obj
 xuserdata
 *.xcuserdatad
 
+*.class
+
 Debug
 Release
 

@@ -16,7 +16,7 @@ public:
 	}
 
 	void BeginDraw();
-	void DrawCircle(const CVec2D& position, double radius);
+	void FillCircle(const CVec2D& position, double radius);
 	void EndDraw();
 
 private:
@@ -38,7 +38,7 @@ public:
 	}
 
 	void BeginDraw();
-	void DrawCircle(const CVec2D& /*position*/, double /*radius*/) {}
+	void FillCircle(const CVec2D& /*position*/, double /*radius*/) {}
 	void EndDraw();
 
 private:

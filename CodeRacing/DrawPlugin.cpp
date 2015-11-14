@@ -19,9 +19,9 @@ void CDrawPlugin::BeginDraw()
 	drawFile.open(drawFilePath.c_str());
 }
 
-void CDrawPlugin::DrawCircle(const CVec2D& position, double radius)
+void CDrawPlugin::FillCircle(const CVec2D& position, double radius)
 {
-	drawFile << "drawCircle(" << position.X << ", " << position.Y << ", " << radius << ");" << endl;
+	drawFile << "fillCircle " << position.X << " " << position.Y << " " << radius << endl;
 }
 
 void CDrawPlugin::EndDraw()

@@ -1,4 +1,5 @@
 import java.awt.*;
+import java.io.*;
 
 import model.*;
 
@@ -20,24 +21,29 @@ public final class LocalTestRendererListener {
     public void beforeDrawScene(Graphics graphics, World world, Game game, int canvasWidth, int canvasHeight,
                                 double left, double top, double width, double height) {
         updateFields(graphics, world, game, canvasWidth, canvasHeight, left, top, width, height);
-
-        graphics.setColor(Color.BLACK);
-        drawRect(100.0D, 100.0D, 5100.0D, 5100.0D);
-
-        for (Car car : world.getCars()) {
-            drawCircle(car.getX(), car.getY(), hypot(car.getWidth(), car.getHeight()) / 2.0D);
-        }
+        // Пока что всё рисование происходит в afterDrawScene
     }
 
     public void afterDrawScene(Graphics graphics, World world, Game game, int canvasWidth, int canvasHeight,
                                double left, double top, double width, double height) {
         updateFields(graphics, world, game, canvasWidth, canvasHeight, left, top, width, height);
-
-        graphics.setColor(Color.BLACK);
-        drawCircle(2600.0D, 2600.0D, 2400.0D);
-
-        for (Car car : world.getCars()) {
-            fillCircle(car.getX(), car.getY(), car.getHeight() / 2.0D);
+        String drawFileName = "..\\draw.txt";
+        try(BufferedReader br = new BufferedReader(new FileReader(drawFileName))) {
+            String line = br.readLine();
+            while(line != null) {
+                String[] parts = line.split(" ");
+                if(parts[0].equals("setColor")) {
+                    //Error: cannot convert int to Color
+                    //graphics.setColor(Integer.parseInt(parts[1]));
+                } else if(parts[0].equals("fillCircle")) {
+                    fillCircle(Double.parseDouble(parts[1]), Double.parseDouble(parts[2]), Double.parseDouble(parts[3]));
+                }
+                line = br.readLine();
+            }
+            br.close();
+        } catch(FileNotFoundException e) {
+        } catch(IOException e) {
+        } finally {
         }
     }
 
