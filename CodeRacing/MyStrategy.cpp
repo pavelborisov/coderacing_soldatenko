@@ -31,6 +31,8 @@ void MyStrategy::move(const Car& self, const World& world, const Game& game, Mov
 	}
 	CLog& log = CLog::Instance();
 	CDrawPlugin& draw = CDrawPlugin::Instance();
+	draw.BeginDraw();
+	draw.EndDraw();
 
 	if (world.getTick() >= game.getInitialFreezeDurationTicks()) {
 		// Быстрый старт
@@ -94,6 +96,13 @@ void MyStrategy::move(const Car& self, const World& world, const Game& game, Mov
 		draw.FillCircle(car.Position, 10);
 		draw.SetColor(255, 128, 0);
 		draw.FillCircle(prediction.Position, 5);
+		draw.SetColor(0, 0, 255);
+		for (int x = 0; x < 10; x++) {
+			draw.DrawLine({ x * 800.0, 0.0 }, { x * 800.0, 8000.0 });
+		}
+		for (int y = 0; y < 10; y++) {
+			draw.DrawLine({ 0.0, y * 800.0 }, { 8000.0, y * 800.0 });
+		}
 
 		prevPrediction = prediction;
 	}

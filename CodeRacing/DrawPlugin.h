@@ -17,6 +17,7 @@ public:
 
 	void BeginDraw();
 	void SetColor(int red, int green, int blue);
+	void DrawLine(const CVec2D& start, const CVec2D& end);
 	void FillCircle(const CVec2D& position, double radius);
 	void EndDraw();
 
@@ -40,6 +41,7 @@ public:
 
 	void BeginDraw();
 	void SetColor(int /*red*/, int /*green*/, int /*blue*/) {}
+	void DrawLine(const CVec2D& /*start*/, const CVec2D& /*end*/) {}
 	void FillCircle(const CVec2D& /*position*/, double /*radius*/) {}
 	void EndDraw();
 
