@@ -39,3 +39,8 @@ xuserdata
 
 Debug
 Release
+
+/draw.txt
+/log.txt
+/local-runner/game.log
+/local-runner/result.txt
