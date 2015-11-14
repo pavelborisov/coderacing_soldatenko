@@ -22,7 +22,7 @@ MyStrategy::MyStrategy() :
 	log(CLog::Instance()),
 	draw(CDrawPlugin::Instance()),
 	currentTick(0),
-	currentWaypointIndex(0)
+	nextWaypointIndex(0)
 {
 	draw.BeginDraw();
 	draw.EndDraw();
@@ -35,10 +35,12 @@ void MyStrategy::move(const Car& _self, const World& _world, const Game& _game, 
 	game = &_game;
 	resultMove = &_resultMove;
 
+	CDrawPluginSwitcher drawSwitcher(draw); 
 	currentTick = world->getTick();
 
 	firstTick();
-	updateCurrentWaypointIndex();
+	updateWaypoints();
+	findTileRoute();
 	makeMove();
 	predict();
 	doLog();
@@ -54,64 +56,90 @@ void MyStrategy::firstTick()
 	}
 }
 
-void MyStrategy::updateCurrentWaypointIndex()
+void MyStrategy::updateWaypoints()
 {
-	vector<vector<int>> waypoints_src = world->getWaypoints();
-	waypoints.clear();
-	for (const auto& w : waypoints_src) {
-		waypoints.push_back(CVec2D(w[0], w[1]));
+	CMyTile::TileTypesXY = world->getTilesXY();
+	CMyTile::TileSize = game->getTrackTileSize();
+
+	vector<vector<int>> waypoints = world->getWaypoints();
+	waypointTiles.clear();
+	for (const auto& w : waypoints) {
+		waypointTiles.push_back(CMyTile(w[0], w[1]));
 	}
 
-	while (waypoints[currentWaypointIndex].X != self->getNextWaypointX()
-		|| waypoints[currentWaypointIndex].Y != self->getNextWaypointY())
+	while (waypointTiles[nextWaypointIndex].X != self->getNextWaypointX()
+		|| waypointTiles[nextWaypointIndex].Y != self->getNextWaypointY())
 	{
-		currentWaypointIndex++;
-		currentWaypointIndex %= waypoints.size();
+		nextWaypointIndex++;
+		nextWaypointIndex %= waypoints.size();
 	}
+}
+
+void MyStrategy::findTileRoute()
+{
+	const int currentX = static_cast<int>(self->getX() / game->getTrackTileSize());
+	const int currentY = static_cast<int>(self->getY() / game->getTrackTileSize());
+	tileRoute = tileRouteFinder.FindRoute(waypointTiles, nextWaypointIndex, CMyTile(currentX, currentY));
 }
 
 void MyStrategy::makeMove()
 {
 	if (currentTick < game->getInitialFreezeDurationTicks()) {
-		//resultMove->setEnginePower(1.0);
+		resultMove->setEnginePower(1.0);
 		return;
 	}
-	updateCurrentWaypointIndex();
+
+	//// Пройдёмся по всему пути в обратном порядке. Проставим для каджого тайла информацию о том,
+	//// какой поворот будет следующий.
+	//for (int i = tileRoute.size() - 1; i >= 1; i--) {
+	//	const CMyTile& tile = tileRoute[i];
+	//	const CMyTile& prevTile = tileRoute[i];
+	//}
+
+	//CMyTile currentTile = tileRoute[0];
+	//CMyTile nextTile = tileRoute[1];
+	//CMyTile afterNextTile = tileRoute[2];
+	//CVec2D target;
+
+	//const int dx1 = nextTile.X - currentTile.X;
+	//const int dy1 = nextTile.Y - currentTile.Y;
+	//const int dx2 = afterNextTile.X - nextTile.X;
+	//const int dy2 = afterNextTile.Y - nextTile.Y;
 
 	// Быстрый старт
-	double nextWaypointX = (self->getNextWaypointX() + 0.5) * game->getTrackTileSize();
-	double nextWaypointY = (self->getNextWaypointY() + 0.5) * game->getTrackTileSize();
+	CMyTile targetTile = tileRoute[1];
+	CVec2D targetPos = targetTile.ToVec();
 
 	double cornerTileOffset = 0.25 * game->getTrackTileSize();
 
-	switch (world->getTilesXY()[self->getNextWaypointX()][self->getNextWaypointY()]) {
+		switch (targetTile.Type()) {
 		case LEFT_TOP_CORNER:
-			nextWaypointX += cornerTileOffset;
-			nextWaypointY += cornerTileOffset;
+			targetPos += CVec2D(cornerTileOffset, cornerTileOffset);
 			break;
 		case RIGHT_TOP_CORNER:
-			nextWaypointX -= cornerTileOffset;
-			nextWaypointY += cornerTileOffset;
+			targetPos += CVec2D(-cornerTileOffset, cornerTileOffset);
 			break;
 		case LEFT_BOTTOM_CORNER:
-			nextWaypointX += cornerTileOffset;
-			nextWaypointY -= cornerTileOffset;
+			targetPos += CVec2D(cornerTileOffset, -cornerTileOffset);
 			break;
 		case RIGHT_BOTTOM_CORNER:
-			nextWaypointX -= cornerTileOffset;
-			nextWaypointY -= cornerTileOffset;
+			targetPos += CVec2D(-cornerTileOffset, -cornerTileOffset);
 			break;
 	}
 
-	double angleToWaypoint = self->getAngleTo(nextWaypointX, nextWaypointY);
+	double angleToTarget = self->getAngleTo(targetPos.X, targetPos.Y);
 	double speedModule = hypot(self->getSpeedX(), self->getSpeedY());
 
-	resultMove->setWheelTurn(angleToWaypoint * 32.0 / PI);
-	resultMove->setEnginePower(0.75);
+	resultMove->setWheelTurn(angleToTarget * 50 / PI);
+	resultMove->setEnginePower(1.0);
 
-	if (speedModule * speedModule * abs(angleToWaypoint) > 2.5 * 2.5 * PI) {
+	if (speedModule > 10) {
 		resultMove->setBrake(true);
 	}
+
+	//if (speedModule * speedModule * abs(angleToTarget) > 2.5 * 2.5 * PI) {
+	//	resultMove->setBrake(true);
+	//}
 }
 
 void MyStrategy::predict()
@@ -141,19 +169,20 @@ void MyStrategy::doLog()
 
 void MyStrategy::doDraw()
 {
-	CDrawPluginSwitcher drawSwitcher(draw);
 	draw.SetColor(0, 0, 0);
 	draw.FillCircle(car.Position, 10);
 	draw.SetColor(255, 128, 0);
 	draw.FillCircle(prediction.Position, 5);
 
-	for (size_t i = 0; i < waypoints.size(); i++) {
-		if (i == currentWaypointIndex) {
-			draw.SetColor(255, 0, 0);
-		} else {
-			draw.SetColor(64, 0, 0);
-		}
-		draw.FillCircle((waypoints[i] + CVec2D(0.5, 0.5)) * game->getTrackTileSize(), 100);
+	draw.SetColor(255, 0, 0);
+	CVec2D nextWaypoint = waypointTiles[nextWaypointIndex].ToVec();
+	draw.FillCircle(nextWaypoint, 50);
+
+	draw.SetColor(0, 255, 0);
+	for (size_t i = 1; i < tileRoute.size(); i++) {
+		CVec2D from = tileRoute[i - 1].ToVec();
+		CVec2D to = tileRoute[i].ToVec();
+		draw.DrawLine(from, to);
 	}
 }
 

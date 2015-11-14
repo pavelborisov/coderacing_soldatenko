@@ -105,6 +105,7 @@
     <ClCompile Include="model\World.cpp" />
     <ClCompile Include="MyCar.cpp" />
     <ClCompile Include="MyStrategy.cpp" />
+    <ClCompile Include="MyTile.cpp" />
     <ClCompile Include="RemoteProcessClient.cpp" />
     <ClCompile Include="Runner.cpp" />
     <ClCompile Include="Simulator.cpp" />
@@ -113,6 +114,7 @@
     <ClCompile Include="csimplesocket\HTTPActiveSocket.cpp" />
     <ClCompile Include="csimplesocket\PassiveSocket.cpp" />
     <ClCompile Include="csimplesocket\SimpleSocket.cpp" />
+    <ClCompile Include="TileRouteFinder.cpp" />
     <ClCompile Include="Vec2D.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -137,6 +139,7 @@
     <ClInclude Include="model\World.h" />
     <ClInclude Include="MyCar.h" />
     <ClInclude Include="MyStrategy.h" />
+    <ClInclude Include="MyTile.h" />
     <ClInclude Include="RemoteProcessClient.h" />
     <ClInclude Include="Runner.h" />
     <ClInclude Include="Simulator.h" />
@@ -147,6 +150,7 @@
     <ClInclude Include="csimplesocket\PassiveSocket.h" />
     <ClInclude Include="csimplesocket\SimpleSocket.h" />
     <ClInclude Include="csimplesocket\StatTimer.h" />
+    <ClInclude Include="TileRouteFinder.h" />
     <ClInclude Include="Vec2D.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

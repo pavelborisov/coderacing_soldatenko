@@ -5,11 +5,13 @@
 
 #include "Strategy.h"
 
-#include "Simulator.h"
-#include "MyCar.h"
-#include "Vec2D.h"
-#include "Log.h"
 #include "DrawPlugin.h"
+#include "Log.h"
+#include "MyCar.h"
+#include "MyTile.h"
+#include "Simulator.h"
+#include "TileRouteFinder.h"
+#include "Vec2D.h"
 
 class MyStrategy : public Strategy {
 public:
@@ -27,8 +29,10 @@ private:
 	model::Move* resultMove;
 	int currentTick;
 
-	std::vector<CVec2D> waypoints;
-	size_t currentWaypointIndex;
+	CTileRouteFinder tileRouteFinder;
+	std::vector<CMyTile> waypointTiles;
+	std::vector<CMyTile> tileRoute;
+	int nextWaypointIndex;
 
 	CSimulator simulator;
 	CMyCar prevPrediction;
@@ -37,8 +41,9 @@ private:
 
 	MyStrategy& operator = (const MyStrategy&) {}
 
+	void updateWaypoints();
+	void findTileRoute();
 	void firstTick();
-	void updateCurrentWaypointIndex();
 	void makeMove();
 	void predict();
 	void doLog();
