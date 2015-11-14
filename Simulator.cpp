@@ -53,7 +53,6 @@ static const double limit(double val, double lim)
 
 CMyCar CSimulator::Predict(const CMyCar& startCar, const model::World& /*world*/, const model::Move& move) const
 {
-	// TODO: Тормоза - не совпадает.
 	// TODO: Коллизии. Со стенами, другими машинами, бонусами(!)
 	CMyCar car(startCar);
 
@@ -105,7 +104,9 @@ CMyCar CSimulator::Predict(const CMyCar& startCar, const model::World& /*world*/
 
 		// Обновление скорости.
 		// 1. Ускорение.
-		car.Speed += accelerationDt;
+		if (!move.isBrake()) {
+			car.Speed += accelerationDt;
+		}
 		// 2. Трение об воздух - пропорционально скорости и равномерно по всем направлениям.
 		car.Speed *= movementAirFrictionFactorDt;
 		// 3. Трение колёс - постоянно и различно по направлениям. Если тормозим, то к продольному направлению надо
