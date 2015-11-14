@@ -19,10 +19,10 @@ static const void logIfDiffers(const T& a, const T&b, const char* name, CLog& lo
 }
 
 MyStrategy::MyStrategy() :
-	currentWaypointIndex(0),
 	log(CLog::Instance()),
 	draw(CDrawPlugin::Instance()),
-	currentTick(0)
+	currentTick(0),
+	currentWaypointIndex(0)
 {
 	draw.BeginDraw();
 	draw.EndDraw();
@@ -38,6 +38,7 @@ void MyStrategy::move(const Car& _self, const World& _world, const Game& _game, 
 	currentTick = world->getTick();
 
 	firstTick();
+	updateCurrentWaypointIndex();
 	makeMove();
 	predict();
 	doLog();
@@ -53,12 +54,29 @@ void MyStrategy::firstTick()
 	}
 }
 
+void MyStrategy::updateCurrentWaypointIndex()
+{
+	vector<vector<int>> waypoints_src = world->getWaypoints();
+	waypoints.clear();
+	for (const auto& w : waypoints_src) {
+		waypoints.push_back(CVec2D(w[0], w[1]));
+	}
+
+	while (waypoints[currentWaypointIndex].X != self->getNextWaypointX()
+		|| waypoints[currentWaypointIndex].Y != self->getNextWaypointY())
+	{
+		currentWaypointIndex++;
+		currentWaypointIndex %= waypoints.size();
+	}
+}
+
 void MyStrategy::makeMove()
 {
 	if (currentTick < game->getInitialFreezeDurationTicks()) {
 		//resultMove->setEnginePower(1.0);
 		return;
 	}
+	updateCurrentWaypointIndex();
 
 	// Быстрый старт
 	double nextWaypointX = (self->getNextWaypointX() + 0.5) * game->getTrackTileSize();
@@ -128,12 +146,14 @@ void MyStrategy::doDraw()
 	draw.FillCircle(car.Position, 10);
 	draw.SetColor(255, 128, 0);
 	draw.FillCircle(prediction.Position, 5);
-	draw.SetColor(0, 0, 255);
-	for (int x = 0; x < 10; x++) {
-		draw.DrawLine({ x * 800.0, 0.0 }, { x * 800.0, 8000.0 });
-	}
-	for (int y = 0; y < 10; y++) {
-		draw.DrawLine({ 0.0, y * 800.0 }, { 8000.0, y * 800.0 });
+
+	for (size_t i = 0; i < waypoints.size(); i++) {
+		if (i == currentWaypointIndex) {
+			draw.SetColor(255, 0, 0);
+		} else {
+			draw.SetColor(64, 0, 0);
+		}
+		draw.FillCircle((waypoints[i] + CVec2D(0.5, 0.5)) * game->getTrackTileSize(), 100);
 	}
 }
 

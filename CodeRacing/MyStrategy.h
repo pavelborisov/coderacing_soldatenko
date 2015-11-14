@@ -18,7 +18,6 @@ public:
 	void move(const model::Car& self, const model::World& world, const model::Game& game, model::Move& resultMove);
 
 private:
-	int currentWaypointIndex;
 	CLog& log;
 	CDrawPlugin& draw;
 
@@ -28,6 +27,9 @@ private:
 	model::Move* resultMove;
 	int currentTick;
 
+	std::vector<CVec2D> waypoints;
+	size_t currentWaypointIndex;
+
 	CSimulator simulator;
 	CMyCar prevPrediction;
 	CMyCar car;
@@ -36,6 +38,7 @@ private:
 	MyStrategy& operator = (const MyStrategy&) {}
 
 	void firstTick();
+	void updateCurrentWaypointIndex();
 	void makeMove();
 	void predict();
 	void doLog();
