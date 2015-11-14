@@ -6,15 +6,9 @@
 #include <cmath>
 #include <cstdlib>
 #include <string>
-#include "DrawPlugin.h"
-#include "Log.h"
 
 using namespace model;
 using namespace std;
-
-MyStrategy::MyStrategy()
-{
-}
 
 template<typename T>
 static const void logIfDiffers(const T& a, const T&b, const char* name, CLog& log)
@@ -24,90 +18,123 @@ static const void logIfDiffers(const T& a, const T&b, const char* name, CLog& lo
 	}
 }
 
-void MyStrategy::move(const Car& self, const World& world, const Game& game, Move& move)
+MyStrategy::MyStrategy() :
+	currentWaypointIndex(0),
+	log(CLog::Instance()),
+	draw(CDrawPlugin::Instance()),
+	currentTick(0)
 {
-	if (!simulator.IsInitialized()) {
-		simulator.Initialize(game);
-	}
-	CLog& log = CLog::Instance();
-	CDrawPlugin& draw = CDrawPlugin::Instance();
 	draw.BeginDraw();
 	draw.EndDraw();
+}
 
-	if (world.getTick() >= game.getInitialFreezeDurationTicks()) {
-		// Ѕыстрый старт
-		double nextWaypointX = (self.getNextWaypointX() + 0.5) * game.getTrackTileSize();
-		double nextWaypointY = (self.getNextWaypointY() + 0.5) * game.getTrackTileSize();
+void MyStrategy::move(const Car& _self, const World& _world, const Game& _game, Move& _resultMove)
+{
+	self = &_self;
+	world = &_world;
+	game = &_game;
+	resultMove = &_resultMove;
 
-		double cornerTileOffset = 0.25 * game.getTrackTileSize();
+	currentTick = world->getTick();
 
-		switch (world.getTilesXY()[self.getNextWaypointX()][self.getNextWaypointY()]) {
-			case LEFT_TOP_CORNER:
-				nextWaypointX += cornerTileOffset;
-				nextWaypointY += cornerTileOffset;
-				break;
-			case RIGHT_TOP_CORNER:
-				nextWaypointX -= cornerTileOffset;
-				nextWaypointY += cornerTileOffset;
-				break;
-			case LEFT_BOTTOM_CORNER:
-				nextWaypointX += cornerTileOffset;
-				nextWaypointY -= cornerTileOffset;
-				break;
-			case RIGHT_BOTTOM_CORNER:
-				nextWaypointX -= cornerTileOffset;
-				nextWaypointY -= cornerTileOffset;
-				break;
-		}
+	firstTick();
+	makeMove();
+	predict();
+	doLog();
+	doDraw();
 
-		double angleToWaypoint = self.getAngleTo(nextWaypointX, nextWaypointY);
-		double speedModule = hypot(self.getSpeedX(), self.getSpeedY());
+	prevPrediction = prediction;
+}
 
-		move.setWheelTurn(angleToWaypoint * 32.0 / PI);
-		move.setEnginePower(0.75);
+void MyStrategy::firstTick()
+{
+	if (currentTick == 0) {
+		simulator.Initialize(*game);
+	}
+}
 
-		if (speedModule * speedModule * abs(angleToWaypoint) > 2.5 * 2.5 * PI) {
-			move.setBrake(true);
-		}
-
-		// —имул€ци€
-		CMyCar car(self);
-		CMyCar prediction = simulator.Predict(car, world, move);
-
-		log.LogTick(world.getTick());
-		//log.LogMyCar(prevPrediction, "Previous prediction");
-		log.LogMyCar(car,            "Current            ");
-		log.LogMyCar(prediction,     "Prediction         ");
-
-		logIfDiffers(car.Angle, prevPrediction.Angle, "Angle", log);
-		logIfDiffers(car.AngularSpeed, prevPrediction.AngularSpeed, "AngularSpeed", log);
-		logIfDiffers(car.EnginePower, prevPrediction.EnginePower, "EnginePower", log);
-		logIfDiffers(car.NitroCooldown, prevPrediction.NitroCooldown, "NitroCooldown", log);
-		logIfDiffers(car.NitroCount, prevPrediction.NitroCount, "NitroCount", log);
-		logIfDiffers(car.NitroTicks, prevPrediction.NitroTicks, "NitroTicks", log);
-		logIfDiffers(car.Position.X, prevPrediction.Position.X, "Position.X", log);
-		logIfDiffers(car.Position.Y, prevPrediction.Position.Y, "Position.Y", log);
-		logIfDiffers(car.Speed.X, prevPrediction.Speed.X, "Speed.X", log);
-		logIfDiffers(car.Speed.Y, prevPrediction.Speed.Y, "Speed.Y", log);
-		logIfDiffers(car.Type, prevPrediction.Type, "Type", log);
-
-		CDrawPluginSwitcher drawSwitcher(draw);
-		draw.SetColor(0, 0, 0);
-		draw.FillCircle(car.Position, 10);
-		draw.SetColor(255, 128, 0);
-		draw.FillCircle(prediction.Position, 5);
-		draw.SetColor(0, 0, 255);
-		for (int x = 0; x < 10; x++) {
-			draw.DrawLine({ x * 800.0, 0.0 }, { x * 800.0, 8000.0 });
-		}
-		for (int y = 0; y < 10; y++) {
-			draw.DrawLine({ 0.0, y * 800.0 }, { 8000.0, y * 800.0 });
-		}
-
-		prevPrediction = prediction;
+void MyStrategy::makeMove()
+{
+	if (currentTick < game->getInitialFreezeDurationTicks()) {
+		//resultMove->setEnginePower(1.0);
+		return;
 	}
 
-	prevSelf = self;
+	// Ѕыстрый старт
+	double nextWaypointX = (self->getNextWaypointX() + 0.5) * game->getTrackTileSize();
+	double nextWaypointY = (self->getNextWaypointY() + 0.5) * game->getTrackTileSize();
+
+	double cornerTileOffset = 0.25 * game->getTrackTileSize();
+
+	switch (world->getTilesXY()[self->getNextWaypointX()][self->getNextWaypointY()]) {
+		case LEFT_TOP_CORNER:
+			nextWaypointX += cornerTileOffset;
+			nextWaypointY += cornerTileOffset;
+			break;
+		case RIGHT_TOP_CORNER:
+			nextWaypointX -= cornerTileOffset;
+			nextWaypointY += cornerTileOffset;
+			break;
+		case LEFT_BOTTOM_CORNER:
+			nextWaypointX += cornerTileOffset;
+			nextWaypointY -= cornerTileOffset;
+			break;
+		case RIGHT_BOTTOM_CORNER:
+			nextWaypointX -= cornerTileOffset;
+			nextWaypointY -= cornerTileOffset;
+			break;
+	}
+
+	double angleToWaypoint = self->getAngleTo(nextWaypointX, nextWaypointY);
+	double speedModule = hypot(self->getSpeedX(), self->getSpeedY());
+
+	resultMove->setWheelTurn(angleToWaypoint * 32.0 / PI);
+	resultMove->setEnginePower(0.75);
+
+	if (speedModule * speedModule * abs(angleToWaypoint) > 2.5 * 2.5 * PI) {
+		resultMove->setBrake(true);
+	}
+}
+
+void MyStrategy::predict()
+{
+	car = CMyCar(*self);
+	prediction = simulator.Predict(car, *world, *resultMove);
+}
+
+void MyStrategy::doLog()
+{
+	log.LogTick(currentTick);
+	log.LogMyCar(car,        "Current            ");
+	log.LogMyCar(prediction, "Prediction         ");
+
+	logIfDiffers(car.Angle, prevPrediction.Angle, "Angle", log);
+	logIfDiffers(car.AngularSpeed, prevPrediction.AngularSpeed, "AngularSpeed", log);
+	logIfDiffers(car.EnginePower, prevPrediction.EnginePower, "EnginePower", log);
+	logIfDiffers(car.NitroCooldown, prevPrediction.NitroCooldown, "NitroCooldown", log);
+	logIfDiffers(car.NitroCount, prevPrediction.NitroCount, "NitroCount", log);
+	logIfDiffers(car.NitroTicks, prevPrediction.NitroTicks, "NitroTicks", log);
+	logIfDiffers(car.Position.X, prevPrediction.Position.X, "Position.X", log);
+	logIfDiffers(car.Position.Y, prevPrediction.Position.Y, "Position.Y", log);
+	logIfDiffers(car.Speed.X, prevPrediction.Speed.X, "Speed.X", log);
+	logIfDiffers(car.Speed.Y, prevPrediction.Speed.Y, "Speed.Y", log);
+	logIfDiffers(car.Type, prevPrediction.Type, "Type", log);
+}
+
+void MyStrategy::doDraw()
+{
+	CDrawPluginSwitcher drawSwitcher(draw);
+	draw.SetColor(0, 0, 0);
+	draw.FillCircle(car.Position, 10);
+	draw.SetColor(255, 128, 0);
+	draw.FillCircle(prediction.Position, 5);
+	draw.SetColor(0, 0, 255);
+	for (int x = 0; x < 10; x++) {
+		draw.DrawLine({ x * 800.0, 0.0 }, { x * 800.0, 8000.0 });
+	}
+	for (int y = 0; y < 10; y++) {
+		draw.DrawLine({ 0.0, y * 800.0 }, { 8000.0, y * 800.0 });
+	}
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
