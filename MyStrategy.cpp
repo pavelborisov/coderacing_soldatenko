@@ -6,6 +6,7 @@
 #include <cmath>
 #include <cstdlib>
 #include <string>
+#include "DrawPlugin.h"
 #include "Log.h"
 
 using namespace model;
@@ -29,6 +30,7 @@ void MyStrategy::move(const Car& self, const World& world, const Game& game, Mov
 		simulator.Initialize(game);
 	}
 	CLog& log = CLog::Instance();
+	CDrawPlugin& draw = CDrawPlugin::Instance();
 
 	if (world.getTick() >= game.getInitialFreezeDurationTicks()) {
 		// Быстрый старт
@@ -86,6 +88,10 @@ void MyStrategy::move(const Car& self, const World& world, const Game& game, Mov
 		logIfDiffers(car.Speed.X, prevPrediction.Speed.X, "Speed.X", log);
 		logIfDiffers(car.Speed.Y, prevPrediction.Speed.Y, "Speed.Y", log);
 		logIfDiffers(car.Type, prevPrediction.Type, "Type", log);
+
+		CDrawPluginSwitcher drawSwitcher(draw);
+		draw.DrawCircle(car.Position, 20);
+		draw.DrawCircle(prediction.Position, 20);
 
 		prevPrediction = prediction;
 	}

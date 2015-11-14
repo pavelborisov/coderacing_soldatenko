@@ -89,6 +89,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="DrawPlugin.cpp" />
     <ClCompile Include="Log.cpp" />
     <ClCompile Include="model\Bonus.cpp" />
     <ClCompile Include="model\Car.cpp" />
@@ -115,6 +116,7 @@
     <ClCompile Include="Vec2D.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="DrawPlugin.h" />
     <ClInclude Include="Log.h" />
     <ClInclude Include="model\Bonus.h" />
     <ClInclude Include="model\BonusType.h" />
