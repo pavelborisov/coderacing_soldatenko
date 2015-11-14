@@ -10,7 +10,9 @@ using namespace std;
 
 static void startServer()
 {
-	ShellExecute(NULL, NULL, L"local-runner-debug.bat", NULL, L"..\\..\\local-runner", SW_HIDE);
+	const wchar_t* const localRunnerDirectory = L"..\\local-runner";
+	const wchar_t* const localRunnerBat = L"local-runner-debug.bat";
+	ShellExecute(NULL, NULL, localRunnerBat, NULL, localRunnerDirectory, SW_HIDE);
 	Sleep(500);
 }
 
