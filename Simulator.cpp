@@ -1,6 +1,7 @@
 #include "Simulator.h"
 
 #include <algorithm>
+#define _USE_MATH_DEFINES
 #include "math.h"
 #include "assert.h"
 
@@ -124,6 +125,13 @@ CMyCar CSimulator::Predict(const CMyCar& startCar, const model::World& /*world*/
 		// Обновление угловой скорости.
 		// TODO: Как учесть rotationFrictionFactorDt?
 		car.AngularSpeed = medianAngularSpeed + (car.AngularSpeed - medianAngularSpeed) * rotationAirFrictionFactorDt;
+	}
+
+	// Вот такая странная обрезка угла происходит движком. Симулируем поведение движка.
+	if (car.Angle < -M_PI) {
+		car.Angle += 2 * M_PI;
+	} else if (car.Angle > M_PI) {
+		car.Angle -= 2 * M_PI;
 	}
 
 	return car;

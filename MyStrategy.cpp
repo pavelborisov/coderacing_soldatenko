@@ -31,22 +31,42 @@ void MyStrategy::move(const Car& self, const World& world, const Game& game, Mov
 	CLog& log = CLog::Instance();
 
 	if (world.getTick() >= game.getInitialFreezeDurationTicks()) {
-		move.setEnginePower(0.9);
+		// Ѕыстрый старт
+		double nextWaypointX = (self.getNextWaypointX() + 0.5) * game.getTrackTileSize();
+		double nextWaypointY = (self.getNextWaypointY() + 0.5) * game.getTrackTileSize();
 
-		if (world.getTick() == 195) {
-			move.setUseNitro(true);
+		double cornerTileOffset = 0.25 * game.getTrackTileSize();
+
+		switch (world.getTilesXY()[self.getNextWaypointX()][self.getNextWaypointY()]) {
+			case LEFT_TOP_CORNER:
+				nextWaypointX += cornerTileOffset;
+				nextWaypointY += cornerTileOffset;
+				break;
+			case RIGHT_TOP_CORNER:
+				nextWaypointX -= cornerTileOffset;
+				nextWaypointY += cornerTileOffset;
+				break;
+			case LEFT_BOTTOM_CORNER:
+				nextWaypointX += cornerTileOffset;
+				nextWaypointY -= cornerTileOffset;
+				break;
+			case RIGHT_BOTTOM_CORNER:
+				nextWaypointX -= cornerTileOffset;
+				nextWaypointY -= cornerTileOffset;
+				break;
 		}
 
-		if (world.getTick() >= 230 && world.getTick() < 300) {
-			move.setWheelTurn(1.0);
-		} else if (world.getTick() >= 300 && world.getTick() < 341) {
-			move.setWheelTurn(-1.0);
-		}
+		double angleToWaypoint = self.getAngleTo(nextWaypointX, nextWaypointY);
+		double speedModule = hypot(self.getSpeedX(), self.getSpeedY());
 
-		if (world.getTick() >= 450 && world.getTick() <= 600 ) {
+		move.setWheelTurn(angleToWaypoint * 32.0 / PI);
+		move.setEnginePower(0.75);
+
+		if (speedModule * speedModule * abs(angleToWaypoint) > 2.5 * 2.5 * PI) {
 			move.setBrake(true);
 		}
 
+		// —имул€ци€
 		CMyCar car(self);
 		CMyCar prediction = simulator.Predict(car, world, move);
 
@@ -72,3 +92,23 @@ void MyStrategy::move(const Car& self, const World& world, const Game& game, Mov
 
 	prevSelf = self;
 }
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//// ќтладночное руление дл€ карты map01 и места первого игрока.
+//if (world.getTick() >= game.getInitialFreezeDurationTicks()) {
+//	move.setEnginePower(0.9);
+//
+//	if (world.getTick() == 195) {
+//		move.setUseNitro(true);
+//	}
+//
+//	if (world.getTick() >= 230 && world.getTick() < 300) {
+//		move.setWheelTurn(1.0);
+//	} else if (world.getTick() >= 300 && world.getTick() < 341) {
+//		move.setWheelTurn(-1.0);
+//	}
+//
+//	if (world.getTick() >= 450 && world.getTick() <= 600) {
+//		move.setBrake(true);
+//	}
+//}
