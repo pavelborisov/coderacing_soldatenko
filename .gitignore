@@ -20,18 +20,12 @@
 *.out
 *.app
 
-/wipe.bat
-/UpgradeLog*.XML
-/_UpgradeReport_Files
-/ipch
-/cpp-cgdk*.ncb
-/cpp-cgdk*.sdf
-/cpp-cgdk*.suo
-/cpp-cgdk*.vcproj.user
-/cpp-cgdk*.vcproj.*.user
-/cpp-cgdk*.vcxproj.user
-/cpp-cgdk*.vcxproj.*.user
-/*.opensdf
+ipch
+*.ncb
+*.sdf
+*.suo
+*.user
+*.opensdf
 
 # Mac 
 MyStrategy.xcodeproj
