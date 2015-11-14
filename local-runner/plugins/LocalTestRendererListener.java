@@ -33,10 +33,15 @@ public final class LocalTestRendererListener {
             while(line != null) {
                 String[] parts = line.split(" ");
                 if(parts[0].equals("setColor")) {
-                    //Error: cannot convert int to Color
-                    //graphics.setColor(Integer.parseInt(parts[1]));
+                    int red = Integer.parseInt(parts[1]);
+                    int green = Integer.parseInt(parts[2]);
+                    int blue = Integer.parseInt(parts[3]);
+                    graphics.setColor(new Color(red, green, blue));
                 } else if(parts[0].equals("fillCircle")) {
-                    fillCircle(Double.parseDouble(parts[1]), Double.parseDouble(parts[2]), Double.parseDouble(parts[3]));
+                    double x = Double.parseDouble(parts[1]);
+                    double y = Double.parseDouble(parts[2]);
+                    double radius = Double.parseDouble(parts[3]);
+                    fillCircle(x, y, radius);
                 }
                 line = br.readLine();
             }

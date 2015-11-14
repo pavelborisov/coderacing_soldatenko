@@ -19,6 +19,11 @@ void CDrawPlugin::BeginDraw()
 	drawFile.open(drawFilePath.c_str());
 }
 
+void CDrawPlugin::SetColor(int red, int green, int blue)
+{
+	drawFile << "setColor " << red << " " << green << " " << blue << endl;
+}
+
 void CDrawPlugin::FillCircle(const CVec2D& position, double radius)
 {
 	drawFile << "fillCircle " << position.X << " " << position.Y << " " << radius << endl;
