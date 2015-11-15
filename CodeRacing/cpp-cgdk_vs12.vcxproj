@@ -151,6 +151,7 @@
     <ClInclude Include="csimplesocket\SimpleSocket.h" />
     <ClInclude Include="csimplesocket\StatTimer.h" />
     <ClInclude Include="TileRouteFinder.h" />
+    <ClInclude Include="Tools.h" />
     <ClInclude Include="Vec2D.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

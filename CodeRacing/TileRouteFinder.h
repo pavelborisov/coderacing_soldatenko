@@ -5,12 +5,14 @@
 
 class CTileRouteFinder {
 public:
-	struct CMyTileWithCost;
+	struct CMyTileWithScore;
 
 	std::vector<CMyTile> FindRoute(
-		const std::vector<CMyTile>& waypointTiles, int nextWaypointIndex, const CMyTile& currentTile) const;
+		const std::vector<CMyTile>& waypointTiles, int nextWaypointIndex, const CMyTile& currentTile,
+		const CMyTile& prevTile, const CMyTile& beforePrevTile ) const;
 
 private:
-	std::vector<CMyTile> findSingleRoute( const CMyTile& start, const CMyTile& end) const;
+	std::vector<CMyTile> findSingleRoute( const CMyTile& start, const CMyTile& end,
+		const CMyTile& prevTile, const CMyTile& beforePrevTile ) const;
 
 };

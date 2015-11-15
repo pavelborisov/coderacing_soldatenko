@@ -6,6 +6,7 @@
 #include <cmath>
 #include <cstdlib>
 #include <string>
+#include "Tools.h"
 
 using namespace model;
 using namespace std;
@@ -79,7 +80,16 @@ void MyStrategy::findTileRoute()
 {
 	const int currentX = static_cast<int>(self->getX() / game->getTrackTileSize());
 	const int currentY = static_cast<int>(self->getY() / game->getTrackTileSize());
-	tileRoute = tileRouteFinder.FindRoute(waypointTiles, nextWaypointIndex, CMyTile(currentX, currentY));
+	CMyTile tile = CMyTile(currentX, currentY);
+	if (currentTile.IsUndefined()) {
+		currentTile = tile;
+	} else if (tile == tileRoute[1]) {
+		beforePrevTile = prevTile;
+		prevTile = currentTile;
+		currentTile = tile;
+	}
+	tileRoute = tileRouteFinder.FindRoute(waypointTiles, nextWaypointIndex, currentTile,
+		prevTile, beforePrevTile);
 }
 
 void MyStrategy::makeMove()
@@ -89,57 +99,40 @@ void MyStrategy::makeMove()
 		return;
 	}
 
-	//// Пройдёмся по всему пути в обратном порядке. Проставим для каджого тайла информацию о том,
-	//// какой поворот будет следующий.
-	//for (int i = tileRoute.size() - 1; i >= 1; i--) {
-	//	const CMyTile& tile = tileRoute[i];
-	//	const CMyTile& prevTile = tileRoute[i];
-	//}
-
-	//CMyTile currentTile = tileRoute[0];
-	//CMyTile nextTile = tileRoute[1];
-	//CMyTile afterNextTile = tileRoute[2];
-	//CVec2D target;
-
-	//const int dx1 = nextTile.X - currentTile.X;
-	//const int dy1 = nextTile.Y - currentTile.Y;
-	//const int dx2 = afterNextTile.X - nextTile.X;
-	//const int dy2 = afterNextTile.Y - nextTile.Y;
-
-	// Быстрый старт
-	CMyTile targetTile = tileRoute[1];
-	CVec2D targetPos = targetTile.ToVec();
-
-	double cornerTileOffset = 0.25 * game->getTrackTileSize();
-
-		switch (targetTile.Type()) {
-		case LEFT_TOP_CORNER:
-			targetPos += CVec2D(cornerTileOffset, cornerTileOffset);
-			break;
-		case RIGHT_TOP_CORNER:
-			targetPos += CVec2D(-cornerTileOffset, cornerTileOffset);
-			break;
-		case LEFT_BOTTOM_CORNER:
-			targetPos += CVec2D(cornerTileOffset, -cornerTileOffset);
-			break;
-		case RIGHT_BOTTOM_CORNER:
-			targetPos += CVec2D(-cornerTileOffset, -cornerTileOffset);
-			break;
-	}
-
-	double angleToTarget = self->getAngleTo(targetPos.X, targetPos.Y);
 	double speedModule = hypot(self->getSpeedX(), self->getSpeedY());
 
-	resultMove->setWheelTurn(angleToTarget * 50 / PI);
-	resultMove->setEnginePower(1.0);
+	// TODO: Можно пройтись по всему пути в обратном порядке и проставить инфу о предстоящих поворотах.
+	CMyTile nextTile = tileRoute[1];
+	CMyTile afterNextTile = tileRoute[2];
+	int dx1 = nextTile.X - currentTile.X;
+	int dy1 = nextTile.Y - currentTile.Y;
+	int angle = getRotationAngle(dx1, dy1);
+	simpleRotate(dx1, dy1, angle);
+	int dx2 = afterNextTile.X - nextTile.X;
+	int dy2 = afterNextTile.Y - nextTile.Y;
+	simpleRotate(dx2, dy2, angle);
+	bool mirror = dy2 == -1;
 
-	if (speedModule > 10) {
-		resultMove->setBrake(true);
+	CVec2D targetPos = nextTile.ToVec();
+	double angleToTarget = self->getAngleTo(targetPos.X, targetPos.Y);
+
+	if (dy2 != 0) {
+		CVec2D cornerShift = CVec2D(-0.25, 0.25);
+		if (mirror) cornerShift.Y = -cornerShift.Y;
+		simpleRotate(cornerShift.X, cornerShift.Y, 4 - angle);
+		targetPos += cornerShift * game->getTrackTileSize();
+		angleToTarget = self->getAngleTo(targetPos.X, targetPos.Y);
+
+		if (speedModule > 18) {
+			resultMove->setBrake(true);
+		}
+		if (abs(angleToTarget) > PI / 10 && speedModule > 12) {
+			resultMove->setBrake(true);
+		}
 	}
+	resultMove->setWheelTurn(angleToTarget * 30 / PI);
 
-	//if (speedModule * speedModule * abs(angleToTarget) > 2.5 * 2.5 * PI) {
-	//	resultMove->setBrake(true);
-	//}
+	resultMove->setEnginePower(1.0);
 }
 
 void MyStrategy::predict()

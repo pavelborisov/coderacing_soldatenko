@@ -18,6 +18,7 @@ struct CMyTile {
 	bool operator!=(const CMyTile& tile) const;
 
 	model::TileType Type() const { return TileTypesXY[X][Y]; }
+	bool IsUndefined() const;
 	bool IsEmpty() const;
 	bool IsLeftOpen() const;
 	bool IsRightOpen() const;
@@ -25,6 +26,7 @@ struct CMyTile {
 	bool IsTopOpen() const;
 	bool CanDriveTo(const CMyTile& tile) const;
 	int Manhattan(const CMyTile& tile) const;
+	double Euclidean(const CMyTile& tile) const;
 	CVec2D ToVec() const; // Надо выыставить TileSize
 	std::vector<CMyTile> FindNeighbors() const;
 

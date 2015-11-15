@@ -27,6 +27,11 @@ bool CMyTile::operator!=(const CMyTile& tile) const
 	return X != tile.X || Y != tile.Y;
 }
 
+bool CMyTile::IsUndefined() const
+{
+	return X == -1 && Y == -1;
+}
+
 bool CMyTile::IsEmpty() const
 {
 	static_assert(_TILE_TYPE_COUNT_ == 12, "model::TileType has been changed");
@@ -117,6 +122,11 @@ bool CMyTile::CanDriveTo(const CMyTile& tile) const
 int CMyTile::Manhattan(const CMyTile& tile) const
 {
 	return abs(X - tile.X) + abs(Y - tile.Y);
+}
+
+double CMyTile::Euclidean(const CMyTile& tile) const
+{
+	return sqrt(pow(X - tile.X, 2) + pow(Y - tile.Y, 2));
 }
 
 CVec2D CMyTile::ToVec() const
