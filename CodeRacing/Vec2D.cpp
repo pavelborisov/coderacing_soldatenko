@@ -33,7 +33,7 @@ void CVec2D::Rotate(double angle)
 	const double sinValue = sin(angle);
 	const double cosValue = cos(angle);
 	const double xNew = X * cosValue - Y * sinValue;
-	const double yNew = X * sinValue + X * cosValue;
+	const double yNew = X * sinValue + Y * cosValue;
 	X = xNew;
 	Y = yNew;
 }

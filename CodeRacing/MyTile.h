@@ -13,6 +13,7 @@ struct CMyTile {
 
 	CMyTile();
 	CMyTile(int X, int Y);
+	explicit CMyTile(const CVec2D& vec);
 
 	bool operator==(const CMyTile& tile) const;
 	bool operator!=(const CMyTile& tile) const;

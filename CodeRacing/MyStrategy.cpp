@@ -3,6 +3,7 @@
 #define PI 3.14159265358979323846
 #define _USE_MATH_DEFINES
 
+#include <algorithm>
 #include <cmath>
 #include <cstdlib>
 #include <string>
@@ -99,40 +100,115 @@ void MyStrategy::makeMove()
 		return;
 	}
 
-	double speedModule = hypot(self->getSpeedX(), self->getSpeedY());
 
-	// TODO: Можно пройтись по всему пути в обратном порядке и проставить инфу о предстоящих поворотах.
-	CMyTile nextTile = tileRoute[1];
-	CMyTile afterNextTile = tileRoute[2];
-	int dx1 = nextTile.X - currentTile.X;
-	int dy1 = nextTile.Y - currentTile.Y;
-	int angle = getRotationAngle(dx1, dy1);
-	simpleRotate(dx1, dy1, angle);
-	int dx2 = afterNextTile.X - nextTile.X;
-	int dy2 = afterNextTile.Y - nextTile.Y;
-	simpleRotate(dx2, dy2, angle);
-	bool mirror = dy2 == -1;
+	static const int simulationTickDepth = 500;
+	CMyTile simTarget = tileRoute[3];
+	CVec2D simTargetPos = simTarget.ToVec();
 
-	CVec2D targetPos = nextTile.ToVec();
-	double angleToTarget = self->getAngleTo(targetPos.X, targetPos.Y);
+	double bestScore = INT_MIN;
+	int bestTurnStart = 0;
+	int bestTurnLength = 0;
+	int bestTurnReverse = 0;
+	int bestTurn = 0;
+	int bestBrakeStart = 0;
+	int bestBrakeLength = 0;
+	int bestTick = INT_MAX;
+	CMyCar bestSimCar;
+	for (int turn = -1; turn <= 1; turn += 2) {
+		for (int brakeStart : {0}) {
+			for (int brakeLength : {0, 40} ) {
+				for (int turnStart : {0, 40}) {
+					//if (turnStart < brakeStart + brakeLength) continue;
+					//if (brakeStart < turnStart) continue;
+					brakeStart = max(0, turnStart - 20);
+					for (int turnLength : {0, 10, 20, 30, 40, 50, 60, 70, 100, 150}) {
+						for (int turnReverse : {turnLength}) {
+							const int turnEnd = turnStart + turnLength;
+							const int turnReverseAt = turnStart + turnReverse;
+							if (turnEnd > simulationTickDepth) continue;
+							if (turnReverseAt > turnEnd) continue;
+							CMyCar simCar = car;
+							for (int tick = 0; tick < simulationTickDepth; tick++) {
+								model::Move simMove;
+								simMove.setEnginePower(1.0);
+								if (tick >= turnStart && tick < turnStart + turnLength) {
+									simMove.setWheelTurn(tick >= turnReverseAt ? -turn : turn);
+								}
+								if (tick >= brakeStart && tick < brakeStart + brakeLength) {
+									simMove.setBrake(true);
+								}
+								simCar = simulator.Predict(simCar, *world, simMove);
 
-	if (dy2 != 0) {
-		CVec2D cornerShift = CVec2D(-0.25, 0.25);
-		if (mirror) cornerShift.Y = -cornerShift.Y;
-		simpleRotate(cornerShift.X, cornerShift.Y, 4 - angle);
-		targetPos += cornerShift * game->getTrackTileSize();
-		angleToTarget = self->getAngleTo(targetPos.X, targetPos.Y);
+								// TODO: Считать score по тому, насколько далеко мы продвинулись вдоль маршрута!
+								double score = -(simTargetPos - simCar.Position).Length() - 1 * tick;
+								if (brakeStart == 0 && brakeLength > 0) score -= 200;
+								if (car.Speed.Length() < 15 && brakeStart == 0 && brakeLength > 0) score -= 500;
+								//score += (brakeStart == 0 && brakeLength > 0) ? -0.5 : 0;
 
-		if (speedModule > 18) {
-			resultMove->setBrake(true);
-		}
-		if (abs(angleToTarget) > PI / 10 && speedModule > 12) {
-			resultMove->setBrake(true);
+								if (score > bestScore) {
+									bestScore = score;
+									bestTurnStart = turnStart;
+									bestTurnLength = turnLength;
+									bestTurnReverse = turnReverse;
+									bestTurn = turn;
+									bestTick = tick;
+									bestBrakeStart = brakeStart;
+									bestBrakeLength = brakeLength;
+									bestSimCar = simCar;
+								}
+							}
+						}
+					}
+				}
+			}
 		}
 	}
-	resultMove->setWheelTurn(angleToTarget * 30 / PI);
+	//draw
+	CMyCar simCar = car;
+	draw.SetColor(0, 0, 255);
+	for (int tick = 0; tick < bestTick; tick++) {
+		const int turnReverseAt = bestTurnStart + bestTurnReverse;
+		model::Move simMove;
+		simMove.setEnginePower(1.0);
+		if (tick >= bestTurnStart && tick < bestTurnStart + bestTurnLength) {
+			simMove.setWheelTurn(tick >= turnReverseAt ? -bestTurn : bestTurn);
+		}
+		if (tick >= bestBrakeStart && tick < bestBrakeStart + bestBrakeLength) {
+			simMove.setBrake(true);
+		}
+		simCar = simulator.Predict(simCar, *world, simMove);
+		draw.FillCircle(simCar.Position, 5);
+	}
+	const double halfHeight = game->getCarHeight() / 2;
+	const double halfWidth = game->getCarWidth() / 2;
+	vector<CVec2D> carCorners(4);
+	carCorners[0] = CVec2D(halfWidth, halfHeight);
+	carCorners[1] = CVec2D(halfWidth, -halfHeight);
+	carCorners[2] = CVec2D(-halfWidth, -halfHeight);
+	carCorners[3] = CVec2D(-halfWidth, halfHeight);
+	draw.SetColor(0, 255, 255);
+	draw.FillCircle(simTargetPos, 20);
+	for (auto& corner : carCorners) {
+		corner.Rotate(simCar.Angle);
+		corner += simCar.Position;
+		draw.FillCircle(corner, 5);
+	}
 
 	resultMove->setEnginePower(1.0);
+	if (bestTurnStart == 0 && bestTurnLength > 0) {
+		resultMove->setWheelTurn(bestTurn);
+	}
+	if (bestBrakeStart == 0 && bestBrakeLength > 0) {
+		resultMove->setBrake(true);
+	}
+
+	// TODO: Умно использовать бонусы?
+	//if (self->getNitroChargeCount() > 0) {
+	//	resultMove->setUseNitro(true);
+	//}
+	if (self->getOilCanisterCount() > 0) {
+		resultMove->setSpillOil(true);
+	}
 }
 
 void MyStrategy::predict()

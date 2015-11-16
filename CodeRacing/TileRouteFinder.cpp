@@ -41,9 +41,9 @@ vector<CMyTile> CTileRouteFinder::FindRoute(
 		CMyTile end = waypointTiles[(nextWaypointIndex + i) % waypointTiles.size()];
 		vector<CMyTile> partialRoute = findSingleRoute(start, end, prev, beforePrev);
 		route.insert(route.end(), partialRoute.begin(), partialRoute.end());
-		if (route.size() >= 5) {
-			return route;
-		}
+		//if (route.size() >= 10) {
+		//	return route;
+		//}
 		start = end;
 		if (route.size() >= 1) {
 			beforePrev = prev;

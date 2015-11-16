@@ -17,6 +17,12 @@ CMyTile::CMyTile(int _X, int _Y) : X(_X), Y(_Y)
 {
 }
 
+CMyTile::CMyTile(const CVec2D& vec)
+{
+	X = static_cast<int>(vec.X / TileSize);
+	Y = static_cast<int>(vec.Y / TileSize);
+}
+
 bool CMyTile::operator==(const CMyTile& tile) const
 {
 	return X == tile.X && Y == tile.Y;

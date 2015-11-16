@@ -4,6 +4,8 @@
 #define _USE_MATH_DEFINES
 #include "math.h"
 #include "assert.h"
+#include "MyTile.h"
+#include "DrawPlugin.h"
 
 using namespace std;
 
@@ -57,6 +59,57 @@ CMyCar CSimulator::Predict(const CMyCar& startCar, const model::World& /*world*/
 	// TODO: Коллизии. Со стенами, другими машинами, бонусами(!)
 	CMyCar car(startCar);
 
+	///////////////
+	// Тупейшая обработка коллизий со стенами.
+	CMyTile carTile(car.Position);
+	const double tileSize = CMyTile::TileSize;
+	CVec2D carTileTopLeft(carTile.X * tileSize, carTile.Y * tileSize);
+	CVec2D carRelative = car.Position - carTileTopLeft;
+	CVec2D topLeft(0, 0);
+	CVec2D topRight(tileSize, 0);
+	CVec2D bottomLeft(0, tileSize);
+	CVec2D bottomRight(tileSize, tileSize);
+	const double radius = 80;
+	const double radiusSqr = radius*radius;
+	const bool leftWall = !carTile.IsLeftOpen();
+	const bool rightWall = !carTile.IsRightOpen();
+	const bool topWall = !carTile.IsTopOpen();
+	const bool bottomWall = !carTile.IsBottomOpen();
+
+	const double halfHeight = game.getCarHeight() / 2;
+	const double halfWidth = game.getCarWidth() / 2;
+	vector<CVec2D> carCorners(4);
+	carCorners[0] = CVec2D(halfWidth, halfHeight);
+	carCorners[1] = CVec2D(halfWidth, -halfHeight);
+	carCorners[2] = CVec2D(-halfWidth, -halfHeight);
+	carCorners[3] = CVec2D(-halfWidth, halfHeight);
+	bool collision = false;
+	for (auto& corner : carCorners) {
+		corner.Rotate(car.Angle);
+		corner += carRelative;
+		//CDrawPlugin::Instance().FillCircle(carTileTopLeft + corner, 5);
+		if (CVec2D(corner - topLeft).LengthSquared() <= radiusSqr ||
+			CVec2D(corner - topRight).LengthSquared() <= radiusSqr ||
+			CVec2D(corner - bottomLeft).LengthSquared() <= radiusSqr ||
+			CVec2D(corner - bottomRight).LengthSquared() <= radiusSqr ||
+			(leftWall && corner.X <= radius) ||
+			(rightWall && corner.X >= (tileSize - radius)) ||
+			(topWall && corner.Y <= radius) ||
+			(bottomWall && corner.Y >= (tileSize - radius)))
+		{
+			collision = true;
+			break;
+		}
+	}
+	if (collision) {
+		//car = startCar;
+		car.Speed.X = 0;
+		car.Speed.Y = 0;
+		car.AngularSpeed = 0;
+		return car;
+	}
+	///////////////
+
 	// Единичный вектор направленный туда, куда смотрит автомобиль.
 	CVec2D lengthwiseUnitVector(cos(car.Angle), sin(car.Angle));
 	// Ортогональное направление.
@@ -84,7 +137,7 @@ CMyCar CSimulator::Predict(const CMyCar& startCar, const model::World& /*world*/
 	}
 	// Вектор ускорения. Будет постоянный для всех итераций физики.
 	CVec2D accelerationDt = car.EnginePower >= 0 ?
-		lengthwiseUnitVector * forwardAccelByType[car.Type] * car.EnginePower * dTime:
+		lengthwiseUnitVector * forwardAccelByType[car.Type] * car.EnginePower * dTime :
 		lengthwiseUnitVector * rearAccelByType[car.Type] * car.EnginePower * dTime;
 
 	// Обновляем угол поворота колёс.
@@ -113,7 +166,7 @@ CMyCar CSimulator::Predict(const CMyCar& startCar, const model::World& /*world*/
 		// 3. Трение колёс - постоянно и различно по направлениям. Если тормозим, то к продольному направлению надо
 		//    применить такое же трение, что и к поперечному.
 		const double frictionLengthwise = limit(car.Speed.DotProduct(lengthwiseUnitVector),
-			move.isBrake() ? crosswiseFrictionFactorDt : lengthwiseFrictionFactorDt );
+			move.isBrake() ? crosswiseFrictionFactorDt : lengthwiseFrictionFactorDt);
 		const double frictionCrosswise = limit(car.Speed.DotProduct(crosswiseUnitVector), crosswiseFrictionFactorDt);
 		car.Speed -= lengthwiseUnitVector * frictionLengthwise + crosswiseUnitVector * frictionCrosswise;
 

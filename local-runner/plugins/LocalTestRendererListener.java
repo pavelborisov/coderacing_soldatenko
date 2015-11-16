@@ -20,8 +20,9 @@ public final class LocalTestRendererListener {
 
     public void beforeDrawScene(Graphics graphics, World world, Game game, int canvasWidth, int canvasHeight,
                                 double left, double top, double width, double height) {
-        updateFields(graphics, world, game, canvasWidth, canvasHeight, left, top, width, height);
+        //updateFields(graphics, world, game, canvasWidth, canvasHeight, left, top, width, height);
         // Пока что всё рисование происходит в afterDrawScene
+        afterDrawScene(graphics, world, game, canvasWidth, canvasHeight, left, top, width, height);
     }
 
     public void afterDrawScene(Graphics graphics, World world, Game game, int canvasWidth, int canvasHeight,
