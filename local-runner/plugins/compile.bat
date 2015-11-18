@@ -30,4 +30,4 @@ if not "%JAVA_HOME%"=="" (
     )
 )
 
-javac -encoding UTF-8 *.java
+javac -encoding UTF-8 -classpath . *.java
