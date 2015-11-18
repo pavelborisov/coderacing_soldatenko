@@ -49,7 +49,6 @@ bool CMyTile::IsEmpty() const
 		default:
 			return false;
 	}
-	return false;
 }
 
 bool CMyTile::IsLeftOpen() const
@@ -67,7 +66,6 @@ bool CMyTile::IsLeftOpen() const
 		default:
 			return false;
 	}
-	return false;
 }
 
 bool CMyTile::IsRightOpen() const
@@ -85,7 +83,6 @@ bool CMyTile::IsRightOpen() const
 		default:
 			return false;
 	}
-	return false;
 }
 
 bool CMyTile::IsBottomOpen() const
@@ -103,7 +100,6 @@ bool CMyTile::IsBottomOpen() const
 		default:
 			return false;
 	}
-	return false;
 }
 
 bool CMyTile::IsTopOpen() const
@@ -121,7 +117,6 @@ bool CMyTile::IsTopOpen() const
 		default:
 			return false;
 	}
-	return false;
 }
 
 bool CMyTile::CanDriveTo(const CMyTile& tile) const
