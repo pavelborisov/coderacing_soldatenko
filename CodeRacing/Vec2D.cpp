@@ -1,8 +1,8 @@
 #include "Vec2D.h"
 
-#define _USE_MATH_DEFINES
 #include <math.h>
 #include <assert.h>
+#include "Tools.h"
 
 double CVec2D::Length() const
 {
@@ -20,10 +20,10 @@ double CVec2D::GetAngleTo(const CVec2D& v) const
 	const double thisAngle = GetAngle();
 	const double otherAngle = v.GetAngle();
 	double difAngle = otherAngle - thisAngle;
-	if (difAngle > M_PI_2) {
-		return difAngle - M_PI;
-	} else if (difAngle < -M_PI_2) {
-		return difAngle + M_PI;
+	if (difAngle > PI_2) {
+		return difAngle - PI;
+	} else if (difAngle < -PI_2) {
+		return difAngle + PI;
 	}
 	return difAngle;
 }

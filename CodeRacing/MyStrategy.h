@@ -42,7 +42,7 @@ private:
 	CMyCar car;
 	CMyCar prediction;
 
-	MyStrategy& operator = (const MyStrategy&) {}
+	MyStrategy& operator = (const MyStrategy&) { return *this; }
 
 	void updateWaypoints();
 	void findTileRoute();

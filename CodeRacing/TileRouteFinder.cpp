@@ -1,5 +1,6 @@
 #include "TileRouteFinder.h"
 
+#include <algorithm>
 #include <functional>
 #include <queue>
 #include "assert.h"
@@ -176,7 +177,7 @@ vector<CMyTile> CTileRouteFinder::findSingleRoute(const CMyTile& start, const CM
 				singleRoute.push_back(prev);
 			}
 			singleRoute.push_back(start);
-			reverse(singleRoute.begin(), singleRoute.end());
+			std::reverse(singleRoute.begin(), singleRoute.end());
 			return singleRoute;
 		}
 		openSetQueue.pop();

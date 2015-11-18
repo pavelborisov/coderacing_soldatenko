@@ -1,5 +1,8 @@
 #pragma once
 
+#define PI 3.14159265358979323846
+#define PI_2 PI / 2
+
 inline int getRotationAngle(int dx, int dy)
 {
 	if (dx == 1) {

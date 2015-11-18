@@ -1,7 +1,8 @@
 #include "MyTile.h"
 
 #include <vector>
-#include "math.h"
+#include <cstdlib>
+#include <math.h>
 
 using namespace std;
 using namespace model;
@@ -45,6 +46,8 @@ bool CMyTile::IsEmpty() const
 		case EMPTY:
 		case _UNKNOWN_TILE_TYPE_:
 			return true;
+		default:
+			return false;
 	}
 	return false;
 }
@@ -61,6 +64,8 @@ bool CMyTile::IsLeftOpen() const
 		case CROSSROADS:
 		case UNKNOWN:
 			return true;
+		default:
+			return false;
 	}
 	return false;
 }
@@ -77,6 +82,8 @@ bool CMyTile::IsRightOpen() const
 		case CROSSROADS:
 		case UNKNOWN:
 			return true;
+		default:
+			return false;
 	}
 	return false;
 }
@@ -93,6 +100,8 @@ bool CMyTile::IsBottomOpen() const
 		case CROSSROADS:
 		case UNKNOWN:
 			return true;
+		default:
+			return false;
 	}
 	return false;
 }
@@ -109,6 +118,8 @@ bool CMyTile::IsTopOpen() const
 		case CROSSROADS:
 		case UNKNOWN:
 			return true;
+		default:
+			return false;
 	}
 	return false;
 }

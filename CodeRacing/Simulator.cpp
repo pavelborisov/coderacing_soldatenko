@@ -1,11 +1,11 @@
 #include "Simulator.h"
 
 #include <algorithm>
-#define _USE_MATH_DEFINES
 #include "math.h"
 #include "assert.h"
 #include "MyTile.h"
 #include "DrawPlugin.h"
+#include "Tools.h"
 
 using namespace std;
 
@@ -187,10 +187,10 @@ CMyCar CSimulator::Predict(const CMyCar& startCar, const model::World& /*world*/
 	}
 
 	// Вот такая странная обрезка угла происходит движком. Симулируем поведение движка.
-	if (car.Angle < -M_PI) {
-		car.Angle += 2 * M_PI;
-	} else if (car.Angle > M_PI) {
-		car.Angle -= 2 * M_PI;
+	if (car.Angle < -PI) {
+		car.Angle += 2 * PI;
+	} else if (car.Angle > PI) {
+		car.Angle -= 2 * PI;
 	}
 
 	return car;

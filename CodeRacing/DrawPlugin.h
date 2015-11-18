@@ -61,6 +61,6 @@ private:
 	CDrawPlugin& drawPlugin;
 
 	CDrawPluginSwitcher(CDrawPluginSwitcher& switcher) : drawPlugin(switcher.drawPlugin) {}
-	CDrawPluginSwitcher& operator = (CDrawPluginSwitcher& /*switcher*/) {}
+	CDrawPluginSwitcher& operator = (CDrawPluginSwitcher& /*switcher*/) { return *this; }
 
 };
