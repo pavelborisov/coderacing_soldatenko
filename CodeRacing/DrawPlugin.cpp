@@ -36,6 +36,7 @@ void CDrawPlugin::FillCircle(const CVec2D& position, double radius)
 
 void CDrawPlugin::EndDraw()
 {
+	SetColor(0, 0, 0);
 	drawFile.close();
 }
 
