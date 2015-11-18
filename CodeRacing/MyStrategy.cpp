@@ -205,6 +205,8 @@ void MyStrategy::makeMove()
 	if (bestBrakeStart == 0 && bestBrakeLength > 0) {
 		resultMove->setBrake(true);
 	}
+	// TODO: ќпределить, что никуда не едем (столкнулись?) и сделать аварийный режим с ездой назад
+	// TODO: —трел€лка
 
 	// TODO: ”мно использовать бонусы?
 	//if (self->getNitroChargeCount() > 0) {
