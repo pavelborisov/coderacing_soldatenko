@@ -1,4 +1,5 @@
 import java.awt.*;
+import java.io.*;
 
 import model.*;
 
@@ -20,7 +21,7 @@ public final class LocalTestRendererListener {
     public void beforeDrawScene(Graphics graphics, World world, Game game, int canvasWidth, int canvasHeight,
                                 double left, double top, double width, double height) {
         //updateFields(graphics, world, game, canvasWidth, canvasHeight, left, top, width, height);
-        // Пока что всё рисование происходит в afterDrawScene
+        // РџРѕРєР° С‡С‚Рѕ РІСЃС‘ СЂРёСЃРѕРІР°РЅРёРµ РїСЂРѕРёСЃС…РѕРґРёС‚ РІ afterDrawScene
         afterDrawScene(graphics, world, game, canvasWidth, canvasHeight, left, top, width, height);
     }
 
@@ -65,8 +66,8 @@ public final class LocalTestRendererListener {
         this.game = game;
 
         this.canvasWidth = canvasWidth;
-        // TODO: -17 подобрано экспериментально. Очень похоже, что это есть высота заголовка окна и её в
-        // исходном плагине не учитывали.
+        // TODO: -17 РїРѕРґРѕР±СЂР°РЅРѕ СЌРєСЃРїРµСЂРёРјРµРЅС‚Р°Р»СЊРЅРѕ. РћС‡РµРЅСЊ РїРѕС…РѕР¶Рµ, С‡С‚Рѕ СЌС‚Рѕ РµСЃС‚СЊ РІС‹СЃРѕС‚Р° Р·Р°РіРѕР»РѕРІРєР° РѕРєРЅР° Рё РµС‘ РІ
+        // РёСЃС…РѕРґРЅРѕРј РїР»Р°РіРёРЅРµ РЅРµ СѓС‡РёС‚С‹РІР°Р»Рё.
         this.canvasHeight = canvasHeight - 17;
 
         this.left = left;
