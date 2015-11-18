@@ -33,14 +33,14 @@ bool CMyTile::operator!=(const CMyTile& tile) const
 	return X != tile.X || Y != tile.Y;
 }
 
-bool CMyTile::IsUndefined() const
+bool CMyTile::IsCorrect() const
 {
-	return X == -1 && Y == -1;
+	return X >= 0 && X < static_cast<int>(TileTypesXY.size()) && Y >= 0 && Y < static_cast<int>(TileTypesXY[0].size());
 }
 
 bool CMyTile::IsEmpty() const
 {
-	static_assert(_TILE_TYPE_COUNT_ == 12, "model::TileType has been changed");
+	static_assert(_TILE_TYPE_COUNT_ == 13, "model::TileType has been changed");
 	switch (Type()) {
 		case EMPTY:
 		case _UNKNOWN_TILE_TYPE_:
@@ -59,6 +59,7 @@ bool CMyTile::IsLeftOpen() const
 		case TOP_HEADED_T:
 		case BOTTOM_HEADED_T:
 		case CROSSROADS:
+		case UNKNOWN:
 			return true;
 	}
 	return false;
@@ -74,6 +75,7 @@ bool CMyTile::IsRightOpen() const
 		case TOP_HEADED_T:
 		case BOTTOM_HEADED_T:
 		case CROSSROADS:
+		case UNKNOWN:
 			return true;
 	}
 	return false;
@@ -89,6 +91,7 @@ bool CMyTile::IsBottomOpen() const
 		case LEFT_HEADED_T:
 		case RIGHT_HEADED_T:
 		case CROSSROADS:
+		case UNKNOWN:
 			return true;
 	}
 	return false;
@@ -104,6 +107,7 @@ bool CMyTile::IsTopOpen() const
 		case LEFT_HEADED_T:
 		case RIGHT_HEADED_T:
 		case CROSSROADS:
+		case UNKNOWN:
 			return true;
 	}
 	return false;

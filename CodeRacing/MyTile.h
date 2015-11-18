@@ -19,7 +19,7 @@ struct CMyTile {
 	bool operator!=(const CMyTile& tile) const;
 
 	model::TileType Type() const { return TileTypesXY[X][Y]; }
-	bool IsUndefined() const;
+	bool IsCorrect() const;
 	bool IsEmpty() const;
 	bool IsLeftOpen() const;
 	bool IsRightOpen() const;

@@ -60,8 +60,18 @@ void MyStrategy::firstTick()
 
 void MyStrategy::updateWaypoints()
 {
-	CMyTile::TileTypesXY = world->getTilesXY();
-	CMyTile::TileSize = game->getTrackTileSize();
+	vector<vector<TileType>> tilesXY = world->getTilesXY();
+	if (CMyTile::TileTypesXY.size() == 0) {
+		CMyTile::TileTypesXY = tilesXY;
+		CMyTile::TileSize = game->getTrackTileSize();
+	}
+	for (size_t x = 0; x < tilesXY.size(); x++) {
+		for (size_t y = 0; y < tilesXY.size(); y++) {
+			if (tilesXY[x][y] != UNKNOWN) {
+				CMyTile::TileTypesXY[x][y] = tilesXY[x][y];
+			}
+		}
+	}
 
 	vector<vector<int>> waypoints = world->getWaypoints();
 	waypointTiles.clear();
@@ -69,12 +79,7 @@ void MyStrategy::updateWaypoints()
 		waypointTiles.push_back(CMyTile(w[0], w[1]));
 	}
 
-	while (waypointTiles[nextWaypointIndex].X != self->getNextWaypointX()
-		|| waypointTiles[nextWaypointIndex].Y != self->getNextWaypointY())
-	{
-		nextWaypointIndex++;
-		nextWaypointIndex %= waypoints.size();
-	}
+	nextWaypointIndex = self->getNextWaypointIndex();
 }
 
 void MyStrategy::findTileRoute()
@@ -82,13 +87,12 @@ void MyStrategy::findTileRoute()
 	const int currentX = static_cast<int>(self->getX() / game->getTrackTileSize());
 	const int currentY = static_cast<int>(self->getY() / game->getTrackTileSize());
 	CMyTile tile = CMyTile(currentX, currentY);
-	if (currentTile.IsUndefined()) {
-		currentTile = tile;
-	} else if (tile == tileRoute[1]) {
+	if (tile != currentTile) {
 		beforePrevTile = prevTile;
 		prevTile = currentTile;
 		currentTile = tile;
 	}
+
 	tileRoute = tileRouteFinder.FindRoute(waypointTiles, nextWaypointIndex, currentTile,
 		prevTile, beforePrevTile);
 }
@@ -101,7 +105,7 @@ void MyStrategy::makeMove()
 	}
 
 
-	static const int simulationTickDepth = 500;
+	static const int simulationTickDepth = 150;
 	CMyTile simTarget = tileRoute[3];
 	CVec2D simTargetPos = simTarget.ToVec();
 
@@ -120,8 +124,8 @@ void MyStrategy::makeMove()
 				for (int turnStart : {0, 40}) {
 					//if (turnStart < brakeStart + brakeLength) continue;
 					//if (brakeStart < turnStart) continue;
-					brakeStart = max(0, turnStart - 20);
-					for (int turnLength : {0, 10, 20, 30, 40, 50, 60, 70, 100, 150}) {
+					//brakeStart = max(0, turnStart - 20);
+					for (int turnLength : {0, 2, 3, 5, 10, 20, 30, 40, 50, 60, 80, 100}) {
 						for (int turnReverse : {turnLength}) {
 							const int turnEnd = turnStart + turnLength;
 							const int turnReverseAt = turnStart + turnReverse;

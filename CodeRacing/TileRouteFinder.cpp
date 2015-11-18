@@ -79,7 +79,7 @@ static const double smartDistance(const CMyTile& from, const CMyTile& to,
 	assert(abs(dx) + abs(dy) == 1);
 
 	//const CMyTile bFrom = cameFrom[from.X][from.Y];
-	if (bFrom.IsUndefined()) {
+	if (!bFrom.IsCorrect()) {
 		return noBefore;
 	}
 	int dxb = from.X - bFrom.X;
@@ -91,7 +91,7 @@ static const double smartDistance(const CMyTile& from, const CMyTile& to,
 	assert(abs(dxb) + abs(dyb) == 1);
 
 	//const CMyTile bbFrom = cameFrom[bFrom.X][bFrom.Y];
-	if (bbFrom.IsUndefined()) {
+	if (!bbFrom.IsCorrect()) {
 		return noBefore;
 	}
 	int dxbb = bFrom.X - bbFrom.X;
@@ -154,9 +154,9 @@ vector<CMyTile> CTileRouteFinder::findSingleRoute(const CMyTile& start, const CM
 	vector<vector<double>> totalScore(sizeX, vector<double>(sizeY, INT_MAX));
 	vector<vector<double>> distance(sizeX, vector<double>(sizeY, INT_MAX));
 
-	if (!prevTile.IsUndefined()) {
+	if (prevTile.IsCorrect()) {
 		closedSet[prevTile.X][prevTile.Y] = true;
-		if (!beforePrevTile.IsUndefined()) {
+		if (beforePrevTile.IsCorrect()) {
 			closedSet[beforePrevTile.X][beforePrevTile.Y] = true;
 		}
 	}

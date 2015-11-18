@@ -62,6 +62,12 @@ CMyCar CSimulator::Predict(const CMyCar& startCar, const model::World& /*world*/
 	///////////////
 	// Тупейшая обработка коллизий со стенами.
 	CMyTile carTile(car.Position);
+	if (!carTile.IsCorrect()) {
+		car.Speed.X = 0;
+		car.Speed.Y = 0;
+		car.AngularSpeed = 0;
+		return car;
+	}
 	const double tileSize = CMyTile::TileSize;
 	CVec2D carTileTopLeft(carTile.X * tileSize, carTile.Y * tileSize);
 	CVec2D carRelative = car.Position - carTileTopLeft;
