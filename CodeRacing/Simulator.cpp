@@ -85,16 +85,15 @@ CMyCar CSimulator::Predict(const CMyCar& startCar, const model::World& /*world*/
 
 	const double halfHeight = game.getCarHeight() / 2;
 	const double halfWidth = game.getCarWidth() / 2;
-	vector<CVec2D> carCorners(4);
-	carCorners[0] = CVec2D(halfWidth, halfHeight);
-	carCorners[1] = CVec2D(halfWidth, -halfHeight);
-	carCorners[2] = CVec2D(-halfWidth, -halfHeight);
-	carCorners[3] = CVec2D(-halfWidth, halfHeight);
+	CVec2D carCorners[] = {
+		{ halfWidth, halfHeight },
+		{ -halfWidth, halfHeight },
+		{ -halfWidth, -halfHeight },
+		{ halfWidth, -halfHeight } };
 	bool collision = false;
 	for (auto& corner : carCorners) {
 		corner.Rotate(car.Angle);
 		corner += carRelative;
-		//CDrawPlugin::Instance().FillCircle(carTileTopLeft + corner, 5);
 		if (CVec2D(corner - topLeft).LengthSquared() <= radiusSqr ||
 			CVec2D(corner - topRight).LengthSquared() <= radiusSqr ||
 			CVec2D(corner - bottomLeft).LengthSquared() <= radiusSqr ||
