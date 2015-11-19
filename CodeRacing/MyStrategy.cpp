@@ -111,7 +111,7 @@ void MyStrategy::makeMove()
 		return;
 	}
 
-	static const int simulationDepth = 200;
+	static const int simulationDepth = 175;
 
 	double bestScore = INT_MIN;
 	CMyCar bestSimCar;
@@ -132,11 +132,11 @@ void MyStrategy::makeMove()
 	static map<int, int> bestThirdLengthStats;
 
 	vector<int> firstActionArray = { 0, -1, 1 };
-	vector<int> firstLengthArray = { 0, 5, 10, 15, 20, 30, 40 };
+	vector<int> firstLengthArray = { 0, 5, 10, 20, 30 };
 	vector<int> secondActionArray = { 0, INT_MIN };
-	vector<int> secondLengthArray = { 0, 20 };
+	vector<int> secondLengthArray = { 0, 30 };
 	vector<int> thirdActionArray = { -1, 1 };
-	vector<int> thirdLengthArray = { 0, 10, 20, 40, 60 };
+	vector<int> thirdLengthArray = { 0, 10, 25, 50 };
 
 	for(int firstAction: firstActionArray) {
 		for (int firstLength : firstLengthArray) {
@@ -331,7 +331,7 @@ void MyStrategy::makeMove()
 			resultMove->setWheelTurn(-angle);
 		}
 		rear--;
-		if (rear == 0) rear = -80;
+		if (rear == 0) rear = -150;
 	}
 
 	for (auto otherCar : world->getCars()) {
