@@ -184,7 +184,8 @@ vector<CMyTile> CTileRouteFinder::findSingleRoute(const CMyTile& start, const CM
 		openSet[current.X][current.Y] = false;
 		closedSet[current.X][current.Y] = true;
 		// Смотрим всех соседей этого элемента.
-		for (CMyTile neighbor : current.FindNeighbors()) {
+		vector<CMyTile> neighbors = current.FindNeighbors();
+		for (CMyTile neighbor : neighbors) {
 			// Не интересуют те соседи, которые уже попали в closedSet
 			if (closedSet[neighbor.X][neighbor.Y]) {
 				continue;
