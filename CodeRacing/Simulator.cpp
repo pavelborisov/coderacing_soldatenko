@@ -9,7 +9,7 @@
 
 using namespace std;
 
-static const int subtickCount = 10;
+static const int subtickCount = 2;
 static const double dTime = 1.0 / subtickCount;
 
 CSimulator::CSimulator() :

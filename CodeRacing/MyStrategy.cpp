@@ -235,54 +235,54 @@ void MyStrategy::makeMove()
 		}
 	}
 
-	//////////////////////////////////////// draw best
-	CMyCar simCar = car;
-	draw.SetColor(0, 0, 255);
-	for (int tick = 0; tick < bestTick; tick++) {
-		model::Move simMove;
-		simMove.setEnginePower(1.0);
-		int firstStart = 0;
-		int firstEnd = firstStart + bestFirstLength;
-		int secondStart = firstEnd;
-		int secondEnd = secondStart + bestSecondLength;
-		int thirdStart = secondEnd;
-		int thirdEnd = thirdStart + bestThirdLength;
+	////////////////////////////////////////// draw best
+	//CMyCar simCar = car;
+	//draw.SetColor(0, 0, 255);
+	//for (int tick = 0; tick < bestTick; tick++) {
+	//	model::Move simMove;
+	//	simMove.setEnginePower(1.0);
+	//	int firstStart = 0;
+	//	int firstEnd = firstStart + bestFirstLength;
+	//	int secondStart = firstEnd;
+	//	int secondEnd = secondStart + bestSecondLength;
+	//	int thirdStart = secondEnd;
+	//	int thirdEnd = thirdStart + bestThirdLength;
 
-		if (tick >= firstStart && tick < firstEnd) {
-			if (bestFirstAction == INT_MIN) {
-				simMove.setBrake(true);
-			} else {
-				simMove.setWheelTurn(bestFirstAction);
-			}
-		} else if (tick >= secondStart && tick < secondEnd) {
-			if (bestSecondAction == INT_MIN) {
-				simMove.setBrake(true);
-			} else {
-				simMove.setWheelTurn(bestSecondAction);
-			}
-		} else if (tick >= thirdStart && tick < thirdEnd) {
-			if (bestThirdAction == INT_MIN) {
-				simMove.setBrake(true);
-			} else {
-				simMove.setWheelTurn(bestThirdAction);
-			}
-		}
-		simCar = simulator.Predict(simCar, *world, simMove);
-		draw.FillCircle(simCar.Position, 5);
-	}
-	const double halfHeight = game->getCarHeight() / 2;
-	const double halfWidth = game->getCarWidth() / 2;
-	vector<CVec2D> carCorners(4);
-	carCorners[0] = CVec2D(halfWidth, halfHeight);
-	carCorners[1] = CVec2D(halfWidth, -halfHeight);
-	carCorners[2] = CVec2D(-halfWidth, -halfHeight);
-	carCorners[3] = CVec2D(-halfWidth, halfHeight);
-	draw.SetColor(0, 255, 255);
-	for (auto& corner : carCorners) {
-		corner.Rotate(simCar.Angle);
-		corner += simCar.Position;
-		draw.FillCircle(corner, 5);
-	}
+	//	if (tick >= firstStart && tick < firstEnd) {
+	//		if (bestFirstAction == INT_MIN) {
+	//			simMove.setBrake(true);
+	//		} else {
+	//			simMove.setWheelTurn(bestFirstAction);
+	//		}
+	//	} else if (tick >= secondStart && tick < secondEnd) {
+	//		if (bestSecondAction == INT_MIN) {
+	//			simMove.setBrake(true);
+	//		} else {
+	//			simMove.setWheelTurn(bestSecondAction);
+	//		}
+	//	} else if (tick >= thirdStart && tick < thirdEnd) {
+	//		if (bestThirdAction == INT_MIN) {
+	//			simMove.setBrake(true);
+	//		} else {
+	//			simMove.setWheelTurn(bestThirdAction);
+	//		}
+	//	}
+	//	simCar = simulator.Predict(simCar, *world, simMove);
+	//	draw.FillCircle(simCar.Position, 5);
+	//}
+	//const double halfHeight = game->getCarHeight() / 2;
+	//const double halfWidth = game->getCarWidth() / 2;
+	//vector<CVec2D> carCorners(4);
+	//carCorners[0] = CVec2D(halfWidth, halfHeight);
+	//carCorners[1] = CVec2D(halfWidth, -halfHeight);
+	//carCorners[2] = CVec2D(-halfWidth, -halfHeight);
+	//carCorners[3] = CVec2D(-halfWidth, halfHeight);
+	//draw.SetColor(0, 255, 255);
+	//for (auto& corner : carCorners) {
+	//	corner.Rotate(simCar.Angle);
+	//	corner += simCar.Position;
+	//	draw.FillCircle(corner, 5);
+	//}
 
 	////////////////////////////////////// Собственно делаем ход
 	resultMove->setEnginePower(1.0);
