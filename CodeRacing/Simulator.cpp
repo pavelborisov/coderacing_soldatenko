@@ -173,9 +173,12 @@ CMyCar CSimulator::Predict(const CMyCar& startCar, const model::World& /*world*/
 		car.Speed *= movementAirFrictionFactorDt;
 		// 3. “рение колЄс - посто€нно и различно по направлени€м. ≈сли тормозим, то к продольному направлению надо
 		//    применить такое же трение, что и к поперечному.
-		const double frictionLengthwise = limit(car.Speed.DotProduct(lengthwiseUnitVector),
+		const double frictionLengthwise = limit(
+			car.Speed.DotProduct(lengthwiseUnitVector),
 			move.isBrake() ? crosswiseFrictionFactorDt : lengthwiseFrictionFactorDt);
-		const double frictionCrosswise = limit(car.Speed.DotProduct(crosswiseUnitVector), crosswiseFrictionFactorDt);
+		const double frictionCrosswise = limit(
+			car.Speed.DotProduct(crosswiseUnitVector),
+			crosswiseFrictionFactorDt);
 		car.Speed -= lengthwiseUnitVector * frictionLengthwise + crosswiseUnitVector * frictionCrosswise;
 
 		// ќбновление угла.

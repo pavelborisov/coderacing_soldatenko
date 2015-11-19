@@ -48,77 +48,9 @@ vector<CMyTile> CTileRouteFinder::FindRoute(
 
 
 
-static const double smartDistance(const CMyTile& from, const CMyTile& to)
+static const double smartDistance(const CMyTile& /*from*/, const CMyTile& /*to*/)
 {
-	static const double noBefore = 1;
-	static const double straight = 1.5; //1;
-	static const double cornerCut = 1; //1.5;
-	static const double farTurn = 2; //2;
-	static const double closeTurn = 3; //3;
-	static const double uTurn = 5; //4;
-
-	return noBefore;
-	from;
-	to;
-
-	//int dx = to.X - from.X;
-	//int dy = to.Y - from.Y;
-	//// Повернём так, чтобы dx == 1, что будет соответствовать направлению "вправо".
-	//// Один angle = поворот на 90 градусов против часовой стрелки (если ось Y смотрит вниз).
-	//int angle = getRotationAngle(dx, dy);
-	//simpleRotate(dx, dy, angle);
-	//assert(abs(dx) + abs(dy) == 1);
-
-	////const CMyTile bFrom = cameFrom[from.X][from.Y];
-	//if (!bFrom.IsCorrect()) {
-	//	return noBefore;
-	//}
-	//int dxb = from.X - bFrom.X;
-	//int dyb = from.Y - bFrom.Y;
-	//simpleRotate(dxb, dyb, angle);
-	//// Отразим, чтобы dyb == 1, что будет соответствовать повороту "снизу направо"
-	//bool mirror = dyb == -1;
-	//if (mirror) dyb = -dyb;
-	//assert(abs(dxb) + abs(dyb) == 1);
-
-	////const CMyTile bbFrom = cameFrom[bFrom.X][bFrom.Y];
-	//if (!bbFrom.IsCorrect()) {
-	//	return noBefore;
-	//}
-	//int dxbb = bFrom.X - bbFrom.X;
-	//int dybb = bFrom.Y - bbFrom.Y;
-	//simpleRotate(dxbb, dybb, angle);
-	//// Мы можем ещё раз попробовать отразить, если предыдущий раз не было поворота, а сейчас есть.
-	//mirror = mirror || ((dyb == 0) && (dybb == -1));
-	//if (mirror) dybb = -dybb;
-
-	//// Из-за нормализации поворота и отражений у нас могут быть всего пять случаев:
-	//// ---- прямая дорога, соответствует dx = 1, dxb = 1, dxbb = 1
-	//// 
-	//// г--  поворот был давно, соответствует dx = 1, dxb = 1, dybb = 1
-	////
-	////  г-  поворот был недавно, соответствует dx = 1, dyb = 1, dybb = 1
-	////  |
-	////
-	//// _г-  недавно было два переменных поворота, соответствует dx = 1, dyb = 1, dxbb = 1
-	////
-	////  г-  недавно было два одинаковых поворота. соответствует dx = 1, dyb = 1, dxbb = -1
-	////  L-
-
-	//assert(dx == 1);
-	//if (dxb == 1 && dxbb == 1) {
-	//	return straight;
-	//} else if (dxb == 1 && dybb == 1) {
-	//	return farTurn;
-	//} else if (dyb == 1 && dybb == 1) {
-	//	return closeTurn;
-	//} else if (dyb == 1 && dxbb == 1) {
-	//	return cornerCut;
-	//} else if (dyb == 1 && dxbb == -1) {
-	//	return uTurn;
-	//}
-	//assert(false);
-	//return 1;
+	return 1;
 }
 
 static const double heuristic(const CMyTile& from, const CMyTile& to)
@@ -143,13 +75,6 @@ vector<CMyTile> CTileRouteFinder::findSingleRoute(const CMyTile& start, const CM
 	vector<vector<CMyTile>> cameFrom(sizeX, vector<CMyTile>(sizeY));
 	vector<vector<double>> totalScore(sizeX, vector<double>(sizeY, INT_MAX));
 	vector<vector<double>> distance(sizeX, vector<double>(sizeY, INT_MAX));
-
-	//if (prevTile.IsCorrect()) {
-	//	closedSet[prevTile.X][prevTile.Y] = true;
-	//	if (beforePrevTile.IsCorrect()) {
-	//		closedSet[beforePrevTile.X][beforePrevTile.Y] = true;
-	//	}
-	//}
 
 	distance[start.X][start.Y] = 0;
 	totalScore[start.X][start.Y] = distance[start.X][start.Y] + heuristic(start, end);
@@ -179,8 +104,6 @@ vector<CMyTile> CTileRouteFinder::findSingleRoute(const CMyTile& start, const CM
 			if (closedSet[neighbor.X][neighbor.Y]) {
 				continue;
 			}
-			//const CMyTile bFrom = current == start ? prevTile : cameFrom[current.X][current.Y];
-			//const CMyTile bbFrom = current == start ? beforePrevTile : ( bFrom == start ? prevTile : cameFrom[bFrom.X][bFrom.Y] );
 			const double neighborDistance = distance[current.X][current.Y] + smartDistance(current, neighbor);
 			const double neighborScore = neighborDistance + heuristic(neighbor, end);
 			if (!openSet[neighbor.X][neighbor.Y]) {

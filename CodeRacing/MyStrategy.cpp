@@ -3,8 +3,10 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdlib>
+#include <map>
 #include <set>
 #include <string>
+#include <assert.h>
 #include "Tools.h"
 
 using namespace model;
@@ -91,6 +93,16 @@ void MyStrategy::findTileRoute()
 	tileRoute = tileRouteFinder.FindRoute(waypointTiles, nextWaypointIndex, currentTile);
 }
 
+template<class MAP>
+void logStats(const MAP& m, const char* name, std::basic_ostream< char, std::char_traits<char> >& stream)
+{
+	stream << name << ": ";
+	for (auto p : m) {
+		stream << p.first << "," << p.second << " ";
+	}
+	stream << endl;
+}
+
 void MyStrategy::makeMove()
 {
 	// TODO: Баг с предсказанием торможения в повороте.
@@ -99,83 +111,138 @@ void MyStrategy::makeMove()
 		return;
 	}
 
-
-	static const int simulationTickDepth = 150;
+	static const int simulationDepth = 180;
 
 	double bestScore = INT_MIN;
-	int bestTurnStart = 0;
-	int bestTurnLength = 0;
-	int bestTurn = 0;
-	int bestBrakeStart = 0;
-	int bestBrakeLength = 0;
-	int bestTick = INT_MAX;
 	CMyCar bestSimCar;
-	vector<int> brakeStartArray = { 0 };
-	vector<int> brakeLengthArray = { 0, 50 };
-	vector<int> turnStartArray = { 0, 40 };
-	vector<int> turnLengthArray = { 0, 2, 5, 10, 20, 40, 60, 80, 100 };
-	for (int turn = -1; turn <= 1; turn += 2) {
-		for (int brakeStart : brakeStartArray) {
-			for (int brakeLength : brakeLengthArray) {
-				if (brakeStart + brakeLength > simulationTickDepth) continue;
-				for (int turnStart : turnStartArray) {
-					for (int turnLength : turnLengthArray) {
-						const int turnEnd = turnStart + turnLength;
-						if (turnEnd > simulationTickDepth) continue;
-						//if (turnStart + turnLength > 100) break;
-						CMyCar simCar = car;
-						int nextRouteIndex = 1;
-						double routeScore = 0;
-						for (int tick = 0; tick < simulationTickDepth; tick++) {
-							model::Move simMove;
-							simMove.setEnginePower(1.0);
-							if (tick >= turnStart && tick < turnStart + turnLength) {
-								simMove.setWheelTurn(turn);
-							}
-							if (tick >= brakeStart && tick < brakeStart + brakeLength) {
-								simMove.setBrake(true);
-							}
-							simCar = simulator.Predict(simCar, *world, simMove);
+	int bestTick = INT_MAX;
+	int bestFirstTurn = 0;
+	int bestFirstLength = 0;
+	bool bestSecondBrake = 0;
+	int bestSecondLength = 0;
+	int bestThirdTurn = 0;
+	int bestThirdLength = 0;
 
-							CMyTile simCarTile(simCar.Position);
-							double score = 0;
-							if (simCarTile == tileRoute[nextRouteIndex]) {
-								nextRouteIndex = (nextRouteIndex + 1) % tileRoute.size();
-								routeScore += 1000;
-							}
-							score += routeScore;
-							score -= (tileRoute[nextRouteIndex].ToVec() - simCar.Position).Length();
-							//score -= tick;
+	static map<int, int> bestTickStats;
+	static map<int, int> bestFirstTurnStats;
+	static map<int, int> bestFirstLengthStats;
+	static map<bool, int> bestSecondBrakeStats;
+	static map<int, int> bestSecondLengthStats;
+	static map<int, int> bestThirdTurnStats;
+	static map<int, int> bestThirdLengthStats;
 
-							if (brakeStart == 0 && brakeLength > 0) score -= 200;
+	vector<int> firstTurnArray = { 0, -1, 1 };
+	vector<int> firstLengthArray = { 0, 3, 5, 7, 10, 15 };
+	vector<bool> secondBrakeArray = { false};
+	vector<int> secondLengthArray = { 0 };
+	vector<int> thirdTurnArray = { -1, 1 };
+	vector<int> thirdLengthArray = { 0, 5, 7, 10, 15, 20, 25, 30, 40, 50, 60 };
 
-							if (score > bestScore) {
-								bestScore = score;
-								bestTurnStart = turnStart;
-								bestTurnLength = turnLength;
-								bestTurn = turn;
-								bestTick = tick;
-								bestBrakeStart = brakeStart;
-								bestBrakeLength = brakeLength;
-								bestSimCar = simCar;
+	for(int firstTurn: firstTurnArray) {
+		for (int firstLength : firstLengthArray) {
+			int firstStart = 0;
+			int firstEnd = firstStart + firstLength;
+			if (firstLength == 0 && firstTurn != firstTurnArray[0]) continue;
+			if (firstEnd > simulationDepth) continue;
+			for (bool secondBrake : secondBrakeArray) {
+				for (int secondLength : secondLengthArray) {
+					int secondStart = firstEnd;
+					int secondEnd = secondStart + secondLength;
+					if (secondLength == 0 && secondBrake != secondBrakeArray[0]) continue;
+					if (secondEnd > simulationDepth) continue;
+					for (int thirdTurn : thirdTurnArray) {
+						for (int thirdLength : thirdLengthArray) {
+							//for (int thirdLength : {simulationDepth - thirdStart}) {
+							int thirdStart = secondEnd;
+							int thirdEnd = thirdStart + thirdLength;
+							if (thirdLength == 0 && thirdTurn != thirdTurnArray[0]) continue;
+							if (thirdEnd > simulationDepth) continue;
+
+							//////////// непосредственно симуляция.
+							CMyCar simCar = car;
+							int nextRouteIndex = 1;
+							double routeScore = 0;
+							for (int tick = 0; tick < simulationDepth; tick++) {
+								model::Move simMove;
+								simMove.setEnginePower(1.0);
+								if (tick >= firstStart && tick < firstEnd) {
+									simMove.setWheelTurn(firstTurn);
+								} else if (tick >= secondStart && tick < secondEnd) {
+									simMove.setBrake(secondBrake);
+								} else if (tick >= thirdStart && tick < thirdEnd) {
+									simMove.setWheelTurn(thirdTurn);
+								}
+								simCar = simulator.Predict(simCar, *world, simMove);
+
+								CMyTile simCarTile(simCar.Position);
+								double score = 0;
+								if (simCarTile == tileRoute[nextRouteIndex]) {
+									nextRouteIndex = (nextRouteIndex + 1) % tileRoute.size();
+									routeScore += 800;
+								}
+								score += routeScore;
+								CMyTile targetTile = tileRoute[nextRouteIndex];
+								// Проверяем из какого тайл в какой едем. Увеличиваем оценку на то, сколько мы проехали вдоль направления,
+								// по которому эти тайлы соединяются.
+								if (simCarTile.X == targetTile.X + 1) {
+									score += (simCarTile.X + 1) * 800 - simCar.Position.X;
+								} else if (simCarTile.X == targetTile.X - 1) {
+									score += simCar.Position.X - (simCarTile.X) * 800;
+								} else if (simCarTile.Y == targetTile.Y + 1) {
+									score += (simCarTile.Y + 1) * 800 - simCar.Position.Y;
+								} else if (simCarTile.Y == targetTile.Y - 1) {
+									score += simCar.Position.Y - (simCarTile.Y) * 800;
+								} else {
+									// Где-то далеко мы находимся.
+									score += 0;
+								}
+
+								// TODO: штраф за напрасное торможение?
+								//if (brakeStart == 0 && brakeLength > 0) score -= 200;
+
+								if (score > bestScore) {
+									bestScore = score;
+									bestSimCar = simCar;
+									bestTick = tick;
+									bestFirstTurn = firstTurn;
+									bestFirstLength = firstLength;
+									bestSecondBrake = secondBrake;
+									bestSecondLength = secondLength;
+									bestThirdTurn = thirdTurn;
+									bestThirdLength = thirdLength;
+								}
+
+								if (simCar.CollisionDetected) {
+									break;
+								}
 							}
+							//////////// конец непосредственно симуляции.
 						}
 					}
 				}
 			}
 		}
 	}
-	//draw
+
+	//////////////////////////////////////// draw best
 	CMyCar simCar = car;
 	draw.SetColor(0, 0, 255);
 	for (int tick = 0; tick < bestTick; tick++) {
 		model::Move simMove;
 		simMove.setEnginePower(1.0);
-		if (tick >= bestTurnStart && tick < bestTurnStart + bestTurnLength) {
-			simMove.setWheelTurn(bestTurn);
-		}
-		if (tick >= bestBrakeStart && tick < bestBrakeStart + bestBrakeLength) {
-			simMove.setBrake(true);
+		int firstStart = 0;
+		int firstEnd = firstStart + bestFirstLength;
+		int secondStart = firstEnd;
+		int secondEnd = secondStart + bestSecondLength;
+		int thirdStart = secondEnd;
+		int thirdEnd = thirdStart + bestThirdLength;
+
+		if (tick >= firstStart && tick < firstEnd) {
+			simMove.setWheelTurn(bestFirstTurn);
+		} else if (tick >= secondStart && tick < secondEnd) {
+			simMove.setBrake(bestSecondBrake);
+		} else if (tick >= thirdStart && tick < thirdEnd) {
+			simMove.setWheelTurn(bestThirdTurn);
 		}
 		simCar = simulator.Predict(simCar, *world, simMove);
 		draw.FillCircle(simCar.Position, 5);
@@ -194,12 +261,14 @@ void MyStrategy::makeMove()
 		draw.FillCircle(corner, 5);
 	}
 
+	////////////////////////////////////// Собственно делаем ход
 	resultMove->setEnginePower(1.0);
-	if (bestTurnStart == 0 && bestTurnLength > 0) {
-		resultMove->setWheelTurn(bestTurn);
-	}
-	if (bestBrakeStart == 0 && bestBrakeLength > 0) {
-		resultMove->setBrake(true);
+	if (bestFirstLength > 0) {
+		resultMove->setWheelTurn(bestFirstTurn);
+	} else if (bestSecondLength > 0) {
+		resultMove->setBrake(bestSecondBrake);
+	} else if (bestThirdLength > 0) {
+		resultMove->setWheelTurn(bestThirdTurn);
 	}
 
 	// Тупой задний ход
@@ -244,10 +313,30 @@ void MyStrategy::makeMove()
 			}
 		}
 	}
-	// Тупое нитро
-	if (self->getNitroChargeCount() > 0 && bestTurnStart > 0 && bestTurnLength <= 20) {
+	// TODO: Проверка на прямые участки.
+	// Тупое нитро.
+	if (self->getNitroChargeCount() > 0 && self->getRemainingNitroCooldownTicks() == 0 && self->getRemainingNitroTicks() == 0
+		&& bestFirstLength + bestThirdLength < 20 && bestTick > 100)
+	{
 		resultMove->setUseNitro(true);
 	}
+
+	///////////////////////////// статы
+	bestTickStats[bestTick] += 1;
+	bestFirstTurnStats[bestFirstTurn] += 1;
+	bestFirstLengthStats[bestFirstLength] += 1;
+	bestSecondBrakeStats[bestSecondBrake] += 1;
+	bestSecondLengthStats[bestSecondLength] += 1;
+	bestThirdTurnStats[bestThirdTurn] += 1;
+	bestThirdLengthStats[bestThirdLength] += 1;
+	//logStats(bestTickStats, "bestTickStats", log.Stream());
+	logStats(bestFirstTurnStats, "bestFirstTurnStats", log.Stream());
+	logStats(bestFirstLengthStats, "bestFirstLengthStats", log.Stream());
+	logStats(bestSecondBrakeStats, "bestSecondBrakeStats", log.Stream());
+	logStats(bestSecondLengthStats, "bestSecondLengthStats", log.Stream());
+	logStats(bestThirdTurnStats, "bestThirdTurnStats", log.Stream());
+	logStats(bestThirdLengthStats, "bestThirdLengthStats", log.Stream());
+
 }
 
 void MyStrategy::predict()

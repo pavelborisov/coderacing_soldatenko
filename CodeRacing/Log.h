@@ -25,6 +25,7 @@ public:
 	void LogVec2D(const CVec2D& position, const char* name);
 	template<typename T>
 	void Log(const T& value, const char* name) { logfile << name << ": " << value << endl; }
+	std::basic_ostream< char, std::char_traits<char> >& Stream() { return logfile; }
 
 private:
 	std::ofstream logfile;
@@ -35,6 +36,7 @@ private:
 
 #else // LOGGING is not defined
 
+#include <ostream>
 class CLog {
 public:
 	static CLog& Instance()
@@ -48,9 +50,11 @@ public:
 	void LogVec2D(const CVec2D& /*position*/, const char* /*name*/) {}
 	template<typename T>
 	void Log(const T& /*value*/, const char* /*name*/) {}
+	std::basic_ostream< char, std::char_traits<char> >& Stream() { return logfile; }
 
 private:
-	CLog() {}
+	std::ostream logfile;
+	CLog() : logfile(0) {}
 
 };
 #endif
