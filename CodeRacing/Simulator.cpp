@@ -191,12 +191,7 @@ CMyCar CSimulator::Predict(const CMyCar& startCar, const model::World& /*world*/
 		car.AngularSpeed = medianAngularSpeed + (car.AngularSpeed - medianAngularSpeed) * rotationAirFrictionFactorDt;
 	}
 
-	// Вот такая странная обрезка угла происходит движком. Симулируем поведение движка.
-	if (car.Angle < -PI) {
-		car.Angle += 2 * PI;
-	} else if (car.Angle > PI) {
-		car.Angle -= 2 * PI;
-	}
+	normalizeAngle(car.Angle);
 
 	return car;
 }

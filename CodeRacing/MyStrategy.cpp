@@ -111,51 +111,50 @@ void MyStrategy::makeMove()
 		return;
 	}
 
-	static const int simulationDepth = 180;
+	static const int simulationDepth = 200;
 
 	double bestScore = INT_MIN;
 	CMyCar bestSimCar;
 	int bestTick = INT_MAX;
-	int bestFirstTurn = 0;
+	int bestFirstAction = 0;
 	int bestFirstLength = 0;
-	bool bestSecondBrake = 0;
+	int bestSecondAction = 0;
 	int bestSecondLength = 0;
-	int bestThirdTurn = 0;
+	int bestThirdAction = 0;
 	int bestThirdLength = 0;
 
 	static map<int, int> bestTickStats;
-	static map<int, int> bestFirstTurnStats;
+	static map<int, int> bestFirstActionStats;
 	static map<int, int> bestFirstLengthStats;
-	static map<bool, int> bestSecondBrakeStats;
+	static map<int, int> bestSecondActionStats;
 	static map<int, int> bestSecondLengthStats;
-	static map<int, int> bestThirdTurnStats;
+	static map<int, int> bestThirdActionStats;
 	static map<int, int> bestThirdLengthStats;
 
-	vector<int> firstTurnArray = { 0, -1, 1 };
-	vector<int> firstLengthArray = { 0, 3, 5, 7, 10, 15 };
-	vector<bool> secondBrakeArray = { false};
-	vector<int> secondLengthArray = { 0 };
-	vector<int> thirdTurnArray = { -1, 1 };
-	vector<int> thirdLengthArray = { 0, 5, 7, 10, 15, 20, 25, 30, 40, 50, 60 };
+	vector<int> firstActionArray = { 0, -1, 1 };
+	vector<int> firstLengthArray = { 0, 5, 10, 15, 20, 30, 40 };
+	vector<int> secondActionArray = { 0, INT_MIN };
+	vector<int> secondLengthArray = { 0, 20 };
+	vector<int> thirdActionArray = { -1, 1 };
+	vector<int> thirdLengthArray = { 0, 10, 20, 40, 60 };
 
-	for(int firstTurn: firstTurnArray) {
+	for(int firstAction: firstActionArray) {
 		for (int firstLength : firstLengthArray) {
 			int firstStart = 0;
 			int firstEnd = firstStart + firstLength;
-			if (firstLength == 0 && firstTurn != firstTurnArray[0]) continue;
+			if (firstLength == 0 && firstAction != firstActionArray[0]) continue;
 			if (firstEnd > simulationDepth) continue;
-			for (bool secondBrake : secondBrakeArray) {
+			for (int secondAction : secondActionArray) {
 				for (int secondLength : secondLengthArray) {
 					int secondStart = firstEnd;
 					int secondEnd = secondStart + secondLength;
-					if (secondLength == 0 && secondBrake != secondBrakeArray[0]) continue;
+					if (secondLength == 0 && secondAction != secondActionArray[0]) continue;
 					if (secondEnd > simulationDepth) continue;
-					for (int thirdTurn : thirdTurnArray) {
+					for (int thirdAction : thirdActionArray) {
 						for (int thirdLength : thirdLengthArray) {
-							//for (int thirdLength : {simulationDepth - thirdStart}) {
 							int thirdStart = secondEnd;
 							int thirdEnd = thirdStart + thirdLength;
-							if (thirdLength == 0 && thirdTurn != thirdTurnArray[0]) continue;
+							if (thirdLength == 0 && thirdAction != thirdActionArray[0]) continue;
 							if (thirdEnd > simulationDepth) continue;
 
 							//////////// непосредственно симуляция.
@@ -166,11 +165,23 @@ void MyStrategy::makeMove()
 								model::Move simMove;
 								simMove.setEnginePower(1.0);
 								if (tick >= firstStart && tick < firstEnd) {
-									simMove.setWheelTurn(firstTurn);
+									if (firstAction == INT_MIN) {
+										simMove.setBrake(true);
+									} else {
+										simMove.setWheelTurn(firstAction);
+									}
 								} else if (tick >= secondStart && tick < secondEnd) {
-									simMove.setBrake(secondBrake);
+									if (secondAction == INT_MIN) {
+										simMove.setBrake(true);
+									} else {
+										simMove.setWheelTurn(secondAction);
+									}
 								} else if (tick >= thirdStart && tick < thirdEnd) {
-									simMove.setWheelTurn(thirdTurn);
+									if (thirdAction == INT_MIN) {
+										simMove.setBrake(true);
+									} else {
+										simMove.setWheelTurn(thirdAction);
+									}
 								}
 								simCar = simulator.Predict(simCar, *world, simMove);
 
@@ -194,7 +205,7 @@ void MyStrategy::makeMove()
 									score += simCar.Position.Y - (simCarTile.Y) * 800;
 								} else {
 									// Где-то далеко мы находимся.
-									score += 0;
+									score -= 0;
 								}
 
 								// TODO: штраф за напрасное торможение?
@@ -204,11 +215,11 @@ void MyStrategy::makeMove()
 									bestScore = score;
 									bestSimCar = simCar;
 									bestTick = tick;
-									bestFirstTurn = firstTurn;
+									bestFirstAction = firstAction;
 									bestFirstLength = firstLength;
-									bestSecondBrake = secondBrake;
+									bestSecondAction = secondAction;
 									bestSecondLength = secondLength;
-									bestThirdTurn = thirdTurn;
+									bestThirdAction = thirdAction;
 									bestThirdLength = thirdLength;
 								}
 
@@ -238,11 +249,23 @@ void MyStrategy::makeMove()
 		int thirdEnd = thirdStart + bestThirdLength;
 
 		if (tick >= firstStart && tick < firstEnd) {
-			simMove.setWheelTurn(bestFirstTurn);
+			if (bestFirstAction == INT_MIN) {
+				simMove.setBrake(true);
+			} else {
+				simMove.setWheelTurn(bestFirstAction);
+			}
 		} else if (tick >= secondStart && tick < secondEnd) {
-			simMove.setBrake(bestSecondBrake);
+			if (bestSecondAction == INT_MIN) {
+				simMove.setBrake(true);
+			} else {
+				simMove.setWheelTurn(bestSecondAction);
+			}
 		} else if (tick >= thirdStart && tick < thirdEnd) {
-			simMove.setWheelTurn(bestThirdTurn);
+			if (bestThirdAction == INT_MIN) {
+				simMove.setBrake(true);
+			} else {
+				simMove.setWheelTurn(bestThirdAction);
+			}
 		}
 		simCar = simulator.Predict(simCar, *world, simMove);
 		draw.FillCircle(simCar.Position, 5);
@@ -264,11 +287,23 @@ void MyStrategy::makeMove()
 	////////////////////////////////////// Собственно делаем ход
 	resultMove->setEnginePower(1.0);
 	if (bestFirstLength > 0) {
-		resultMove->setWheelTurn(bestFirstTurn);
+		if (bestFirstAction == INT_MIN) {
+			resultMove->setBrake(true);
+		} else {
+			resultMove->setWheelTurn(bestFirstAction);
+		}
 	} else if (bestSecondLength > 0) {
-		resultMove->setBrake(bestSecondBrake);
+		if (bestSecondAction == INT_MIN) {
+			resultMove->setBrake(true);
+		} else {
+			resultMove->setWheelTurn(bestSecondAction);
+		}
 	} else if (bestThirdLength > 0) {
-		resultMove->setWheelTurn(bestThirdTurn);
+		if (bestThirdAction == INT_MIN) {
+			resultMove->setBrake(true);
+		} else {
+			resultMove->setWheelTurn(bestThirdAction);
+		}
 	}
 
 	// Тупой задний ход
@@ -283,14 +318,18 @@ void MyStrategy::makeMove()
 	} else if (rear < 0) {
 		rear++;
 	} else if (rear > 0) {
+		double angle = car.Angle - (car.Position - tileRoute[1].ToVec()).GetAngle();
+		normalizeAngle(angle);
+
 		if (rear < 30) {
 			resultMove->setBrake(true);
 			resultMove->setEnginePower(1.0);
+			resultMove->setWheelTurn(angle);
 		} else {
 			resultMove->setBrake(false);
 			resultMove->setEnginePower(-1.0);
+			resultMove->setWheelTurn(-angle);
 		}
-		resultMove->setWheelTurn(0);
 		rear--;
 		if (rear == 0) rear = -80;
 	}
@@ -315,27 +354,31 @@ void MyStrategy::makeMove()
 	}
 	// TODO: Проверка на прямые участки.
 	// Тупое нитро.
+	// Сколько тиков поворачиваем.
+	double turnTicks = (bestFirstAction == 1 || bestFirstAction == -1) ? bestFirstLength : 0;
+	turnTicks += (bestSecondAction == 1 || bestSecondAction == -1) ? bestSecondLength : 0;
+	turnTicks += (bestThirdAction == 1 || bestThirdAction == -1) ? bestThirdLength : 0;
 	if (self->getNitroChargeCount() > 0 && self->getRemainingNitroCooldownTicks() == 0 && self->getRemainingNitroTicks() == 0
-		&& bestFirstLength + bestThirdLength < 20 && bestTick > 100)
+		&& turnTicks < 20 && bestTick > 120)
 	{
 		resultMove->setUseNitro(true);
 	}
 
 	///////////////////////////// статы
-	bestTickStats[bestTick] += 1;
-	bestFirstTurnStats[bestFirstTurn] += 1;
-	bestFirstLengthStats[bestFirstLength] += 1;
-	bestSecondBrakeStats[bestSecondBrake] += 1;
-	bestSecondLengthStats[bestSecondLength] += 1;
-	bestThirdTurnStats[bestThirdTurn] += 1;
-	bestThirdLengthStats[bestThirdLength] += 1;
-	//logStats(bestTickStats, "bestTickStats", log.Stream());
-	logStats(bestFirstTurnStats, "bestFirstTurnStats", log.Stream());
-	logStats(bestFirstLengthStats, "bestFirstLengthStats", log.Stream());
-	logStats(bestSecondBrakeStats, "bestSecondBrakeStats", log.Stream());
-	logStats(bestSecondLengthStats, "bestSecondLengthStats", log.Stream());
-	logStats(bestThirdTurnStats, "bestThirdTurnStats", log.Stream());
-	logStats(bestThirdLengthStats, "bestThirdLengthStats", log.Stream());
+	//bestTickStats[bestTick] += 1;
+	//bestFirstTurnStats[bestFirstTurn] += 1;
+	//bestFirstLengthStats[bestFirstLength] += 1;
+	//bestSecondBrakeStats[bestSecondBrake] += 1;
+	//bestSecondLengthStats[bestSecondLength] += 1;
+	//bestThirdTurnStats[bestThirdTurn] += 1;
+	//bestThirdLengthStats[bestThirdLength] += 1;
+	////logStats(bestTickStats, "bestTickStats", log.Stream());
+	//logStats(bestFirstTurnStats, "bestFirstTurnStats", log.Stream());
+	//logStats(bestFirstLengthStats, "bestFirstLengthStats", log.Stream());
+	//logStats(bestSecondBrakeStats, "bestSecondBrakeStats", log.Stream());
+	//logStats(bestSecondLengthStats, "bestSecondLengthStats", log.Stream());
+	//logStats(bestThirdTurnStats, "bestThirdTurnStats", log.Stream());
+	//logStats(bestThirdLengthStats, "bestThirdLengthStats", log.Stream());
 
 }
 

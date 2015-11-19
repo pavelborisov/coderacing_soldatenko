@@ -15,19 +15,6 @@ double CVec2D::GetAngle() const
 	return atan2(Y, X);
 }
 
-double CVec2D::GetAngleTo(const CVec2D& v) const
-{
-	const double thisAngle = GetAngle();
-	const double otherAngle = v.GetAngle();
-	double difAngle = otherAngle - thisAngle;
-	if (difAngle > PI_2) {
-		return difAngle - PI;
-	} else if (difAngle < -PI_2) {
-		return difAngle + PI;
-	}
-	return difAngle;
-}
-
 void CVec2D::Rotate(double angle)
 {
 	const double sinValue = sin(angle);

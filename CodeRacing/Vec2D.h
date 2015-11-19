@@ -25,7 +25,6 @@ struct CVec2D {
 
 	// [-pi, pi]
 	double GetAngle() const;
-	double GetAngleTo(const CVec2D& v) const;
 	void Rotate(double angle);
 	
 };

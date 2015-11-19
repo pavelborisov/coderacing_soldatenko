@@ -1,7 +1,6 @@
 #pragma once
 
 #define PI 3.14159265358979323846
-#define PI_2 PI / 2
 
 inline int getRotationAngle(int dx, int dy)
 {
@@ -42,5 +41,15 @@ void simpleRotate(T& x, T& y, int angle)
 		default:
 			//assert(false);
 			break;
+	}
+}
+
+inline void normalizeAngle(double& angle)
+{
+	while (angle > PI) {
+		angle -= 2 * PI;
+	}
+	while (angle < -PI) {
+		angle += 2 * PI;
 	}
 }
