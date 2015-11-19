@@ -104,7 +104,7 @@ void MyStrategy::makeMove()
 	}
 
 
-	static const int simulationTickDepth = 200;
+	static const int simulationTickDepth = 150;
 	CMyTile simTarget = tileRoute[3];
 	CVec2D simTargetPos = simTarget.ToVec();
 
@@ -119,9 +119,9 @@ void MyStrategy::makeMove()
 	vector<int> brakeStartArray = { 0 };
 	vector<int> brakeLengthArray = { 0, 50 };
 	//vector<int> brakeLengthArray = { 0 };
-	vector<int> turnStartArray = { 0, 20, 40, 60 };
+	vector<int> turnStartArray = { 0, 40 };
 	//vector<int> turnLengthArray = { 0, 2, 3, 5, 10, 20, 30, 40, 50, 60, 80, 100 };
-	vector<int> turnLengthArray = { 0, 2, 3, 5, 10, 20, 40, 60, 80, 100 };
+	vector<int> turnLengthArray = { 0, 2, 5, 10, 20, 40, 60, 80, 100 };
 	for (int turn = -1; turn <= 1; turn += 2) {
 		for (int brakeStart : brakeStartArray) {
 			for (int brakeLength : brakeLengthArray) {
