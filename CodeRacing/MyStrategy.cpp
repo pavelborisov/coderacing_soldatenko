@@ -244,7 +244,7 @@ void MyStrategy::makeMove()
 		}
 	}
 	// Тупое нитро
-	if (self->getNitroChargeCount() > 0 && bestTurnStart > 50 && bestTurnLength < 30) {
+	if (self->getNitroChargeCount() > 0 && bestTurnStart > 0 && bestTurnLength <= 20) {
 		resultMove->setUseNitro(true);
 	}
 }
