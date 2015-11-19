@@ -5,6 +5,8 @@
 
 #include <cmath>
 
+#pragma warning(push, 3)
+
 using namespace model;
 
 Unit::Unit(long long id, double mass, double x, double y, double speedX, double speedY, double angle,
@@ -73,3 +75,5 @@ double Unit::getDistanceTo(const Unit& unit) const {
 }
 
 Unit::~Unit() { }
+
+#pragma warning(pop)

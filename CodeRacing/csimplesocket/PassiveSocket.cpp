@@ -42,7 +42,7 @@
  *----------------------------------------------------------------------------*/
 #include "PassiveSocket.h"
 
-
+#pragma warning(push, 3)
 
 CPassiveSocket::CPassiveSocket(CSocketType nType) : CSimpleSocket(nType)
 {
@@ -330,3 +330,5 @@ int32 CPassiveSocket::Send(const uint8 *pBuf, size_t bytesToSend)
 
     return m_nBytesSent;
 }
+
+#pragma warning(pop)

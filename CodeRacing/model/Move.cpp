@@ -1,5 +1,7 @@
 #include "Move.h"
 
+#pragma warning(push, 3)
+
 using namespace model;
 
 Move::Move()
@@ -52,3 +54,5 @@ bool Move::isSpillOil() const {
 void Move::setSpillOil(const bool spillOil) {
     this->spillOil = spillOil;
 }
+
+#pragma warning(pop)
