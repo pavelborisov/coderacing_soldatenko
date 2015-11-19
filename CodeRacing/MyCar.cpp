@@ -10,7 +10,8 @@ CMyCar::CMyCar() :
 	NitroCount(0),
 	NitroTicks(0),
 	NitroCooldown(0),
-	Type(0)
+	Type(0),
+	CollisionDetected(false)
 {
 }
 
@@ -24,7 +25,8 @@ CMyCar::CMyCar(const CMyCar& car) :
 	NitroCount(car.NitroCount),
 	NitroTicks(car.NitroTicks),
 	NitroCooldown(car.NitroCooldown),
-	Type(car.Type)
+	Type(car.Type),
+	CollisionDetected(car.CollisionDetected)
 {
 }
 
@@ -38,6 +40,7 @@ CMyCar::CMyCar(const model::Car& car) :
 	NitroCount(car.getNitroChargeCount()),
 	NitroTicks(car.getRemainingNitroTicks()),
 	NitroCooldown(car.getRemainingNitroCooldownTicks()),
-	Type(car.getType())
+	Type(car.getType()),
+	CollisionDetected(false)
 {
 }

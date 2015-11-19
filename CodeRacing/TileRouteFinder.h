@@ -8,11 +8,9 @@ public:
 	struct CMyTileWithScore;
 
 	std::vector<CMyTile> FindRoute(
-		const std::vector<CMyTile>& waypointTiles, int nextWaypointIndex, const CMyTile& currentTile,
-		const CMyTile& prevTile, const CMyTile& beforePrevTile ) const;
+		const std::vector<CMyTile>& waypointTiles, int nextWaypointIndex, const CMyTile& currentTile) const;
 
 private:
-	std::vector<CMyTile> findSingleRoute( const CMyTile& start, const CMyTile& end,
-		const CMyTile& prevTile, const CMyTile& beforePrevTile ) const;
+	std::vector<CMyTile> findSingleRoute( const CMyTile& start, const CMyTile& end) const;
 
 };

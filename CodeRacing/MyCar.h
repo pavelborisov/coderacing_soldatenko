@@ -14,6 +14,7 @@ struct CMyCar {
 	int NitroTicks;
 	int NitroCooldown;
 	int Type;
+	bool CollisionDetected;
 
 	CMyCar();
 	CMyCar(const CMyCar& car);

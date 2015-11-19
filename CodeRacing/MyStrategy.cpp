@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdlib>
+#include <set>
 #include <string>
 #include "Tools.h"
 
@@ -84,20 +85,15 @@ void MyStrategy::findTileRoute()
 {
 	const int currentX = static_cast<int>(self->getX() / game->getTrackTileSize());
 	const int currentY = static_cast<int>(self->getY() / game->getTrackTileSize());
-	CMyTile tile = CMyTile(currentX, currentY);
-	if (tile != currentTile) {
-		beforePrevTile = prevTile;
-		prevTile = currentTile;
-		currentTile = tile;
-		if (beforePrevTile == currentTile) beforePrevTile = CMyTile();
-	}
+	currentTile = CMyTile(currentX, currentY);
 
-	tileRoute = tileRouteFinder.FindRoute(waypointTiles, nextWaypointIndex, currentTile,
-		prevTile, beforePrevTile);
+	// TODO: —делать поиск маршрута в зависимости от направлени€ скорости машины в начальной точке.
+	tileRoute = tileRouteFinder.FindRoute(waypointTiles, nextWaypointIndex, currentTile);
 }
 
 void MyStrategy::makeMove()
 {
+	// TODO: Ѕаг с предсказанием торможени€ в повороте.
 	if (currentTick < game->getInitialFreezeDurationTicks()) {
 		resultMove->setEnginePower(1.0);
 		return;
@@ -105,8 +101,6 @@ void MyStrategy::makeMove()
 
 
 	static const int simulationTickDepth = 150;
-	CMyTile simTarget = tileRoute[3];
-	CVec2D simTargetPos = simTarget.ToVec();
 
 	double bestScore = INT_MIN;
 	int bestTurnStart = 0;
@@ -118,9 +112,7 @@ void MyStrategy::makeMove()
 	CMyCar bestSimCar;
 	vector<int> brakeStartArray = { 0 };
 	vector<int> brakeLengthArray = { 0, 50 };
-	//vector<int> brakeLengthArray = { 0 };
 	vector<int> turnStartArray = { 0, 40 };
-	//vector<int> turnLengthArray = { 0, 2, 3, 5, 10, 20, 30, 40, 50, 60, 80, 100 };
 	vector<int> turnLengthArray = { 0, 2, 5, 10, 20, 40, 60, 80, 100 };
 	for (int turn = -1; turn <= 1; turn += 2) {
 		for (int brakeStart : brakeStartArray) {
@@ -132,6 +124,8 @@ void MyStrategy::makeMove()
 						if (turnEnd > simulationTickDepth) continue;
 						//if (turnStart + turnLength > 100) break;
 						CMyCar simCar = car;
+						int nextRouteIndex = 1;
+						double routeScore = 0;
 						for (int tick = 0; tick < simulationTickDepth; tick++) {
 							model::Move simMove;
 							simMove.setEnginePower(1.0);
@@ -143,11 +137,17 @@ void MyStrategy::makeMove()
 							}
 							simCar = simulator.Predict(simCar, *world, simMove);
 
-							// TODO: —читать score по тому, насколько далеко мы продвинулись вдоль маршрута!
-							double score = -(simTargetPos - simCar.Position).Length() - 1 * tick;
-							if (brakeStart == 0 && brakeLength > 0) score -= 300;
-							//if (car.Speed.Length() < 12 && brakeStart == 0 && brakeLength > 0) score -= 500;
-							//score += (brakeStart == 0 && brakeLength > 0) ? -0.5 : 0;
+							CMyTile simCarTile(simCar.Position);
+							double score = 0;
+							if (simCarTile == tileRoute[nextRouteIndex]) {
+								nextRouteIndex = (nextRouteIndex + 1) % tileRoute.size();
+								routeScore += 1000;
+							}
+							score += routeScore;
+							score -= (tileRoute[nextRouteIndex].ToVec() - simCar.Position).Length();
+							//score -= tick;
+
+							if (brakeStart == 0 && brakeLength > 0) score -= 200;
 
 							if (score > bestScore) {
 								bestScore = score;
@@ -188,7 +188,6 @@ void MyStrategy::makeMove()
 	carCorners[2] = CVec2D(-halfWidth, -halfHeight);
 	carCorners[3] = CVec2D(-halfWidth, halfHeight);
 	draw.SetColor(0, 255, 255);
-	draw.FillCircle(simTargetPos, 20);
 	for (auto& corner : carCorners) {
 		corner.Rotate(simCar.Angle);
 		corner += simCar.Position;
@@ -203,11 +202,13 @@ void MyStrategy::makeMove()
 		resultMove->setBrake(true);
 	}
 
-
 	// “упой задний ход
+	// TODO: «апомнить, куда мы поворачивали колеса в последний раз и задним ходом делать наборот.
 	static int rear = 0;
 	if (rear == 0) {
-		if (world->getTick() > 200 && car.Speed.Length() < 2) {
+		if (self->getDurability() == 0) {
+			rear = -game->getCarReactivationTimeTicks() - 50;
+		} else if (world->getTick() > 200 && car.Speed.Length() < 2) {
 			rear = 150;
 		}
 	} else if (rear < 0) {

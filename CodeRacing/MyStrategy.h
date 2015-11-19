@@ -31,8 +31,6 @@ private:
 
 	CTileRouteFinder tileRouteFinder;
 	std::vector<CMyTile> waypointTiles;
-	CMyTile beforePrevTile;
-	CMyTile prevTile;
 	CMyTile currentTile;
 	std::vector<CMyTile> tileRoute;
 	int nextWaypointIndex;

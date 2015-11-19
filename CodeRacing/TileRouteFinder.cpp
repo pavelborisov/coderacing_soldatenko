@@ -31,38 +31,24 @@ bool operator < (const CTileRouteFinder::CMyTileWithScore& a, const CTileRouteFi
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 vector<CMyTile> CTileRouteFinder::FindRoute(
-	const vector<CMyTile>& waypointTiles, int nextWaypointIndex, const CMyTile& currentTile,
-	const CMyTile& prevTile, const CMyTile& beforePrevTile ) const
+	const vector<CMyTile>& waypointTiles, int nextWaypointIndex, const CMyTile& currentTile) const
 {
 	vector<CMyTile> route;
 	CMyTile start = currentTile;
-	CMyTile prev = prevTile;
-	CMyTile beforePrev = beforePrevTile;
 	for (size_t i = 0; i < waypointTiles.size(); i++) {
 		CMyTile end = waypointTiles[(nextWaypointIndex + i) % waypointTiles.size()];
-		vector<CMyTile> partialRoute = findSingleRoute(start, end, prev, beforePrev);
+		vector<CMyTile> partialRoute = findSingleRoute(start, end);
 		route.insert(route.end(), partialRoute.begin(), partialRoute.end());
-		//if (route.size() >= 10) {
-		//	return route;
-		//}
 		start = end;
-		if (route.size() >= 1) {
-			beforePrev = prev;
-			prev = route[route.size() - 1];
-		}
-		if (route.size() >= 2) {
-			beforePrev = route[route.size() - 2];
-		}
 	}
-	vector<CMyTile> finalPartialRoute = findSingleRoute(start, currentTile, prev, beforePrev);
+	vector<CMyTile> finalPartialRoute = findSingleRoute(start, currentTile);
 	route.insert(route.end(), finalPartialRoute.begin(), finalPartialRoute.end());
 	return route;
 }
 
 
 
-static const double smartDistance(const CMyTile& from, const CMyTile& to,
-	const CMyTile& bFrom, const CMyTile& bbFrom)
+static const double smartDistance(const CMyTile& from, const CMyTile& to)
 {
 	static const double noBefore = 1;
 	static const double straight = 1.5; //1;
@@ -71,64 +57,68 @@ static const double smartDistance(const CMyTile& from, const CMyTile& to,
 	static const double closeTurn = 3; //3;
 	static const double uTurn = 5; //4;
 
-	int dx = to.X - from.X;
-	int dy = to.Y - from.Y;
-	// Повернём так, чтобы dx == 1, что будет соответствовать направлению "вправо".
-	// Один angle = поворот на 90 градусов против часовой стрелки (если ось Y смотрит вниз).
-	int angle = getRotationAngle(dx, dy);
-	simpleRotate(dx, dy, angle);
-	assert(abs(dx) + abs(dy) == 1);
+	return noBefore;
+	from;
+	to;
 
-	//const CMyTile bFrom = cameFrom[from.X][from.Y];
-	if (!bFrom.IsCorrect()) {
-		return noBefore;
-	}
-	int dxb = from.X - bFrom.X;
-	int dyb = from.Y - bFrom.Y;
-	simpleRotate(dxb, dyb, angle);
-	// Отразим, чтобы dyb == 1, что будет соответствовать повороту "снизу направо"
-	bool mirror = dyb == -1;
-	if (mirror) dyb = -dyb;
-	assert(abs(dxb) + abs(dyb) == 1);
+	//int dx = to.X - from.X;
+	//int dy = to.Y - from.Y;
+	//// Повернём так, чтобы dx == 1, что будет соответствовать направлению "вправо".
+	//// Один angle = поворот на 90 градусов против часовой стрелки (если ось Y смотрит вниз).
+	//int angle = getRotationAngle(dx, dy);
+	//simpleRotate(dx, dy, angle);
+	//assert(abs(dx) + abs(dy) == 1);
 
-	//const CMyTile bbFrom = cameFrom[bFrom.X][bFrom.Y];
-	if (!bbFrom.IsCorrect()) {
-		return noBefore;
-	}
-	int dxbb = bFrom.X - bbFrom.X;
-	int dybb = bFrom.Y - bbFrom.Y;
-	simpleRotate(dxbb, dybb, angle);
-	// Мы можем ещё раз попробовать отразить, если предыдущий раз не было поворота, а сейчас есть.
-	mirror = mirror || ((dyb == 0) && (dybb == -1));
-	if (mirror) dybb = -dybb;
+	////const CMyTile bFrom = cameFrom[from.X][from.Y];
+	//if (!bFrom.IsCorrect()) {
+	//	return noBefore;
+	//}
+	//int dxb = from.X - bFrom.X;
+	//int dyb = from.Y - bFrom.Y;
+	//simpleRotate(dxb, dyb, angle);
+	//// Отразим, чтобы dyb == 1, что будет соответствовать повороту "снизу направо"
+	//bool mirror = dyb == -1;
+	//if (mirror) dyb = -dyb;
+	//assert(abs(dxb) + abs(dyb) == 1);
 
-	// Из-за нормализации поворота и отражений у нас могут быть всего пять случаев:
-	// ---- прямая дорога, соответствует dx = 1, dxb = 1, dxbb = 1
-	// 
-	// г--  поворот был давно, соответствует dx = 1, dxb = 1, dybb = 1
-	//
-	//  г-  поворот был недавно, соответствует dx = 1, dyb = 1, dybb = 1
-	//  |
-	//
-	// _г-  недавно было два переменных поворота, соответствует dx = 1, dyb = 1, dxbb = 1
-	//
-	//  г-  недавно было два одинаковых поворота. соответствует dx = 1, dyb = 1, dxbb = -1
-	//  L-
+	////const CMyTile bbFrom = cameFrom[bFrom.X][bFrom.Y];
+	//if (!bbFrom.IsCorrect()) {
+	//	return noBefore;
+	//}
+	//int dxbb = bFrom.X - bbFrom.X;
+	//int dybb = bFrom.Y - bbFrom.Y;
+	//simpleRotate(dxbb, dybb, angle);
+	//// Мы можем ещё раз попробовать отразить, если предыдущий раз не было поворота, а сейчас есть.
+	//mirror = mirror || ((dyb == 0) && (dybb == -1));
+	//if (mirror) dybb = -dybb;
 
-	assert(dx == 1);
-	if (dxb == 1 && dxbb == 1) {
-		return straight;
-	} else if (dxb == 1 && dybb == 1) {
-		return farTurn;
-	} else if (dyb == 1 && dybb == 1) {
-		return closeTurn;
-	} else if (dyb == 1 && dxbb == 1) {
-		return cornerCut;
-	} else if (dyb == 1 && dxbb == -1) {
-		return uTurn;
-	}
-	assert(false);
-	return 1;
+	//// Из-за нормализации поворота и отражений у нас могут быть всего пять случаев:
+	//// ---- прямая дорога, соответствует dx = 1, dxb = 1, dxbb = 1
+	//// 
+	//// г--  поворот был давно, соответствует dx = 1, dxb = 1, dybb = 1
+	////
+	////  г-  поворот был недавно, соответствует dx = 1, dyb = 1, dybb = 1
+	////  |
+	////
+	//// _г-  недавно было два переменных поворота, соответствует dx = 1, dyb = 1, dxbb = 1
+	////
+	////  г-  недавно было два одинаковых поворота. соответствует dx = 1, dyb = 1, dxbb = -1
+	////  L-
+
+	//assert(dx == 1);
+	//if (dxb == 1 && dxbb == 1) {
+	//	return straight;
+	//} else if (dxb == 1 && dybb == 1) {
+	//	return farTurn;
+	//} else if (dyb == 1 && dybb == 1) {
+	//	return closeTurn;
+	//} else if (dyb == 1 && dxbb == 1) {
+	//	return cornerCut;
+	//} else if (dyb == 1 && dxbb == -1) {
+	//	return uTurn;
+	//}
+	//assert(false);
+	//return 1;
 }
 
 static const double heuristic(const CMyTile& from, const CMyTile& to)
@@ -136,8 +126,7 @@ static const double heuristic(const CMyTile& from, const CMyTile& to)
 	return from.Euclidean(to);
 }
 
-vector<CMyTile> CTileRouteFinder::findSingleRoute(const CMyTile& start, const CMyTile& end,
-	const CMyTile& prevTile, const CMyTile& beforePrevTile ) const
+vector<CMyTile> CTileRouteFinder::findSingleRoute(const CMyTile& start, const CMyTile& end) const
 {
 	assert(!start.IsEmpty() && !end.IsEmpty());
 	if (start == end) {
@@ -155,12 +144,12 @@ vector<CMyTile> CTileRouteFinder::findSingleRoute(const CMyTile& start, const CM
 	vector<vector<double>> totalScore(sizeX, vector<double>(sizeY, INT_MAX));
 	vector<vector<double>> distance(sizeX, vector<double>(sizeY, INT_MAX));
 
-	if (prevTile.IsCorrect()) {
-		closedSet[prevTile.X][prevTile.Y] = true;
-		if (beforePrevTile.IsCorrect()) {
-			closedSet[beforePrevTile.X][beforePrevTile.Y] = true;
-		}
-	}
+	//if (prevTile.IsCorrect()) {
+	//	closedSet[prevTile.X][prevTile.Y] = true;
+	//	if (beforePrevTile.IsCorrect()) {
+	//		closedSet[beforePrevTile.X][beforePrevTile.Y] = true;
+	//	}
+	//}
 
 	distance[start.X][start.Y] = 0;
 	totalScore[start.X][start.Y] = distance[start.X][start.Y] + heuristic(start, end);
@@ -190,9 +179,9 @@ vector<CMyTile> CTileRouteFinder::findSingleRoute(const CMyTile& start, const CM
 			if (closedSet[neighbor.X][neighbor.Y]) {
 				continue;
 			}
-			const CMyTile bFrom = current == start ? prevTile : cameFrom[current.X][current.Y];
-			const CMyTile bbFrom = current == start ? beforePrevTile : ( bFrom == start ? prevTile : cameFrom[bFrom.X][bFrom.Y] );
-			const double neighborDistance = distance[current.X][current.Y] + smartDistance(current, neighbor, bFrom, bbFrom);
+			//const CMyTile bFrom = current == start ? prevTile : cameFrom[current.X][current.Y];
+			//const CMyTile bbFrom = current == start ? beforePrevTile : ( bFrom == start ? prevTile : cameFrom[bFrom.X][bFrom.Y] );
+			const double neighborDistance = distance[current.X][current.Y] + smartDistance(current, neighbor);
 			const double neighborScore = neighborDistance + heuristic(neighbor, end);
 			if (!openSet[neighbor.X][neighbor.Y]) {
 				// Соседа нет в openSet - добавляем.

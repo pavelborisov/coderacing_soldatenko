@@ -66,6 +66,7 @@ CMyCar CSimulator::Predict(const CMyCar& startCar, const model::World& /*world*/
 		car.Speed.X = 0;
 		car.Speed.Y = 0;
 		car.AngularSpeed = 0;
+		car.CollisionDetected = true;
 		return car;
 	}
 	const double tileSize = CMyTile::TileSize;
@@ -112,6 +113,7 @@ CMyCar CSimulator::Predict(const CMyCar& startCar, const model::World& /*world*/
 		car.Speed.X = 0;
 		car.Speed.Y = 0;
 		car.AngularSpeed = 0;
+		car.CollisionDetected = true;
 		return car;
 	}
 	///////////////

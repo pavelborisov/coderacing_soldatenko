@@ -35,3 +35,9 @@ struct CMyTile {
 	static int SizeY() { return TileTypesXY[0].size(); }
 
 };
+
+inline bool operator < (const CMyTile& a, const CMyTile& b)
+{
+	if (a.X != b.X) return a.X < b.X;
+	return a.Y < b.Y;
+}
