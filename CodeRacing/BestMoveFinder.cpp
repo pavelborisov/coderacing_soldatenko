@@ -129,7 +129,7 @@ void CBestMoveFinder::processMoveIndex(size_t moveIndex, const std::vector<CMove
 				// Подсчёт очков за пройденную клетку маршрута. TODO: переделать
 				if (CMyTile(current.Car.Position) == tileRoute[current.NextRouteIndex]) {
 					current.RouteScore += 800;
-					current.NextRouteIndex++;
+					current.NextRouteIndex = (current.NextRouteIndex + 1) % tileRoute.size();
 				}
 				// Отсечка по коллизиям. TODO: не останавливаться, если коллизия была "мягкая"
 				if (current.Car.CollisionDetected) {
@@ -178,6 +178,7 @@ double CBestMoveFinder::evaluate(const CState& state, const std::vector<CMoveWit
 		score += state.Car.Position.Y - (carTile.Y) * 800;
 	} else {
 		// Где-то далеко мы находимся.
+		//score -= (state.Car.Position - carTile.ToVec()).Length();
 		score -= 0; // Пока не штрафуем.
 	}
 	// Дополнительный штраф за то, что тормозим первым действием.

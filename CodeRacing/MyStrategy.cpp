@@ -216,7 +216,7 @@ void MyStrategy::doDraw()
 	draw.FillCircle(nextWaypoint, 50);
 
 	draw.SetColor(0, 255, 0);
-	for (size_t i = 1; i < tileRoute.size(); i++) {
+	for (size_t i = 1; i < min(10U, tileRoute.size()); i++) {
 		CVec2D from = tileRoute[i - 1].ToVec();
 		CVec2D to = tileRoute[i].ToVec();
 		draw.DrawLine(from, to);
