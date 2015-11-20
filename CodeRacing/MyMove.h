@@ -11,6 +11,9 @@ struct CMyMove {
 	CMyMove(int Turn, int Brake) : Turn(Turn), Brake(Brake) {}
 	CMyMove(int Turn, int Brake, int Engine) : Turn(Turn), Brake(Brake), Engine(Engine) {}
 
+	bool operator == (const CMyMove& m) const { return Turn == m.Turn && Brake == m.Brake && Engine == m.Engine; }
+	bool operator != (const CMyMove& m) const { return Turn != m.Turn || Brake != m.Brake || Engine != m.Engine; }
+
 	inline model::Move Convert() const;
 };
 

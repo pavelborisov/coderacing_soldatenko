@@ -39,10 +39,28 @@ public:
 	CResult Process();
 
 private:
+	struct CState {
+		CMyCar Car;
+		int Tick = 0;
+		int NextRouteIndex = 1;
+		double RouteScore = 0;
+		CState(const CMyCar& Car, int Tick, int NextRouteIndex, double RouteScore) : Car(Car), Tick(Tick), NextRouteIndex(NextRouteIndex), RouteScore(RouteScore) {}
+	};
+
 	const CMyCar& car;
 	const model::World& world;
 	const model::Game& game;
 	const std::vector<CMyTile>& tileRoute;
 	const CSimulator& simulator;
+
+	int simulationTicks = 0;
+	double bestScore = INT_MIN;
+	std::vector<CMoveWithDuration> bestMoveList;
+	std::vector<CState> stateCache;
+
+	static const std::vector<std::pair<std::vector<CMyMove>, std::vector<int>>> allMovesWithLengths;
+
+	void processMoveIndex(size_t moveIndex, const std::vector<CMoveWithDuration>& prevMoveList);
+	double evaluate(const CState& state) const;
 
 };
