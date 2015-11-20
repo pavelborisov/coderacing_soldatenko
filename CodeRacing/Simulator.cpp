@@ -115,6 +115,8 @@ CMyCar CSimulator::Predict(const CMyCar& startCar, const model::World& /*world*/
 		car.CollisionDetected = true;
 		return car;
 	}
+	// —брасываем флаг коллизии.
+	car.CollisionDetected = false;
 	///////////////
 
 	// ≈диничный вектор направленный туда, куда смотрит автомобиль.
