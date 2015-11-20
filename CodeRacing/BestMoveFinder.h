@@ -10,13 +10,21 @@
 
 class CBestMoveFinder {
 public:
+	// Действие и его время действия - первый и последний(не включительно) тики
+	struct CMoveWithDuration{
+		CMyMove Move;
+		int Start = 0;
+		int End = 0;
+		CMoveWithDuration(const CMyMove& Move, int Start, int End) : Move(Move), Start(Start), End(End) {}
+	};
+
 	struct CResult {
 		// Успех.
 		bool Success = false;
 		// То действие, которое лучше всего совершить сейчас.
 		CMyMove CurrentMove;
-		// Последовательность действий - массив из пар (действие, последний тик действия (не включительно)).
-		std::vector<std::pair<CMyMove, int>> MoveList;
+		// Последовательность действий - массив из действий с их временами действия
+		std::vector<CMoveWithDuration> MoveList;
 		// Некоторая функция оценки всей последовательности действий.
 		double Score;
 	};

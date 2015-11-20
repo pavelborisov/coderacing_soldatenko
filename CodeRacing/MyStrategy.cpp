@@ -167,12 +167,12 @@ void MyStrategy::makeMove()
 	// Тупое нитро.
 	// Сколько тиков поворачиваем.
 	int turnTicks = 0;
-	for (const auto& moveWithLength : result.MoveList) {
-		if (moveWithLength.first.Turn != 0) {
-			turnTicks += moveWithLength.second;
+	for (const auto& moveWithDuration : result.MoveList) {
+		if (moveWithDuration.Move.Turn != 0) {
+			turnTicks += moveWithDuration.End - moveWithDuration.Start;
 		}
 	}
-	int totalTicks = result.MoveList.back().second;
+	int totalTicks = result.MoveList.back().End;
 	if (self->getNitroChargeCount() > 0 && self->getRemainingNitroCooldownTicks() == 0 && self->getRemainingNitroTicks() == 0
 		&& turnTicks < 20 && totalTicks > 120)
 	{

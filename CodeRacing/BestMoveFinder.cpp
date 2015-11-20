@@ -201,6 +201,9 @@ CBestMoveFinder::CResult CBestMoveFinder::Process()
 		result.Success = true;
 	}
 	result.Score = bestScore;
-	result.MoveList = { {bestFirstMove, bestFirstTick}, {bestSecondMove, bestSecondTick}, {bestThirdMove, bestThirdTick} };
+	result.MoveList = {
+		{bestFirstMove, 0, bestFirstTick},
+		{bestSecondMove, bestFirstTick, bestSecondTick - bestFirstTick},
+		{bestThirdMove, bestSecondTick, bestThirdTick - bestSecondTick} };
 	return result;
 }
