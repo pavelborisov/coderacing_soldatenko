@@ -11,22 +11,22 @@ using namespace std;
 const vector<pair<vector<CMyMove>, vector<int>>> CBestMoveFinder::allMovesWithLengths = {
 	// Первое множество действий - езда прямо или с поворотами.
 	{
-		{ {0, 0}, {1, 0}, {-1, 0} },
+		{ { 0, 0 },{ 1, 0 },{ -1, 0 } },
 		{ 0, 5, 10, 20, 30 }
 	},
 	// Второе множество действий - тормозить или нет.
 	{
-		{ {0, 0}, {0, 1} },
+		{ { 0, 0 },{ 0, 1 } },
 		{ 0, 30 }
 	},
 	// Третье множество действий - езда прямо или с поворотами.
 	{
-		{ {1, 0}, {-1, 0} },
+		{ { 1, 0 },{ -1, 0 } },
 		{ 0, 10, 25, 50 }
 	},
 	// Четвёртое действие - просто ехать по прямой (пока не упрёмся в maxTick)
 	{
-		{ {0, 0} },
+		{ { 0, 0 } },
 		{ 1000 }
 	}
 };
@@ -108,6 +108,7 @@ CBestMoveFinder::CResult CBestMoveFinder::Process()
 
 void CBestMoveFinder::processMoveIndex(size_t moveIndex, const std::vector<CMoveWithDuration>& prevMoveList)
 {
+	const bool lastMove = moveIndex == allMovesWithLengths.size() - 1;
 	const vector<CMyMove>& moveArray = allMovesWithLengths[moveIndex].first;
 	const vector<int>& lengthsArray = allMovesWithLengths[moveIndex].second;
 
@@ -134,23 +135,24 @@ void CBestMoveFinder::processMoveIndex(size_t moveIndex, const std::vector<CMove
 				if (current.Car.CollisionDetected) {
 					break;
 				}
+				if (lastMove) {
+					vector<CMoveWithDuration> moveList = prevMoveList;
+					moveList.push_back({ move, start, current.Tick });
+					double score = evaluate(current, moveList);
+					if (score > bestScore) {
+						bestScore = score;
+						bestMoveList = moveList;
+					}
+				}
 			}
 
-			vector<CMoveWithDuration> moveList = prevMoveList;
-			moveList.push_back({ move, start, end });
-			if (moveIndex < allMovesWithLengths.size() - 1) {
+			if (!lastMove) {
 				// Запускаем обработку следующего действия.
+				vector<CMoveWithDuration> moveList = prevMoveList;
+				moveList.push_back({ move, start, end });
 				stateCache.push_back(current);
 				processMoveIndex(moveIndex + 1, moveList);
 				stateCache.pop_back();
-			} else {
-				// Это было последнее действие. Проверяем на улучшение функции оценки и сохраняем последовательность действий.
-				assert(moveIndex == allMovesWithLengths.size() - 1);
-				double score = evaluate(current);
-				if (score > bestScore) {
-					bestScore = score;
-					bestMoveList = moveList;
-				}
 			}
 
 			if (end == maxTick) {
@@ -161,7 +163,7 @@ void CBestMoveFinder::processMoveIndex(size_t moveIndex, const std::vector<CMove
 	}
 }
 
-double CBestMoveFinder::evaluate(const CState& state) const
+double CBestMoveFinder::evaluate(const CState& state, const std::vector<CMoveWithDuration>& /*moveList*/) const
 {
 	CMyTile carTile(state.Car.Position); // В каком тайле оказались.
 	CMyTile targetTile(tileRoute[state.NextRouteIndex]); // Какой следующий тайл по маршруту.
@@ -178,5 +180,9 @@ double CBestMoveFinder::evaluate(const CState& state) const
 		// Где-то далеко мы находимся.
 		score -= 0; // Пока не штрафуем.
 	}
+	// Дополнительный штраф за то, что тормозим первым действием.
+	//if (moveList[0].Move.Brake == 1) {
+	//	score -= 800;
+	//}
 	return score;
 }

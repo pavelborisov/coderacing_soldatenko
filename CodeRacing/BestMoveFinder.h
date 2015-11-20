@@ -59,9 +59,9 @@ private:
 	std::vector<CState> stateCache;
 
 	static const std::vector<std::pair<std::vector<CMyMove>, std::vector<int>>> allMovesWithLengths;
-	static const int maxTick = 200;
+	static const int maxTick = 175;
 
 	void processMoveIndex(size_t moveIndex, const std::vector<CMoveWithDuration>& prevMoveList);
-	double evaluate(const CState& state) const;
+	double evaluate(const CState& state, const std::vector<CMoveWithDuration>& moveList) const;
 
 };
