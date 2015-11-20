@@ -1,6 +1,7 @@
 #include "BestMoveFinder.h"
 
 #include <assert.h>
+#include <algorithm>
 #include "DrawPlugin.h"
 #include "Log.h"
 
@@ -23,6 +24,11 @@ const vector<pair<vector<CMyMove>, vector<int>>> CBestMoveFinder::allMovesWithLe
 		{ {0, 0}, {1, 0}, {-1, 0} },
 		{ 0, 10, 25, 50, 100 }
 	},
+	// „етвЄртое действие - просто ехать по пр€мой (пока не упрЄмс€ в maxTick)
+	{
+		{ {0, 0} },
+		{ 1000 }
+	}
 };
 
 CBestMoveFinder::CBestMoveFinder(
@@ -113,7 +119,7 @@ void CBestMoveFinder::processMoveIndex(size_t moveIndex, const std::vector<CMove
 				// ≈сли у действи€ длина == 0, то нам не нужно считать несколько действий. ’ватит только первого из массива.
 				continue;
 			}
-			const int end = start + length;
+			const int end = min(maxTick, start + length);
 			assert(current.Tick <= end); // ѕроверка правильного пор€дка в массиве lenghtsArray
 			// ѕродолжаем симулировать с того места, откуда закончили в предыдущий раз.
 			for (; current.Tick < end; current.Tick++) {
@@ -145,6 +151,11 @@ void CBestMoveFinder::processMoveIndex(size_t moveIndex, const std::vector<CMove
 					bestScore = score;
 					bestMoveList = moveList;
 				}
+			}
+
+			if (end == maxTick) {
+				// Ќет смысла больше увеличивать длину действи€, т.к. мы уже итак досчитали до ограничени€ по максимальному кол-ву тиков.
+				break;
 			}
 		}
 	}
