@@ -108,6 +108,9 @@
     <ClCompile Include="TileRouteFinder.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="BestMoveFinder.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="MyStrategy.h">
@@ -213,6 +216,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Tools.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MyMove.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="BestMoveFinder.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

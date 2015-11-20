@@ -89,6 +89,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="BestMoveFinder.cpp" />
     <ClCompile Include="DrawPlugin.cpp" />
     <ClCompile Include="Log.cpp" />
     <ClCompile Include="model\Bonus.cpp" />
@@ -118,6 +119,7 @@
     <ClCompile Include="Vec2D.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="BestMoveFinder.h" />
     <ClInclude Include="DrawPlugin.h" />
     <ClInclude Include="Log.h" />
     <ClInclude Include="model\Bonus.h" />
@@ -138,6 +140,7 @@
     <ClInclude Include="model\Unit.h" />
     <ClInclude Include="model\World.h" />
     <ClInclude Include="MyCar.h" />
+    <ClInclude Include="MyMove.h" />
     <ClInclude Include="MyStrategy.h" />
     <ClInclude Include="MyTile.h" />
     <ClInclude Include="RemoteProcessClient.h" />
