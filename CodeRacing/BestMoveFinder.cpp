@@ -52,8 +52,22 @@ CBestMoveFinder::CResult CBestMoveFinder::Process()
 	bestMoveList.clear();
 	stateCache.push_back({car, 0, 1, 0});
 
+	CResult result;
 	processMoveIndex(0, vector<CMoveWithDuration>());
+	if (bestMoveList.size() == 0) {
+		result.Success = false;
+		return result;
+	}
 	assert(bestMoveList.size() == allMovesWithLengths.size());
+	result.Success = true;
+	result.MoveList = bestMoveList;
+	for (const auto& m : bestMoveList) {
+		if (m.End > 0) {
+			result.CurrentMove = m.Move;
+			break;
+		}
+	}
+	result.Score = bestScore;
 
 	/////////////////////////////// log
 	static int totalSimulationTicks = 0;
@@ -93,16 +107,6 @@ CBestMoveFinder::CResult CBestMoveFinder::Process()
 		CDrawPlugin::Instance().FillCircle(corner, 5);
 	}
 
-	////////////////////////////////////// Собираем результат
-	CResult result;
-	result.MoveList = bestMoveList;
-	for (const auto& m : bestMoveList) {
-		if (m.End > 0) {
-			result.CurrentMove = m.Move;
-			break;
-		}
-	}
-	result.Score = bestScore;
 	return result;
 }
 
@@ -163,27 +167,30 @@ void CBestMoveFinder::processMoveIndex(size_t moveIndex, const std::vector<CMove
 	}
 }
 
-double CBestMoveFinder::evaluate(const CState& state, const std::vector<CMoveWithDuration>& /*moveList*/) const
+double CBestMoveFinder::evaluate(const CState& state, const std::vector<CMoveWithDuration>& moveList) const
 {
 	CMyTile carTile(state.Car.Position); // В каком тайле оказались.
 	CMyTile targetTile(tileRoute[state.NextRouteIndex]); // Какой следующий тайл по маршруту.
 	double score = state.RouteScore; // Очки за все предыдущие полностью пройденные тайлы из маршрута.
-	if (carTile.X == targetTile.X + 1) {
-		score += (carTile.X + 1) * 800 - state.Car.Position.X;
-	} else if (carTile.X == targetTile.X - 1) {
+	const int dx = targetTile.X - carTile.X;
+	const int dy = targetTile.Y - carTile.Y;
+	if (dx == 1 && dy == 0) {
 		score += state.Car.Position.X - (carTile.X) * 800;
-	} else if (carTile.Y == targetTile.Y + 1) {
-		score += (carTile.Y + 1) * 800 - state.Car.Position.Y;
-	} else if (carTile.Y == targetTile.Y - 1) {
+	} else if (dx == -1 && dy == 0) {
+		score += (carTile.X + 1) * 800 - state.Car.Position.X; 
+	} else if (dx == 0 && dy == 1) {
 		score += state.Car.Position.Y - (carTile.Y) * 800;
+	} else if (dx == 0 && dy == -1) {
+		score += (carTile.Y + 1) * 800 - state.Car.Position.Y; 
 	} else {
 		// Где-то далеко мы находимся.
 		//score -= (state.Car.Position - carTile.ToVec()).Length();
+		//score -= 800;
 		score -= 0; // Пока не штрафуем.
 	}
 	// Дополнительный штраф за то, что тормозим первым действием.
-	//if (moveList[0].Move.Brake == 1) {
-	//	score -= 800;
-	//}
+	if (moveList[0].Move.Brake == 1) {
+		score -= 800;
+	}
 	return score;
 }

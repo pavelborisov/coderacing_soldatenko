@@ -120,40 +120,49 @@ void MyStrategy::makeMove()
 	// Тупой задний ход
 	// TODO: Запомнить, куда мы поворачивали колеса в последний раз и задним ходом делать наборот.
 	static int rear = 0;
+	double angleToTarget = (tileRoute[1].ToVec() - car.Position).GetAngle();
+	double angle = angleToTarget - car.Angle;
+	normalizeAngle(angle);
 	if (rear == 0) {
 		if (self->getDurability() == 0) {
 			rear = -game->getCarReactivationTimeTicks() - 50;
-		} else if (world->getTick() > 200 && car.Speed.Length() < 2) {
-			rear = 150;
+		} else if (world->getTick() > 200 && car.Speed.Length() < 1) {
+			rear = 120 + static_cast<int>(self->getEnginePower() / game->getCarEnginePowerChangePerTick());
+		}
+		// Когда симулятор хз что делать.
+		if (!result.Success || result.MoveList.back().End < 5) {
+			CDrawPlugin::Instance().FillCircle(car.Position, 50);
+			if (angle > PI / 2) resultMove->setBrake(true);
+			resultMove->setEnginePower(1.0);
+			resultMove->setWheelTurn(angle * 32 / PI);
 		}
 	} else if (rear < 0) {
 		rear++;
 	} else if (rear > 0) {
-		double angle = car.Angle - (car.Position - tileRoute[1].ToVec()).GetAngle();
-		normalizeAngle(angle);
-
-		if (rear < 30) {
-			resultMove->setBrake(true);
+		resultMove->setBrake(false); 
+		if (rear < 40) {
 			resultMove->setEnginePower(1.0);
-			resultMove->setWheelTurn(angle);
+			if (rear > 20) {
+				resultMove->setBrake(true);
+			}
+			resultMove->setWheelTurn(angle > 0 ? 1 : -1);
 		} else {
-			resultMove->setBrake(false);
 			resultMove->setEnginePower(-1.0);
-			resultMove->setWheelTurn(-angle);
+			resultMove->setWheelTurn(angle > 0 ? -1 : 1);
 		}
 		rear--;
-		if (rear == 0) rear = -150;
+		if (rear == 0) rear = -50;
 	}
 
 	for (auto otherCar : world->getCars()) {
 		if (otherCar.getPlayerId() != self->getPlayerId()) {
-			double angle = self->getAngleTo(otherCar);
+			double angleToCar = self->getAngleTo(otherCar);
 			double dist = self->getDistanceTo(otherCar);
 			// Тупая стрелялка
 			if (self->getProjectileCount() > 0
-				&& (abs(angle) < PI / 90 && dist < 1500)
-					||(abs(angle) < PI/30 && dist < 700)
-					||(abs(angle) < PI/9 && dist < 300 ))
+				&& (abs(angleToCar) < PI / 90 && dist < 1500)
+					||(abs(angleToCar) < PI/30 && dist < 700)
+					||(abs(angleToCar) < PI/9 && dist < 300 ))
 			{
 					resultMove->setThrowProjectile(true);
 			}
@@ -166,17 +175,19 @@ void MyStrategy::makeMove()
 	// TODO: Проверка на прямые участки.
 	// Тупое нитро.
 	// Сколько тиков поворачиваем.
-	int turnTicks = 0;
-	for (const auto& moveWithDuration : result.MoveList) {
-		if (moveWithDuration.Move.Turn != 0) {
-			turnTicks += moveWithDuration.End - moveWithDuration.Start;
+	if (result.Success) {
+		int turnTicks = 0;
+		for (const auto& moveWithDuration : result.MoveList) {
+			if (moveWithDuration.Move.Turn != 0) {
+				turnTicks += moveWithDuration.End - moveWithDuration.Start;
+			}
 		}
-	}
-	int totalTicks = result.MoveList.back().End;
-	if (self->getNitroChargeCount() > 0 && self->getRemainingNitroCooldownTicks() == 0 && self->getRemainingNitroTicks() == 0
-		&& turnTicks < 20 && totalTicks > 120)
-	{
-		resultMove->setUseNitro(true);
+		int totalTicks = result.MoveList.back().End;
+		if (self->getNitroChargeCount() > 0 && self->getRemainingNitroCooldownTicks() == 0 && self->getRemainingNitroTicks() == 0
+			&& turnTicks < 20 && totalTicks > 120)
+		{
+			resultMove->setUseNitro(true);
+		}
 	}
 }
 
@@ -222,23 +233,3 @@ void MyStrategy::doDraw()
 		draw.DrawLine(from, to);
 	}
 }
-
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//// Отладночное руление для карты map01 и места первого игрока.
-//if (world.getTick() >= game.getInitialFreezeDurationTicks()) {
-//	move.setEnginePower(0.9);
-//
-//	if (world.getTick() == 195) {
-//		move.setUseNitro(true);
-//	}
-//
-//	if (world.getTick() >= 230 && world.getTick() < 300) {
-//		move.setWheelTurn(1.0);
-//	} else if (world.getTick() >= 300 && world.getTick() < 341) {
-//		move.setWheelTurn(-1.0);
-//	}
-//
-//	if (world.getTick() >= 450 && world.getTick() <= 600) {
-//		move.setBrake(true);
-//	}
-//}
