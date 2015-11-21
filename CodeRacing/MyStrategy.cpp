@@ -123,35 +123,35 @@ void MyStrategy::makeMove()
 	double angleToTarget = (tileRoute[1].ToVec() - car.Position).GetAngle();
 	double angle = angleToTarget - car.Angle;
 	normalizeAngle(angle);
+	// Когда симулятор хз что делать.
+	if (!result.Success || result.MoveList.back().End < 5) {
+		CDrawPlugin::Instance().SetColor(128, 128, 128);
+		CDrawPlugin::Instance().FillCircle(car.Position, 50);
+		resultMove->setEnginePower(1.0);
+		resultMove->setWheelTurn(angle * 32 / PI);
+	}
 	if (rear == 0) {
 		if (self->getDurability() == 0) {
 			rear = -game->getCarReactivationTimeTicks() - 50;
 		} else if (world->getTick() > 200 && car.Speed.Length() < 1) {
 			rear = 120 + static_cast<int>(self->getEnginePower() / game->getCarEnginePowerChangePerTick());
 		}
-		// Когда симулятор хз что делать.
-		if (!result.Success || result.MoveList.back().End < 5) {
-			CDrawPlugin::Instance().FillCircle(car.Position, 50);
-			if (angle > PI / 2) resultMove->setBrake(true);
-			resultMove->setEnginePower(1.0);
-			resultMove->setWheelTurn(angle * 32 / PI);
-		}
 	} else if (rear < 0) {
 		rear++;
 	} else if (rear > 0) {
-		resultMove->setBrake(false); 
-		if (rear < 40) {
-			resultMove->setEnginePower(1.0);
-			if (rear > 20) {
-				resultMove->setBrake(true);
-			}
-			resultMove->setWheelTurn(angle > 0 ? 1 : -1);
+		resultMove->setBrake(false);
+		CDrawPlugin::Instance().SetColor(128, 0, 128);
+		CDrawPlugin::Instance().FillCircle(car.Position, 50);
+		if (rear < 30) {
+			resultMove->setEnginePower(0);
+			resultMove->setBrake(true);
+			resultMove->setWheelTurn(0);
 		} else {
 			resultMove->setEnginePower(-1.0);
 			resultMove->setWheelTurn(angle > 0 ? -1 : 1);
 		}
 		rear--;
-		if (rear == 0) rear = -50;
+		if (rear == 0) rear = -120;
 	}
 
 	for (auto otherCar : world->getCars()) {
