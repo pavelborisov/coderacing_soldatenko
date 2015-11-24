@@ -159,7 +159,14 @@ void MyStrategy::makeMove()
 	// TODO: Проверка на прямые участки.
 	// Тупое нитро.
 	// Сколько тиков поворачиваем.
-	if (result.Success) {
+	int enemiesWithProjectiles = 0;
+	for (const auto& c : enemyCars) {
+		if (c.getProjectileCount() > 0) {
+			enemiesWithProjectiles++;
+		}
+	}
+	const int minTicksForNitro = enemiesWithProjectiles < 2 ? 0 : 400;
+	if (result.Success && world->getTick() >= minTicksForNitro) {
 		int turnTicks = 0;
 		for (const auto& moveWithDuration : result.MoveList) {
 			if (moveWithDuration.Move.Turn != 0) {
@@ -168,7 +175,7 @@ void MyStrategy::makeMove()
 		}
 		int totalTicks = result.MoveList.back().End;
 		if (self->getNitroChargeCount() > 0 && self->getRemainingNitroCooldownTicks() == 0 && self->getRemainingNitroTicks() == 0
-			&& turnTicks < 20 && totalTicks > 120)
+			&& turnTicks <= 15 && totalTicks > 120)
 		{
 			resultMove->setUseNitro(true);
 		}
@@ -186,7 +193,6 @@ void MyStrategy::predictEnemyPositions()
 			predictions[0] = CMyCar(otherCar);
 			model::Move simpleMove;
 			simpleMove.setEnginePower(otherCar.getEnginePower());
-			simpleMove.setWheelTurn(otherCar.getWheelTurn());
 			for (int tick = 1; tick <= predictionLength; tick++) {
 				predictions[tick] = simulator.Predict(predictions[tick - 1], *world, simpleMove);
 				//CDrawPlugin::Instance().FillCircle(predictions[tick].Position, 5);
@@ -222,7 +228,8 @@ void MyStrategy::processShooting()
 			// TODO: Нормальная проверка коллизий.
 			for (size_t enemyIndex = 0; enemyIndex < enemyPredictions.size(); enemyIndex++ ) {
 				const model::Car& enemyCar = enemyCars[enemyIndex];
-				if (enemyCar.isFinishedTrack() || enemyCar.getDurability() == 0) {
+				const double enemyDurability = enemyCar.getDurability();
+				if (enemyCar.isFinishedTrack() || enemyCar.getDurability() <= 1e-10) {
 					continue;
 				}
 				const CVec2D& enemyPos = enemyPredictions[enemyIndex][tick].Position;
