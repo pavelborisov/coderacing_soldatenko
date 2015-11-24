@@ -122,6 +122,7 @@
     <ClInclude Include="BestMoveFinder.h" />
     <ClInclude Include="DrawPlugin.h" />
     <ClInclude Include="Log.h" />
+    <ClInclude Include="LowResMap.h" />
     <ClInclude Include="model\Bonus.h" />
     <ClInclude Include="model\BonusType.h" />
     <ClInclude Include="model\Car.h" />
