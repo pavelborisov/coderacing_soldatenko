@@ -75,7 +75,6 @@ CBestMoveFinder::CResult CBestMoveFinder::Process()
 		result.Success = false;
 		return result;
 	}
-	assert(bestMoveList.size() == allMovesWithLengths.size());
 	result.Success = true;
 	result.MoveList = bestMoveList;
 	for (const auto& m : bestMoveList) {
