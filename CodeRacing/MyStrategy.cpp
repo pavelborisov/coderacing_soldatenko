@@ -7,7 +7,6 @@
 #include <set>
 #include <string>
 #include <assert.h>
-#include "BestMoveFinder.h"
 #include "Tools.h"
 
 using namespace model;
@@ -125,8 +124,9 @@ void MyStrategy::makeMove()
 	predictEnemyPositions();
 
 	// TODO: ќценивать предыдущую лучшую последовательность - может, стоит еЄ продолжить?
-	CBestMoveFinder bestMoveFinder(car, *world, *game, tileRoute, simulator);
+	CBestMoveFinder bestMoveFinder(car, *world, *game, tileRoute, simulator, previousResult);
 	CBestMoveFinder::CResult result = bestMoveFinder.Process();
+	previousResult = result;
 	*resultMove = result.CurrentMove.Convert();
 	processShooting();
 	processOil();

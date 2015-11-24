@@ -34,7 +34,8 @@ public:
 		const model::World& world,
 		const model::Game& game,
 		const std::vector<CMyTile>& tileRoute,
-		const CSimulator& simulator);
+		const CSimulator& simulator,
+		const CBestMoveFinder::CResult& previousResult);
 	
 	CResult Process();
 
@@ -57,6 +58,7 @@ private:
 	const model::Game& game;
 	const std::vector<CMyTile>& tileRoute;
 	const CSimulator& simulator;
+	std::vector<CMoveWithDuration> correctedPreviousMoveList;
 
 	std::vector<model::Bonus> bonuses;
 	std::vector<CVec2D> bonusPositions;
@@ -69,6 +71,7 @@ private:
 	static const std::vector<std::pair<std::vector<CMyMove>, std::vector<int>>> allMovesWithLengths;
 	static const int maxTick = 175;
 
+	void processPreviousMoveList();
 	void processMoveIndex(size_t moveIndex, const std::vector<CMoveWithDuration>& prevMoveList);
 	void processBonus(CState& state);
 	double evaluate(const CState& state) const;

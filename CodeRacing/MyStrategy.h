@@ -5,6 +5,7 @@
 
 #include "Strategy.h"
 
+#include "BestMoveFinder.h"
 #include "DrawPlugin.h"
 #include "Log.h"
 #include "MyCar.h"
@@ -39,6 +40,7 @@ private:
 	CMyCar prevPrediction;
 	CMyCar car;
 	CMyCar prediction;
+	CBestMoveFinder::CResult previousResult;
 
 	std::vector<std::vector<CMyCar>> enemyPredictions;
 	std::vector<model::Car> enemyCars;

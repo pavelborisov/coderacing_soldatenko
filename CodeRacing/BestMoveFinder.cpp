@@ -36,7 +36,8 @@ CBestMoveFinder::CBestMoveFinder(
 		const model::World& world,
 		const model::Game& game,
 		const std::vector<CMyTile>& tileRoute,
-		const CSimulator& simulator) :
+		const CSimulator& simulator,
+		const CBestMoveFinder::CResult& previousResult ) :
 	car(car),
 	world(world),
 	game(game),
@@ -47,6 +48,18 @@ CBestMoveFinder::CBestMoveFinder(
 	for (const auto& b : bonuses) {
 		bonusPositions.push_back(CVec2D(b.getX(), b.getY()));
 	}
+
+	correctedPreviousMoveList = previousResult.MoveList;
+
+	for (int i = correctedPreviousMoveList.size() - 1; i >= 0; i--) {
+		correctedPreviousMoveList[i].Start--;
+		if (correctedPreviousMoveList[i].End < maxTick) {
+			correctedPreviousMoveList[i].End--;
+		}
+		if (correctedPreviousMoveList[i].End < 0) {
+			correctedPreviousMoveList.erase(correctedPreviousMoveList.begin() + i);
+		}
+	}
 }
 
 CBestMoveFinder::CResult CBestMoveFinder::Process()
@@ -54,9 +67,9 @@ CBestMoveFinder::CResult CBestMoveFinder::Process()
 	simulationTicks = 0;
 	bestScore = INT_MIN;
 	bestMoveList.clear();
-	stateCache.push_back({car, 0, 1, 0, bonuses.size()});
 
 	CResult result;
+	processPreviousMoveList();
 	processMoveIndex(0, vector<CMoveWithDuration>());
 	if (bestMoveList.size() == 0) {
 		result.Success = false;
@@ -107,11 +120,62 @@ CBestMoveFinder::CResult CBestMoveFinder::Process()
 	return result;
 }
 
+void CBestMoveFinder::processPreviousMoveList()
+{
+	if (correctedPreviousMoveList.size() == 0) {
+		return;
+	}
+
+	CState current(car, 0, 1, 0, bonuses.size());
+	CDrawPlugin::Instance().SetColor(0, 0, 255);
+	const int simulationEnd = correctedPreviousMoveList.back().End;
+	for (int tick = 0; tick < simulationEnd; tick++) {
+		CMyMove move;
+		size_t mi = 0;
+		for (; mi < correctedPreviousMoveList.size(); mi++) {
+			const CMoveWithDuration& m = correctedPreviousMoveList[mi];
+			if (tick >= m.Start && tick < m.End) {
+				move = m.Move;
+				break;
+			}
+		}
+		current.Car = simulator.Predict(current.Car, world, move.Convert());
+		simulationTicks++;
+		// Подсчёт очков за пройденную клетку маршрута. TODO: переделать
+		if (CMyTile(current.Car.Position) == tileRoute[current.NextRouteIndex]) {
+			current.RouteScore += 800;
+			current.NextRouteIndex = (current.NextRouteIndex + 1) % tileRoute.size();
+		}
+		// Штраф за торможение в самом начале.
+		if (current.Tick == 0 && move.Brake == 1) {
+			current.RouteScore -= 50;
+		}
+		// Подбор бонусов
+		processBonus(current);
+		// Отсечка по коллизиям. TODO: не останавливаться, если коллизия была "мягкая"
+		if (current.Car.CollisionDetected) {
+			correctedPreviousMoveList[mi].End = tick;
+			correctedPreviousMoveList.erase(correctedPreviousMoveList.begin() + mi + 1, correctedPreviousMoveList.end());
+			break;
+		}
+	}
+	double score = evaluate(current);
+	if (score > bestScore) {
+		bestScore = score;
+		bestMoveList = correctedPreviousMoveList;
+	}
+}
+
 void CBestMoveFinder::processMoveIndex(size_t moveIndex, const std::vector<CMoveWithDuration>& prevMoveList)
 {
 	const bool lastMove = moveIndex == allMovesWithLengths.size() - 1;
 	const vector<CMyMove>& moveArray = allMovesWithLengths[moveIndex].first;
 	const vector<int>& lengthsArray = allMovesWithLengths[moveIndex].second;
+
+	if (moveIndex == 0) {
+		stateCache.clear();
+		stateCache.push_back({ car, 0, 1, 0, bonuses.size() });
+	}
 
 	for (const CMyMove& move : moveArray) {
 		CState current = stateCache.back();
