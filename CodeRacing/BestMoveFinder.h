@@ -44,7 +44,12 @@ private:
 		int Tick = 0;
 		int NextRouteIndex = 1;
 		double RouteScore = 0;
-		CState(const CMyCar& Car, int Tick, int NextRouteIndex, double RouteScore) : Car(Car), Tick(Tick), NextRouteIndex(NextRouteIndex), RouteScore(RouteScore) {}
+		std::vector<bool> PickedBonuses;
+		CState(const CMyCar& Car, int Tick, int NextRouteIndex, double RouteScore, size_t BonusesSize) :
+			Car(Car), Tick(Tick), NextRouteIndex(NextRouteIndex), RouteScore(RouteScore)
+		{
+			PickedBonuses.assign(BonusesSize, false);
+		}
 	};
 
 	const CMyCar& car;
@@ -52,6 +57,9 @@ private:
 	const model::Game& game;
 	const std::vector<CMyTile>& tileRoute;
 	const CSimulator& simulator;
+
+	std::vector<model::Bonus> bonuses;
+	std::vector<CVec2D> bonusPositions;
 
 	int simulationTicks = 0;
 	double bestScore = INT_MIN;
@@ -62,6 +70,7 @@ private:
 	static const int maxTick = 175;
 
 	void processMoveIndex(size_t moveIndex, const std::vector<CMoveWithDuration>& prevMoveList);
-	double evaluate(const CState& state, bool brake) const;
+	void processBonus(CState& state);
+	double evaluate(const CState& state) const;
 
 };

@@ -69,9 +69,9 @@ CMyCar CSimulator::Predict(const CMyCar& startCar, const model::World& /*world*/
 		car.CollisionDetected = true;
 		return car;
 	}
+
 	const double tileSize = CMyTile::TileSize;
 	CVec2D carTileTopLeft(carTile.X * tileSize, carTile.Y * tileSize);
-	CVec2D carRelative = car.Position - carTileTopLeft;
 	CVec2D topLeft(0, 0);
 	CVec2D topRight(tileSize, 0);
 	CVec2D bottomLeft(0, tileSize);
@@ -83,17 +83,9 @@ CMyCar CSimulator::Predict(const CMyCar& startCar, const model::World& /*world*/
 	const bool topWall = !carTile.IsTopOpen();
 	const bool bottomWall = !carTile.IsBottomOpen();
 
-	const double halfHeight = game.getCarHeight() / 2;
-	const double halfWidth = game.getCarWidth() / 2;
-	CVec2D carCorners[] = {
-		{ halfWidth, halfHeight },
-		{ -halfWidth, halfHeight },
-		{ -halfWidth, -halfHeight },
-		{ halfWidth, -halfHeight } };
 	bool collision = false;
-	for (auto& corner : carCorners) {
-		corner.Rotate(car.Angle);
-		corner += carRelative;
+	for (auto corner : car.RotatedRect.Corners) {
+		corner -= carTileTopLeft;
 		if (CVec2D(corner - topLeft).LengthSquared() <= radiusSqr ||
 			CVec2D(corner - topRight).LengthSquared() <= radiusSqr ||
 			CVec2D(corner - bottomLeft).LengthSquared() <= radiusSqr ||
@@ -193,6 +185,8 @@ CMyCar CSimulator::Predict(const CMyCar& startCar, const model::World& /*world*/
 	}
 
 	normalizeAngle(car.Angle);
+	// Обновим прямоугольник машины.
+	car.UpdateRotatedRect();
 
 	return car;
 }

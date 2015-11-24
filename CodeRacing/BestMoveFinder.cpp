@@ -43,6 +43,10 @@ CBestMoveFinder::CBestMoveFinder(
 	tileRoute(tileRoute),
 	simulator(simulator)
 {
+	bonuses = world.getBonuses();
+	for (const auto& b : bonuses) {
+		bonusPositions.push_back(CVec2D(b.getX(), b.getY()));
+	}
 }
 
 CBestMoveFinder::CResult CBestMoveFinder::Process()
@@ -50,7 +54,7 @@ CBestMoveFinder::CResult CBestMoveFinder::Process()
 	simulationTicks = 0;
 	bestScore = INT_MIN;
 	bestMoveList.clear();
-	stateCache.push_back({car, 0, 1, 0});
+	stateCache.push_back({car, 0, 1, 0, bonuses.size()});
 
 	CResult result;
 	processMoveIndex(0, vector<CMoveWithDuration>());
@@ -95,15 +99,8 @@ CBestMoveFinder::CResult CBestMoveFinder::Process()
 	}
 	const double halfHeight = game.getCarHeight() / 2;
 	const double halfWidth = game.getCarWidth() / 2;
-	vector<CVec2D> carCorners(4);
-	carCorners[0] = CVec2D(halfWidth, halfHeight);
-	carCorners[1] = CVec2D(halfWidth, -halfHeight);
-	carCorners[2] = CVec2D(-halfWidth, -halfHeight);
-	carCorners[3] = CVec2D(-halfWidth, halfHeight);
 	CDrawPlugin::Instance().SetColor(0, 255, 255);
-	for (auto& corner : carCorners) {
-		corner.Rotate(simCar.Angle);
-		corner += simCar.Position;
+	for (const auto& corner : simCar.RotatedRect.Corners) {
 		CDrawPlugin::Instance().FillCircle(corner, 5);
 	}
 
@@ -135,12 +132,18 @@ void CBestMoveFinder::processMoveIndex(size_t moveIndex, const std::vector<CMove
 					current.RouteScore += 800;
 					current.NextRouteIndex = (current.NextRouteIndex + 1) % tileRoute.size();
 				}
+				// Штраф за торможение в самом начале.
+				if (current.Tick == 0 && move.Brake == 1) {
+					current.RouteScore -= 50;
+				}
+				// Подбор бонусов
+				processBonus(current);
 				// Отсечка по коллизиям. TODO: не останавливаться, если коллизия была "мягкая"
 				if (current.Car.CollisionDetected) {
 					break;
 				}
 				if (lastMove) {
-					double score = evaluate(current, prevMoveList[0].Move.Brake == 1);
+					double score = evaluate(current);
 					if (score > bestScore) {
 						bestScore = score;
 						bestMoveList = prevMoveList;
@@ -166,7 +169,55 @@ void CBestMoveFinder::processMoveIndex(size_t moveIndex, const std::vector<CMove
 	}
 }
 
-double CBestMoveFinder::evaluate(const CState& state, bool brake) const
+void CBestMoveFinder::processBonus(CState& state)
+{
+	static const double distToCenterSqrCutoff = pow(170 + 30, 2);
+	static const double distToCenterSqrSure = pow(70 + 20, 2);
+	static const double bonusRadiusSqr = pow(20, 2);
+	for (size_t i = 0; i < bonuses.size(); i++) {
+		if (state.PickedBonuses[i]) continue;
+		const double distToCenterSqr = (bonusPositions[i] - state.Car.Position).LengthSquared();
+		if (distToCenterSqr > distToCenterSqrCutoff) continue;
+		bool pickedUp = false;
+		if (distToCenterSqr < distToCenterSqrSure) {
+			pickedUp = true;
+		}
+		if (!pickedUp) {
+			for (const auto& c : state.Car.RotatedRect.Corners) {
+				const double distSqr = (bonusPositions[i] - c).LengthSquared();
+				if (distSqr < bonusRadiusSqr) {
+					pickedUp = true;
+					break;
+				}
+			}
+		}
+		if (pickedUp) {
+			state.PickedBonuses[i] = true;
+			switch (bonuses[i].getType()) {
+				case model::REPAIR_KIT:
+					// TODO: Durability
+					state.RouteScore += 300;
+					break;
+				case model::AMMO_CRATE:
+					state.RouteScore += 300;
+					break;
+				case model::NITRO_BOOST:
+					state.RouteScore += 300;
+					break;
+				case model::OIL_CANISTER:
+					state.RouteScore += 300;
+					break;
+				case model::PURE_SCORE:
+					state.RouteScore += 900;
+					break;
+				default:
+					assert(false);
+			}
+		}
+	}
+}
+
+double CBestMoveFinder::evaluate(const CState& state) const
 {
 	CMyTile carTile(state.Car.Position); // В каком тайле оказались.
 	CMyTile targetTile(tileRoute[state.NextRouteIndex]); // Какой следующий тайл по маршруту.
@@ -184,12 +235,8 @@ double CBestMoveFinder::evaluate(const CState& state, bool brake) const
 	} else {
 		// Где-то далеко мы находимся.
 		//score -= (state.Car.Position - carTile.ToVec()).Length();
-		//score -= 800;
-		score -= 0; // Пока не штрафуем.
-	}
-	// Дополнительный штраф за то, что тормозим первым действием.
-	if (brake == 1) {
 		score -= 800;
+		//score -= 0; // Пока не штрафуем.
 	}
 	return score;
 }

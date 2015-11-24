@@ -126,7 +126,7 @@ void MyStrategy::makeMove()
 	double angle = angleToTarget - car.Angle;
 	normalizeAngle(angle);
 	// Когда симулятор хз что делать.
-	if (!result.Success || result.MoveList.back().End < 5) {
+	if (!result.Success || result.MoveList.back().End < 10) {
 		CDrawPlugin::Instance().SetColor(128, 128, 128);
 		CDrawPlugin::Instance().FillCircle(car.Position, 50);
 		resultMove->setEnginePower(1.0);

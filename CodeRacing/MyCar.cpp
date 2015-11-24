@@ -17,8 +17,9 @@ CMyCar::CMyCar() :
 
 CMyCar::CMyCar(const CMyCar& car) :
 	Position(car.Position),
-	Speed(car.Speed),
+	RotatedRect(car.RotatedRect),
 	Angle(car.Angle),
+	Speed(car.Speed),
 	AngularSpeed(car.AngularSpeed),
 	EnginePower(car.EnginePower),
 	WheelTurn(car.WheelTurn),
@@ -43,4 +44,18 @@ CMyCar::CMyCar(const model::Car& car) :
 	Type(car.getType()),
 	CollisionDetected(false)
 {
+	UpdateRotatedRect();
+}
+
+void CMyCar::UpdateRotatedRect()
+{
+	const double halfWidth = 210 / 2;//game.getCarWidth() / 2;
+	const double halfHeight = 140 / 2;//game.getCarHeight() / 2;
+	for (int i = 0; i < 4; i++) {
+		CVec2D& c = RotatedRect.Corners[i];
+		c.X = i % 2 == 0 ? halfWidth : -halfWidth;
+		c.Y = i / 2 == 0 ? halfHeight : -halfHeight;
+		c.Rotate(Angle);
+		c += Position;
+	}
 }
