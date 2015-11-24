@@ -31,17 +31,24 @@ bool operator < (const CTileRouteFinder::CMyTileWithScore& a, const CTileRouteFi
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 vector<CMyTile> CTileRouteFinder::FindRoute(
-	const vector<CMyTile>& waypointTiles, int nextWaypointIndex, const CMyTile& currentTile) const
+	const vector<CMyTile>& waypointTiles, int nextWaypointIndex, const CMyTile& currentTile,
+	int dx, int dy) const
 {
 	vector<CMyTile> route;
 	CMyTile start = currentTile;
+	int startDx = dx;
+	int startDy = dy;
 	for (size_t i = 0; i < waypointTiles.size(); i++) {
 		CMyTile end = waypointTiles[(nextWaypointIndex + i) % waypointTiles.size()];
-		vector<CMyTile> partialRoute = findSingleRoute(start, end);
+		vector<CMyTile> partialRoute = findSingleRoute(start, end, startDx, startDy);
 		route.insert(route.end(), partialRoute.begin(), partialRoute.end());
 		start = end;
+		if (route.size() > 0) {
+			startDx = start.X - route.back().X;
+			startDy = start.Y - route.back().Y;
+		}
 	}
-	vector<CMyTile> finalPartialRoute = findSingleRoute(start, currentTile);
+	vector<CMyTile> finalPartialRoute = findSingleRoute(start, currentTile, startDx, startDy);
 	route.insert(route.end(), finalPartialRoute.begin(), finalPartialRoute.end());
 	return route;
 }
@@ -58,7 +65,8 @@ static const double heuristic(const CMyTile& from, const CMyTile& to)
 	return from.Euclidean(to);
 }
 
-vector<CMyTile> CTileRouteFinder::findSingleRoute(const CMyTile& start, const CMyTile& end) const
+vector<CMyTile> CTileRouteFinder::findSingleRoute(const CMyTile& start, const CMyTile& end,
+	int startDx, int startDy ) const
 {
 	assert(!start.IsEmpty() && !end.IsEmpty());
 	if (start == end) {
@@ -104,7 +112,12 @@ vector<CMyTile> CTileRouteFinder::findSingleRoute(const CMyTile& start, const CM
 			if (closedSet[neighbor.X][neighbor.Y]) {
 				continue;
 			}
-			const double neighborDistance = distance[current.X][current.Y] + smartDistance(current, neighbor);
+			double neighborDistance = 0;
+			if (current == start && neighbor.X + startDx == current.X && neighbor.Y + startDy == current.Y) {
+				neighborDistance = 5;
+			} else {
+				neighborDistance = distance[current.X][current.Y] + smartDistance(current, neighbor);
+			}
 			const double neighborScore = neighborDistance + heuristic(neighbor, end);
 			if (!openSet[neighbor.X][neighbor.Y]) {
 				// Соседа нет в openSet - добавляем.

@@ -91,7 +91,18 @@ void MyStrategy::findTileRoute()
 	currentTile = CMyTile(currentX, currentY);
 
 	// TODO: Сделать поиск маршрута в зависимости от направления скорости машины в начальной точке.
-	tileRoute = tileRouteFinder.FindRoute(waypointTiles, nextWaypointIndex, currentTile);
+	int dx = 0;
+	int dy = 0;
+	if (abs(car.Angle) < PI / 4) {
+		dx = 1;
+	} else if (abs(car.Angle) > 3 * PI / 4) {
+		dx = -1;
+	} else if (car.Angle > 0) {
+		dy = 1;
+	} else if (car.Angle < 0) {
+		dy = -1;
+	}
+	tileRoute = tileRouteFinder.FindRoute(waypointTiles, nextWaypointIndex, currentTile, dx, dy);
 }
 
 template<class MAP>
