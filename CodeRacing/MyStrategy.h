@@ -40,12 +40,18 @@ private:
 	CMyCar car;
 	CMyCar prediction;
 
+	std::vector<std::vector<CMyCar>> enemyPredictions;
+	std::vector<model::Car> enemyCars;
+
 	MyStrategy& operator = (const MyStrategy&) { return *this; }
 
 	void updateWaypoints();
 	void findTileRoute();
 	void firstTick();
 	void makeMove();
+	void predictEnemyPositions();
+	void processShooting();
+	void processOil();
 	void predict();
 	void doLog();
 	void doDraw();

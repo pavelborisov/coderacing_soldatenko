@@ -104,18 +104,20 @@ void logStats(const MAP& m, const char* name, std::basic_ostream< char, std::cha
 	stream << endl;
 }
 
-// TODO: Вынести весь перебор в отдельный файл
 void MyStrategy::makeMove()
 {
-	// TODO: Баг с предсказанием торможения в повороте.
 	if (currentTick < game->getInitialFreezeDurationTicks()) {
 		resultMove->setEnginePower(1.0);
 		return;
 	}
 
+	predictEnemyPositions();
+
 	CBestMoveFinder bestMoveFinder(car, *world, *game, tileRoute, simulator);
 	CBestMoveFinder::CResult result = bestMoveFinder.Process();
 	*resultMove = result.CurrentMove.Convert();
+	processShooting();
+	processOil();
 
 	// Тупой задний ход
 	// TODO: Запомнить, куда мы поворачивали колеса в последний раз и задним ходом делать наборот.
@@ -154,24 +156,6 @@ void MyStrategy::makeMove()
 		if (rear == 0) rear = -120;
 	}
 
-	for (auto otherCar : world->getCars()) {
-		if (otherCar.getPlayerId() != self->getPlayerId()) {
-			double angleToCar = self->getAngleTo(otherCar);
-			double dist = self->getDistanceTo(otherCar);
-			// Тупая стрелялка
-			if (self->getProjectileCount() > 0
-				&& (abs(angleToCar) < PI / 90 && dist < 1500)
-					||(abs(angleToCar) < PI/30 && dist < 700)
-					||(abs(angleToCar) < PI/9 && dist < 300 ))
-			{
-					resultMove->setThrowProjectile(true);
-			}
-			// Тупая лужа
-			if (world->getTick() > 350 && self->getOilCanisterCount() > 0 && abs(self->getWheelTurn()) > 0.5) {
-				resultMove->setSpillOil(true);
-			}
-		}
-	}
 	// TODO: Проверка на прямые участки.
 	// Тупое нитро.
 	// Сколько тиков поворачиваем.
@@ -187,6 +171,124 @@ void MyStrategy::makeMove()
 			&& turnTicks < 20 && totalTicks > 120)
 		{
 			resultMove->setUseNitro(true);
+		}
+	}
+}
+
+void MyStrategy::predictEnemyPositions()
+{
+	static const int predictionLength = 50;
+	enemyPredictions.clear();
+	//CDrawPlugin::Instance().SetColor(128, 255, 0);
+	for (const auto& otherCar : world->getCars()) {
+		if (otherCar.getPlayerId() != self->getPlayerId()) {
+			vector<CMyCar> predictions(predictionLength + 1);
+			predictions[0] = CMyCar(otherCar);
+			model::Move simpleMove;
+			simpleMove.setEnginePower(otherCar.getEnginePower());
+			simpleMove.setWheelTurn(otherCar.getWheelTurn());
+			for (int tick = 1; tick <= predictionLength; tick++) {
+				predictions[tick] = simulator.Predict(predictions[tick - 1], *world, simpleMove);
+				//CDrawPlugin::Instance().FillCircle(predictions[tick].Position, 5);
+			}
+			enemyPredictions.emplace_back(predictions);
+			enemyCars.push_back(otherCar);
+		}
+	}
+}
+
+void MyStrategy::processShooting()
+{
+	if (self->getProjectileCount() == 0) {
+		return;
+	}
+
+	static const int predictionLength = 50;
+	double dmgScore = 0;
+	//CDrawPlugin::Instance().SetColor(255, 0, 0);
+	for (int offsetIndex = -1; offsetIndex <= 1; offsetIndex++) {
+		double projectileAngle = car.Angle + offsetIndex * game->getSideWasherAngle();
+		normalizeAngle(projectileAngle);
+		CVec2D projectilePos = car.Position;
+		CVec2D projectileSpeed(game->getWasherInitialSpeed(), 0);
+		projectileSpeed.Rotate(projectileAngle);
+		double projectileRadiusSqr = pow(game->getWasherRadius(), 2);
+		double projectileDmg = game->getWasherDamage();
+
+		const double carEffectiveRadiusSqr = pow((game->getCarHeight()) / 2, 2);
+		
+		for (int tick = 1; tick <= predictionLength; tick++) {
+			projectilePos += projectileSpeed;
+			// TODO: Нормальная проверка коллизий.
+			for (size_t enemyIndex = 0; enemyIndex < enemyPredictions.size(); enemyIndex++ ) {
+				const model::Car& enemyCar = enemyCars[enemyIndex];
+				if (enemyCar.isFinishedTrack() || enemyCar.getDurability() == 0) {
+					continue;
+				}
+				const CVec2D& enemyPos = enemyPredictions[enemyIndex][tick].Position;
+				const double distSqr = (enemyPos - projectilePos).LengthSquared();
+				if (distSqr < projectileRadiusSqr + carEffectiveRadiusSqr) {
+					dmgScore += min(enemyCar.getDurability(), projectileDmg) * game->getCarDamageScoreFactor();
+					if (enemyCar.getDurability() < projectileDmg) {
+						dmgScore += game->getCarEliminationScore();
+					}
+					//CDrawPlugin::Instance().FillCircle(enemyPos, game->getWasherRadius());
+					break;
+				}
+			}
+			//CDrawPlugin::Instance().FillCircle(projectilePos, game->getWasherRadius());
+		}
+	}
+
+	// Стреляем, если предполагаем, что наберём какой-то минимум очков.
+	if (dmgScore > 40) {
+		resultMove->setThrowProjectile(true);
+	}
+}
+
+void MyStrategy::processOil()
+{
+	if (self->getOilCanisterCount() == 0) {
+		return;
+	}
+
+	static const int predictionLength = 50;
+	static const double minEnemySpeed = 5;
+	static const double minEnemyAngularSpeed = PI / 90;
+	static const double minEnemyDrift = PI / 20;
+	double speedRelAngle = car.Speed.GetAngle() - car.Angle;
+	normalizeAngle(speedRelAngle);
+	if (abs(speedRelAngle) > PI / 2) {
+		// Мы сбросим лужу себе под колёса.
+		return;
+	}
+
+	const double oilRadius = game->getOilSlickRadius();
+	CVec2D oilOffset(game->getOilSlickInitialRange() + game->getCarWidth() / 2 + oilRadius, 0);
+	oilOffset.Rotate(car.Angle);
+	const CVec2D oilPos = car.Position - oilOffset;
+	//CDrawPlugin::Instance().SetColor(196, 196, 196);
+	//CDrawPlugin::Instance().FillCircle(oilPos, oilRadius);
+
+	// Выбрасываем лужу только, когда мы уверены, что в неё попадёт какой-либо враг сзади.
+	// Попадание в мазут считается если центр машины попал внутрь окружности мазута.
+	const double oilRadiusSqr = pow(oilRadius, 2);
+	for (size_t enemyIndex = 0; enemyIndex < enemyPredictions.size(); enemyIndex++) {
+		for (int tick = 1; tick <= predictionLength; tick++) {
+			const CMyCar& enemy = enemyPredictions[enemyIndex][tick];
+			// Проверка, что автомобиль попал.
+			if ((enemy.Position - oilPos).LengthSquared() < oilRadiusSqr) {
+				double enemySpeedRelAngle = enemy.Speed.GetAngle() - enemy.Angle;
+				normalizeAngle(enemySpeedRelAngle);
+				double enemyDrift = abs(enemySpeedRelAngle);
+				enemyDrift = enemyDrift > PI / 2 ? PI - enemyDrift : enemyDrift;
+				if (enemy.Speed.Length() > minEnemySpeed && 
+					(enemyDrift > minEnemyDrift || abs(enemy.AngularSpeed > minEnemyAngularSpeed)))
+				{
+					resultMove->setSpillOil(true);
+					break;
+				}
+			}
 		}
 	}
 }
