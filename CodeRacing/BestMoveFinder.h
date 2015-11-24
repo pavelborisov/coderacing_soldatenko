@@ -62,6 +62,6 @@ private:
 	static const int maxTick = 175;
 
 	void processMoveIndex(size_t moveIndex, const std::vector<CMoveWithDuration>& prevMoveList);
-	double evaluate(const CState& state, const std::vector<CMoveWithDuration>& moveList) const;
+	double evaluate(const CState& state, bool brake) const;
 
 };

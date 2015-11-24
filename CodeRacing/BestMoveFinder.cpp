@@ -140,12 +140,11 @@ void CBestMoveFinder::processMoveIndex(size_t moveIndex, const std::vector<CMove
 					break;
 				}
 				if (lastMove) {
-					vector<CMoveWithDuration> moveList = prevMoveList;
-					moveList.push_back({ move, start, current.Tick });
-					double score = evaluate(current, moveList);
+					double score = evaluate(current, prevMoveList[0].Move.Brake == 1);
 					if (score > bestScore) {
 						bestScore = score;
-						bestMoveList = moveList;
+						bestMoveList = prevMoveList;
+						bestMoveList.push_back({ move, start, current.Tick });
 					}
 				}
 			}
@@ -167,7 +166,7 @@ void CBestMoveFinder::processMoveIndex(size_t moveIndex, const std::vector<CMove
 	}
 }
 
-double CBestMoveFinder::evaluate(const CState& state, const std::vector<CMoveWithDuration>& moveList) const
+double CBestMoveFinder::evaluate(const CState& state, bool brake) const
 {
 	CMyTile carTile(state.Car.Position); // В каком тайле оказались.
 	CMyTile targetTile(tileRoute[state.NextRouteIndex]); // Какой следующий тайл по маршруту.
@@ -189,7 +188,7 @@ double CBestMoveFinder::evaluate(const CState& state, const std::vector<CMoveWit
 		score -= 0; // Пока не штрафуем.
 	}
 	// Дополнительный штраф за то, что тормозим первым действием.
-	if (moveList[0].Move.Brake == 1) {
+	if (brake == 1) {
 		score -= 800;
 	}
 	return score;

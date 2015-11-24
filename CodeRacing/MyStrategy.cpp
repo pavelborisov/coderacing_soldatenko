@@ -203,7 +203,7 @@ void MyStrategy::processShooting()
 		return;
 	}
 
-	static const int predictionLength = 50;
+	static const int predictionLength = 40;
 	double dmgScore = 0;
 	//CDrawPlugin::Instance().SetColor(255, 0, 0);
 	for (int offsetIndex = -1; offsetIndex <= 1; offsetIndex++) {
