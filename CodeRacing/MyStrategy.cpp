@@ -68,7 +68,7 @@ void MyStrategy::updateWaypoints()
 		CMyTile::TileSize = game->getTrackTileSize();
 	}
 	for (size_t x = 0; x < tilesXY.size(); x++) {
-		for (size_t y = 0; y < tilesXY.size(); y++) {
+		for (size_t y = 0; y < tilesXY[0].size(); y++) {
 			if (tilesXY[x][y] != UNKNOWN) {
 				CMyTile::TileTypesXY[x][y] = tilesXY[x][y];
 			}
