@@ -113,6 +113,7 @@ void MyStrategy::makeMove()
 
 	predictEnemyPositions();
 
+	// TODO: Оценивать предыдущую лучшую последовательность - может, стоит её продолжить?
 	CBestMoveFinder bestMoveFinder(car, *world, *game, tileRoute, simulator);
 	CBestMoveFinder::CResult result = bestMoveFinder.Process();
 	*resultMove = result.CurrentMove.Convert();
@@ -230,6 +231,7 @@ void MyStrategy::processShooting()
 				const model::Car& enemyCar = enemyCars[enemyIndex];
 				const double enemyDurability = enemyCar.getDurability();
 				if (enemyCar.isFinishedTrack() || enemyCar.getDurability() <= 1e-10) {
+					// TODO: Почему-то часто стреляем по трупам.
 					continue;
 				}
 				const CVec2D& enemyPos = enemyPredictions[enemyIndex][tick].Position;
