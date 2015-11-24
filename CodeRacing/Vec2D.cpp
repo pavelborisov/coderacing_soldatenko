@@ -11,7 +11,10 @@ double CVec2D::Length() const
 
 double CVec2D::GetAngle() const
 {
-	assert(LengthSquared() > 0);
+	//assert(LengthSquared() > 0);
+	if (X == 0 && Y == 0) {
+		return 0;
+	}
 	return atan2(Y, X);
 }
 
