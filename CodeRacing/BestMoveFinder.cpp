@@ -12,17 +12,17 @@ const vector<pair<vector<CMyMove>, vector<int>>> CBestMoveFinder::allMovesWithLe
 	// Первое множество действий
 	{
 		{ { 0, 0 },{ 1, 0 },{ -1, 0 },{ 1, 1 },{ -1, 1 } },
-		{ 0, 5, 10, 20, 30 }
+		{ 0, 5, 10, 20, 40 }
 	},
 	// Второе множество действий
 	{
 		{ { 0, 0 },{ 1, 0 },{ -1, 0 },{ 1, 1 },{ -1, 1 } },
-		{ 0, 20 }
+		{ 0, 40 }
 	},
 	// Третье множество действий
 	{
 		{ { 1, 0 },{ -1, 0 } },
-		{ 0, 30 }
+		{ 0, 40 }
 	},
 	// Четвёртое действие - просто ехать по прямой (пока не упрёмся в maxTick)
 	{
@@ -53,7 +53,7 @@ CBestMoveFinder::CBestMoveFinder(
 
 	for (int i = correctedPreviousMoveList.size() - 1; i >= 0; i--) {
 		correctedPreviousMoveList[i].Start--;
-		if (correctedPreviousMoveList[i].End < maxTick) {
+		if (correctedPreviousMoveList[i].End < maxTick - 1) {
 			correctedPreviousMoveList[i].End--;
 		}
 		if (correctedPreviousMoveList[i].End < 0) {
@@ -128,12 +128,12 @@ void CBestMoveFinder::processPreviousMoveList()
 	CState current(car, 0, 1, 0, bonuses.size());
 	CDrawPlugin::Instance().SetColor(0, 0, 255);
 	const int simulationEnd = correctedPreviousMoveList.back().End;
-	for (int tick = 0; tick < simulationEnd; tick++) {
+	for (current.Tick = 0; current.Tick < simulationEnd; current.Tick++) {
 		CMyMove move;
 		size_t mi = 0;
 		for (; mi < correctedPreviousMoveList.size(); mi++) {
 			const CMoveWithDuration& m = correctedPreviousMoveList[mi];
-			if (tick >= m.Start && tick < m.End) {
+			if (current.Tick >= m.Start && current.Tick < m.End) {
 				move = m.Move;
 				break;
 			}
@@ -147,13 +147,13 @@ void CBestMoveFinder::processPreviousMoveList()
 		}
 		// Штраф за торможение в самом начале.
 		if (current.Tick == 0 && move.Brake == 1) {
-			current.RouteScore -= 50;
+			current.RouteScore -= 200;
 		}
 		// Подбор бонусов
 		processBonus(current);
 		// Отсечка по коллизиям. TODO: не останавливаться, если коллизия была "мягкая"
 		if (current.Car.CollisionDetected) {
-			correctedPreviousMoveList[mi].End = tick;
+			correctedPreviousMoveList[mi].End = current.Tick;
 			correctedPreviousMoveList.erase(correctedPreviousMoveList.begin() + mi + 1, correctedPreviousMoveList.end());
 			break;
 		}
@@ -197,7 +197,7 @@ void CBestMoveFinder::processMoveIndex(size_t moveIndex, const std::vector<CMove
 				}
 				// Штраф за торможение в самом начале.
 				if (current.Tick == 0 && move.Brake == 1) {
-					current.RouteScore -= 50;
+					current.RouteScore -= 200;
 				}
 				// Подбор бонусов
 				processBonus(current);
