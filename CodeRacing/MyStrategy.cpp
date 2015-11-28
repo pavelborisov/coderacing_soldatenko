@@ -170,15 +170,8 @@ void MyStrategy::makeMove()
 
 	// TODO: Проверка на прямые участки.
 	// Тупое нитро.
-	// Сколько тиков поворачиваем.
-	int enemiesWithProjectiles = 0;
-	for (const auto& c : enemyCars) {
-		if (c.getProjectileCount() > 0) {
-			enemiesWithProjectiles++;
-		}
-	}
-	const int minTicksForNitro = enemiesWithProjectiles < 2 ? 0 : 400;
-	if (result.Success && world->getTick() >= minTicksForNitro) {
+	if (result.Success) {
+		// Сколько тиков поворачиваем.
 		int turnTicks = 0;
 		for (const auto& moveWithDuration : result.MoveList) {
 			if (moveWithDuration.Move.Turn != 0) {
