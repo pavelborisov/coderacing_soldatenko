@@ -8,6 +8,7 @@
 #include <string>
 #include <assert.h>
 #include "Tools.h"
+#include "WaypointsDistanceMap.h"
 
 using namespace model;
 using namespace std;
@@ -45,6 +46,7 @@ void MyStrategy::move(const Car& _self, const World& _world, const Game& _game, 
 	updateWaypoints();
 	findTileRoute();
 	makeMove();
+	experiment();
 	predict();
 	doLog();
 	doDraw();
@@ -62,14 +64,19 @@ void MyStrategy::firstTick()
 void MyStrategy::updateWaypoints()
 {
 	vector<vector<TileType>> tilesXY = world->getTilesXY();
+	bool flush = false;
 	if (CMyTile::TileTypesXY.size() == 0) {
+		flush = true;
 		CMyTile::TileTypesXY = tilesXY;
 		CMyTile::TileSize = game->getTrackTileSize();
 	}
 	for (size_t x = 0; x < tilesXY.size(); x++) {
 		for (size_t y = 0; y < tilesXY[0].size(); y++) {
-			if (tilesXY[x][y] != UNKNOWN) {
-				CMyTile::TileTypesXY[x][y] = tilesXY[x][y];
+			const model::TileType& src = tilesXY[x][y];
+			model::TileType& dst = CMyTile::TileTypesXY[x][y];
+			if (src != UNKNOWN && src != dst) {
+				flush = true;
+				dst = src;
 			}
 		}
 	}
@@ -78,6 +85,10 @@ void MyStrategy::updateWaypoints()
 	waypointTiles.clear();
 	for (const auto& w : waypoints) {
 		waypointTiles.push_back(CMyTile(w[0], w[1]));
+	}
+
+	if (flush) {
+		wpDistMap.Initialize(waypointTiles);
 	}
 
 	nextWaypointIndex = self->getNextWaypointIndex();
@@ -304,6 +315,11 @@ void MyStrategy::processOil()
 			}
 		}
 	}
+}
+void MyStrategy::experiment()
+{
+	const double dist = wpDistMap.Query(car.Position.X, car.Position.Y, nextWaypointIndex);
+	log.Stream() << dist;
 }
 
 void MyStrategy::predict()

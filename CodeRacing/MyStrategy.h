@@ -13,6 +13,7 @@
 #include "Simulator.h"
 #include "TileRouteFinder.h"
 #include "Vec2D.h"
+#include "WaypointsDistanceMap.h"
 
 class MyStrategy : public Strategy {
 public:
@@ -35,6 +36,7 @@ private:
 	CMyTile currentTile;
 	std::vector<CMyTile> tileRoute;
 	int nextWaypointIndex;
+	CWaypointDistanceMap wpDistMap;
 
 	CSimulator simulator;
 	CMyCar prevPrediction;
@@ -54,6 +56,7 @@ private:
 	void predictEnemyPositions();
 	void processShooting();
 	void processOil();
+	void experiment();
 	void predict();
 	void doLog();
 	void doDraw();
