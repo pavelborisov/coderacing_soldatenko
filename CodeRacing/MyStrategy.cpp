@@ -27,8 +27,6 @@ MyStrategy::MyStrategy() :
 	currentTick(0),
 	nextWaypointIndex(0)
 {
-	draw.BeginDraw();
-	draw.EndDraw();
 }
 
 void MyStrategy::move(const Car& _self, const World& _world, const Game& _game, Move& _resultMove)
@@ -150,8 +148,7 @@ void MyStrategy::makeMove()
 	normalizeAngle(angle);
 	// Когда симулятор хз что делать.
 	if (!result.Success || result.MoveList.back().End < 10) {
-		CDrawPlugin::Instance().SetColor(128, 128, 128);
-		CDrawPlugin::Instance().FillCircle(car.Position, 50);
+		CDrawPlugin::Instance().FillCircle(car.Position.X, car.Position.Y, 50, 0x888888);
 		resultMove->setEnginePower(1.0);
 		resultMove->setWheelTurn(angle * 32 / PI);
 	}
@@ -165,8 +162,7 @@ void MyStrategy::makeMove()
 		rear++;
 	} else if (rear > 0) {
 		resultMove->setBrake(false);
-		CDrawPlugin::Instance().SetColor(128, 0, 128);
-		CDrawPlugin::Instance().FillCircle(car.Position, 50);
+		CDrawPlugin::Instance().FillCircle(car.Position.X, car.Position.Y, 50, 0x880088);
 		if (rear < 30) {
 			resultMove->setEnginePower(0);
 			resultMove->setBrake(true);
@@ -348,19 +344,12 @@ void MyStrategy::doLog()
 
 void MyStrategy::doDraw()
 {
-	draw.SetColor(0, 0, 0);
-	draw.FillCircle(car.Position, 10);
-	draw.SetColor(255, 128, 0);
-	draw.FillCircle(prediction.Position, 5);
-
-	draw.SetColor(255, 0, 0);
 	CVec2D nextWaypoint = waypointTiles[nextWaypointIndex].ToVec();
-	draw.FillCircle(nextWaypoint, 50);
+	draw.FillCircle(nextWaypoint.X, nextWaypoint.Y, 50, 0xFF0000);
 
-	draw.SetColor(0, 255, 0);
 	for (size_t i = 1; i < min(10U, tileRoute.size()); i++) {
 		CVec2D from = tileRoute[i - 1].ToVec();
 		CVec2D to = tileRoute[i].ToVec();
-		draw.DrawLine(from, to);
+		draw.Line(from.X, from.Y, to.X, to.Y, 0x00FF00);
 	}
 }

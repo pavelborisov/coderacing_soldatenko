@@ -90,6 +90,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="BestMoveFinder.cpp" />
+    <ClCompile Include="Debug.cpp" />
     <ClCompile Include="DrawPlugin.cpp" />
     <ClCompile Include="Log.cpp" />
     <ClCompile Include="model\Bonus.cpp" />
@@ -121,6 +122,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BestMoveFinder.h" />
+    <ClInclude Include="Debug.h" />
     <ClInclude Include="DrawPlugin.h" />
     <ClInclude Include="Log.h" />
     <ClInclude Include="LowResMap.h" />

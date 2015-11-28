@@ -7,37 +7,56 @@ using namespace std;
 
 CDrawPlugin::CDrawPlugin()
 {
-	drawFilePath = "..\\draw.txt";
 }
 
-CDrawPlugin::~CDrawPlugin()
+void CDrawPlugin::BeginPre()
 {
+	debug.beginPre();
 }
 
-void CDrawPlugin::BeginDraw()
+void CDrawPlugin::EndPre()
 {
-	drawFile.open(drawFilePath.c_str());
+	debug.endPre();
 }
 
-void CDrawPlugin::SetColor(int red, int green, int blue)
+void CDrawPlugin::BeginPost()
 {
-	drawFile << "setColor " << red << " " << green << " " << blue << endl;
+	debug.beginPost();
 }
 
-void CDrawPlugin::DrawLine(const CVec2D& start, const CVec2D& end)
+void CDrawPlugin::EndPost()
 {
-	drawFile << "drawLine " << start.X << " " << start.Y << " " << end.X << " " << end.Y << endl;
+	debug.endPost();
 }
 
-void CDrawPlugin::FillCircle(const CVec2D& position, double radius)
+void CDrawPlugin::Circle(double x, double y, double r, int32_t color)
 {
-	drawFile << "fillCircle " << position.X << " " << position.Y << " " << radius << endl;
+	debug.circle(x, y, r, color);
 }
 
-void CDrawPlugin::EndDraw()
+void CDrawPlugin::FillCircle(double x, double y, double r, int32_t color)
 {
-	SetColor(0, 0, 0);
-	drawFile.close();
+	debug.fillCircle(x, y, r, color);
+}
+
+void CDrawPlugin::Rect(double x1, double y1, double x2, double y2, int32_t color)
+{
+	debug.rect(x1, y1, x2, y2, color);
+}
+
+void CDrawPlugin::FillRect(double x1, double y1, double x2, double y2, int32_t color)
+{
+	debug.fillRect(x1, y1, x2, y2, color);
+}
+
+void CDrawPlugin::Line(double x1, double y1, double x2, double y2, int32_t color)
+{
+	debug.line(x1, y1, x2, y2, color);
+}
+
+void CDrawPlugin::Text(double x, double y, const char* text, int32_t color)
+{
+	debug.text(x, y, text, color);
 }
 
 #endif

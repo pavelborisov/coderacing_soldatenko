@@ -1,11 +1,242 @@
 import java.awt.*;
-import java.io.*;
-
-import model.*;
 
 import static java.lang.StrictMath.*;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
+import java.net.*;
+import java.util.ArrayList;
+import java.util.Properties;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+
+import model.*;
+
 public final class LocalTestRendererListener {
+	private final static String LOGFILE_NAME = "visualizer-plugin.err"; 
+	private static void reportException(Exception exc)
+	{
+		try {
+			PrintWriter writer = new PrintWriter(new FileWriter(LOGFILE_NAME, true));
+			exc.printStackTrace(writer);
+			writer.close();
+		} catch (FileNotFoundException e1) {
+			return;
+		} catch (UnsupportedEncodingException e1) {
+			return;
+		} catch (IOException e1) {
+			return;
+		}
+	}
+	private final class Message
+	{
+		public final static String CIRCLE = "circle";
+		public final static String RECT = "rect";
+		public final static String LINE = "line";
+		public final static String TEXT = "text";
+		public final static String FILL_CIRCLE = "fill_circle";
+		public final static String FILL_RECT = "fill_rect";
+		public final static String UNKNOWN = "unknown";
+		
+		private double x1, y1, x2, y2;
+		private Color color;
+		private String type, text;
+		
+		public Message(String line)
+		{
+			String[] tokens = line.split(" ");
+			int colorPos = 1;
+			type = tokens[0];
+			if (type.equals(CIRCLE) || type.equals(FILL_CIRCLE))
+			{
+				x1 = Double.parseDouble(tokens[1]);
+				y1 = Double.parseDouble(tokens[2]);
+				x2 = Double.parseDouble(tokens[3]);
+				colorPos = 4;
+			}
+			else if (type.equals(RECT) || type.equals(LINE) || type.equals(FILL_RECT))
+			{
+				x1 = Double.parseDouble(tokens[1]);
+				y1 = Double.parseDouble(tokens[2]);
+				x2 = Double.parseDouble(tokens[3]);
+				y2 = Double.parseDouble(tokens[4]);
+				colorPos = 5;
+			}
+			else if (type.equals(TEXT))
+			{
+				x1 = Double.parseDouble(tokens[1]);
+				y1 = Double.parseDouble(tokens[2]);
+				StringBuilder sb = new StringBuilder();
+				for (int i = 3; i < tokens.length - 3; i++)
+				{
+					sb.append(tokens[i]);
+					if (i < tokens.length - 4)
+					{
+						sb.append(" ");
+					}
+				}
+				text = sb.toString();
+				colorPos = tokens.length - 3;
+			}
+			else
+			{
+				type = UNKNOWN;
+				return;
+			}
+			
+			float r = Float.parseFloat(tokens[colorPos]);
+			float g = Float.parseFloat(tokens[colorPos + 1]);
+			float b = Float.parseFloat(tokens[colorPos + 2]);
+			color = new Color(r, g, b);
+		}
+		
+		public void draw(Graphics graphics, LocalTestRendererListener listner)
+		{
+			if (type == UNKNOWN) return;
+			graphics.setColor(color);
+			if (type.equals(CIRCLE)) listner.drawCircle(x1, y1, x2);
+			if (type.equals(FILL_CIRCLE)) listner.fillCircle(x1, y1, x2);
+			if (type.equals(RECT)) listner.drawRect(x1, y1, x2 - x1, y2 - y1);
+			if (type.equals(FILL_RECT)) listner.fillRect(x1, y1, x2 - x1, y2 - y1);
+			if (type.equals(LINE)) listner.drawLine(x1, y1, x2, y2);
+			if (type.equals(TEXT)) listner.showText(x1, y1, text);
+		}
+	}
+    private final class ThreadListener extends Thread
+    {
+    	public static final String BEGIN_PRE = "begin pre";
+    	public static final String END_PRE = "end pre";
+    	public static final String BEGIN_POST = "begin post";
+    	public static final String END_POST = "end post";
+
+    	private ServerSocket socket;
+    	private ArrayList<Message> messagesPre, messagesPost, lastMessagesPre, lastMessagesPost;
+    	private int queue;
+    	private Lock lock;
+    	public ThreadListener(int port) throws IOException
+    	{
+    		socket = new ServerSocket(port);
+    		messagesPre = new ArrayList<Message>();
+    		messagesPost = new ArrayList<Message>();
+            lastMessagesPre = new ArrayList<Message>();
+            lastMessagesPost = new ArrayList<Message>();
+    		queue = 0;
+    		lock = new ReentrantLock();
+    	}
+    	
+    	public void run()
+    	{
+    		try
+    		{
+				Socket client = socket.accept();;
+				BufferedReader reader = new BufferedReader(new InputStreamReader(client.getInputStream()));
+	    		while (true)
+	    		{
+	    			String line = null;
+	    			try {
+	    				line = reader.readLine();
+	    			} catch (IOException e)
+	    			{
+	    				reportException(e);
+	    				return;
+	    			}
+	    			if (line == null) return;
+					lock.lock();
+	    			if (line.equals(BEGIN_PRE))
+	    			{
+                        // swap lists
+                        ArrayList<Message> tmp = lastMessagesPre;
+                        lastMessagesPre = messagesPre;
+                        messagesPre = tmp;
+
+	    	    		messagesPre.clear();
+	    	    		queue = -1;
+	    			}
+	    			else if (line.equals(END_PRE))
+	    			{
+	    				queue = 0;
+	    			}
+	    			else if (line.equals(BEGIN_POST))
+	    			{
+                        // swap lists
+                        ArrayList<Message> tmp = lastMessagesPost;
+                        lastMessagesPost = messagesPost;
+                        messagesPost = tmp;
+
+	    				messagesPost.clear();
+	    				queue = 1;
+	    			}
+	    			else if (line.equals(END_POST))
+	    			{
+	    				queue = 0;
+	    			}
+	    			else if (queue != 0)
+	    			{
+	    				Message msg = null;
+	    				try
+	    				{
+	    					msg = new Message(line);
+	    				}
+	    				catch (Exception e)
+	    				{
+	    					reportException(e);
+	    				}
+	    				if (msg != null)
+	    				{
+		    				if (queue == 1) 
+							{
+		    					messagesPost.add(msg);
+							}
+		    				else if (queue == -1)
+		    				{
+		    					messagesPre.add(msg);
+		    				}
+	    				}
+	    			}
+					lock.unlock();
+	    		}
+    		}
+    		catch (Exception e)
+    		{
+    			reportException(e);
+    		}
+    	}
+		public void draw(Graphics graphics, LocalTestRendererListener listner, boolean isPre)
+		{
+			ArrayList<Message> messages;
+			lock.lock();
+			if (isPre)
+			{
+				messages = lastMessagesPre;
+			}
+			else if (!isPre)
+			{
+				messages = lastMessagesPost;
+			}
+			else
+			{
+				lock.unlock();
+				return;
+			}
+			
+			Color oldColor = graphics.getColor();
+			for (int i = 0; i < messages.size(); i++)
+			{
+				messages.get(i).draw(graphics, listner);
+			}
+			lock.unlock();
+			graphics.setColor(oldColor);
+		}
+
+    }
+
     private Graphics graphics;
     private World world;
     private Game game;
@@ -17,46 +248,69 @@ public final class LocalTestRendererListener {
     private double top;
     private double width;
     private double height;
+    
+    private final int PLUGIN_PORT_NUMBER = 13579;
+    private ThreadListener listener;
+    private int port;
+    private Font textFont;
+    
+    private void loadProperties() throws IOException
+    {
+    	Properties properties = new Properties();
+    	try
+    	{
+			properties.load(new FileInputStream("visualizer-plugin.properties"));
+    	}
+    	catch (FileNotFoundException e)
+    	{
+    		// no properties file, use defaults
+    		port = PLUGIN_PORT_NUMBER;
+    		return;
+    	}
+
+    	String portNo = properties.getProperty("plugin-port-number");
+    	port = Integer.parseInt(portNo);
+    }
+    
+    public LocalTestRendererListener()
+    {
+    	File logfile = new File(LOGFILE_NAME);
+    	if (logfile.exists())
+    	{
+    		logfile.delete();
+    	}
+	
+    	// load defaults
+    	port = PLUGIN_PORT_NUMBER;
+    	// now try loading from properties
+    	try {
+			loadProperties();
+		} catch (Exception e1) {
+			reportException(e1);
+			return;
+		}
+    	
+    	textFont = null;
+    	
+    	try {
+			listener = new ThreadListener(port);
+			listener.start();
+		} catch (IOException e) {
+			reportException(e);
+			listener = null;
+		}
+    }
 
     public void beforeDrawScene(Graphics graphics, World world, Game game, int canvasWidth, int canvasHeight,
                                 double left, double top, double width, double height) {
-        //updateFields(graphics, world, game, canvasWidth, canvasHeight, left, top, width, height);
-        // Пока что всё рисование происходит в afterDrawScene
-        afterDrawScene(graphics, world, game, canvasWidth, canvasHeight, left, top, width, height);
+        updateFields(graphics, world, game, canvasWidth, canvasHeight, left, top, width, height);
+        if (listener != null) listener.draw(graphics, this, true);
     }
 
     public void afterDrawScene(Graphics graphics, World world, Game game, int canvasWidth, int canvasHeight,
                                double left, double top, double width, double height) {
         updateFields(graphics, world, game, canvasWidth, canvasHeight, left, top, width, height);
-        String drawFileName = "..\\draw.txt";
-        try(BufferedReader br = new BufferedReader(new FileReader(drawFileName))) {
-            String line = br.readLine();
-            while(line != null) {
-                String[] parts = line.split(" ");
-                if(parts[0].equals("setColor")) {
-                    int red = Integer.parseInt(parts[1]);
-                    int green = Integer.parseInt(parts[2]);
-                    int blue = Integer.parseInt(parts[3]);
-                    graphics.setColor(new Color(red, green, blue));
-                } else if(parts[0].equals("drawLine")) {
-                    double x1 = Double.parseDouble(parts[1]);
-                    double y1 = Double.parseDouble(parts[2]);
-                    double x2 = Double.parseDouble(parts[3]);
-                    double y2 = Double.parseDouble(parts[4]);
-                    drawLine(x1, y1, x2, y2);
-                } else if(parts[0].equals("fillCircle")) {
-                    double x = Double.parseDouble(parts[1]);
-                    double y = Double.parseDouble(parts[2]);
-                    double radius = Double.parseDouble(parts[3]);
-                    fillCircle(x, y, radius);
-                }
-                line = br.readLine();
-            }
-            br.close();
-        } catch(FileNotFoundException e) {
-        } catch(IOException e) {
-        } finally {
-        }
+        if (listener != null) listener.draw(graphics, this, false);
     }
 
     private void updateFields(Graphics graphics, World world, Game game, int canvasWidth, int canvasHeight,
@@ -66,8 +320,7 @@ public final class LocalTestRendererListener {
         this.game = game;
 
         this.canvasWidth = canvasWidth;
-        // TODO: -17 подобрано экспериментально. Очень похоже, что это есть высота заголовка окна и её в
-        // исходном плагине не учитывали.
+        // Windows 10 magic -17
         this.canvasHeight = canvasHeight - 17;
 
         this.left = left;
@@ -95,6 +348,19 @@ public final class LocalTestRendererListener {
         Point2I size = toCanvasOffset(2.0D * radius, 2.0D * radius);
 
         graphics.drawOval(topLeft.getX(), topLeft.getY(), size.getX(), size.getY());
+    }
+    
+    private void showText(double X, double Y, String text)
+    {
+    	Point2I position = toCanvasPosition(X, Y);
+    	Font oldFont = graphics.getFont();
+    	if (textFont == null)
+    	{
+    		textFont = new Font(oldFont.getFamily(), Font.PLAIN, 10);
+    	}
+    	graphics.setFont(textFont);
+    	graphics.drawString(text, position.getX(), position.getY());
+    	graphics.setFont(oldFont);
     }
 
     private void fillArc(double centerX, double centerY, double radius, int startAngle, int arcAngle) {

@@ -4,9 +4,7 @@ struct CVec2D;
 
 #ifdef LOGGING
 
-#include <string>
-#include <fstream>
-
+#include "Debug.h"
 class CDrawPlugin {
 public:
 	static CDrawPlugin& Instance()
@@ -15,18 +13,21 @@ public:
 		return singleInstance;
 	}
 
-	void BeginDraw();
-	void SetColor(int red, int green, int blue);
-	void DrawLine(const CVec2D& start, const CVec2D& end);
-	void FillCircle(const CVec2D& position, double radius);
-	void EndDraw();
+	void BeginPre();
+	void EndPre();
+	void BeginPost();
+	void EndPost();
+	void Circle(double x, double y, double r, int color = 0xFF0000);
+	void FillCircle(double x, double y, double r, int color = 0xFF0000);
+	void Rect(double x1, double y1, double x2, double y2, int color = 0x00FF00);
+	void FillRect(double x1, double y1, double x2, double y2, int color = 0x00FF00);
+	void Line(double x1, double y1, double x2, double y2, int color = 0x0000FF);
+	void Text(double x, double y, const char* text, int color = 0x000000);
 
 private:
-	std::string drawFilePath;
-	std::ofstream drawFile;
+	Debug debug;
 
 	CDrawPlugin();
-	~CDrawPlugin();
 };
 
 #else // LOGGING is not defined
@@ -39,11 +40,16 @@ public:
 		return singleInstance;
 	}
 
-	void BeginDraw() {}
-	void SetColor(int /*red*/, int /*green*/, int /*blue*/) {}
-	void DrawLine(const CVec2D& /*start*/, const CVec2D& /*end*/) {}
-	void FillCircle(const CVec2D& /*position*/, double /*radius*/) {}
-	void EndDraw() {}
+	void BeginPre() {}
+	void EndPre() {}
+	void BeginPost() {}
+	void EndPost() {}
+	void Circle(double, double, double, int) {}
+	void FillCircle(double, double, double, int) {}
+	void Rect(double, double, double, double, int) {}
+	void FillRect(double, double, double, double, int) {}
+	void Line(double, double, double, double, int) {}
+	void Text(double, double, const char*, int) {}
 
 private:
 
@@ -53,8 +59,8 @@ private:
 
 class CDrawPluginSwitcher {
 public:
-	explicit CDrawPluginSwitcher(CDrawPlugin& _drawPlugin) : drawPlugin(_drawPlugin) { drawPlugin.BeginDraw(); }
-	~CDrawPluginSwitcher() { drawPlugin.EndDraw(); }
+	explicit CDrawPluginSwitcher(CDrawPlugin& _drawPlugin) : drawPlugin(_drawPlugin) { drawPlugin.BeginPre(); }
+	~CDrawPluginSwitcher() { drawPlugin.EndPre(); }
 	CDrawPlugin& Get() { return drawPlugin; }
 
 private:

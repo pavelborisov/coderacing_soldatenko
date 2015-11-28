@@ -97,7 +97,6 @@ CBestMoveFinder::CResult CBestMoveFinder::Process()
 
 	////////////////////////////////////////// draw best
 	CMyCar simCar = car;
-	CDrawPlugin::Instance().SetColor(0, 0, 255);
 	const int simulationEnd = bestMoveList.back().End;
 	for (int tick = 0; tick < simulationEnd; tick++) {
 		model::Move simMove;
@@ -107,13 +106,12 @@ CBestMoveFinder::CResult CBestMoveFinder::Process()
 			}
 		}
 		simCar = simulator.Predict(simCar, world, simMove);
-		CDrawPlugin::Instance().FillCircle(simCar.Position, 5);
+		CDrawPlugin::Instance().FillCircle(simCar.Position.X, simCar.Position.Y, 5, 0x0000FF);
 	}
 	const double halfHeight = game.getCarHeight() / 2;
 	const double halfWidth = game.getCarWidth() / 2;
-	CDrawPlugin::Instance().SetColor(0, 255, 255);
 	for (const auto& corner : simCar.RotatedRect.Corners) {
-		CDrawPlugin::Instance().FillCircle(corner, 5);
+		CDrawPlugin::Instance().FillCircle(corner.X, corner.Y, 5, 0x00FFFF);
 	}
 
 	return result;
@@ -126,7 +124,6 @@ void CBestMoveFinder::processPreviousMoveList()
 	}
 
 	CState current(car, 0, 1, 0, bonuses.size());
-	CDrawPlugin::Instance().SetColor(0, 0, 255);
 	const int simulationEnd = correctedPreviousMoveList.back().End;
 	for (current.Tick = 0; current.Tick < simulationEnd; current.Tick++) {
 		CMyMove move;
