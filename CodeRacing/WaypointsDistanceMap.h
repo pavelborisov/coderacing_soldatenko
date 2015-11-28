@@ -9,7 +9,7 @@
 class CWaypointDistanceMap {
 public:
 	static const int tileSize = 800;
-	static const int step = 80;
+	static const int step = 200;
 	static const int undefinedCoordinate = -1;
 	static const int undefinedDistance = -1;
 	static const int undefinedScore = -1;
@@ -29,6 +29,12 @@ public:
 		CLowResTileWithScore() : Score(undefinedScore) {}
 		CLowResTileWithScore(const CLowResTile& LRTile, double Score) : LRTile(LRTile), Score(Score) {}
 	};
+
+	static CWaypointDistanceMap& Instance()
+	{
+		static CWaypointDistanceMap singleInstance;
+		return singleInstance;
+	}
 
 	void Initialize(const std::vector<CMyTile>& waypoints);
 	double Query(double x, double y, int waypointIndex);
@@ -52,6 +58,8 @@ private:
 	std::vector<CMyTile> waypoints;
 	std::vector<std::vector<CLowResTile>> lowResTiles;
 	std::vector<CData> dataByWp;
+
+	CWaypointDistanceMap() {}
 
 	double findDistance(int xt, int yt, CData& data);
 	void processNeighbor(int x, int y, int xn, int yn, CData& data);

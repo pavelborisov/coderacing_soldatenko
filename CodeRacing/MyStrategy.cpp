@@ -86,7 +86,7 @@ void MyStrategy::updateWaypoints()
 	}
 
 	if (flush) {
-		wpDistMap.Initialize(waypointTiles);
+		CWaypointDistanceMap::Instance().Initialize(waypointTiles);
 	}
 
 	nextWaypointIndex = self->getNextWaypointIndex();
@@ -133,7 +133,7 @@ void MyStrategy::makeMove()
 	predictEnemyPositions();
 
 	// TODO: ќценивать предыдущую лучшую последовательность - может, стоит еЄ продолжить?
-	CBestMoveFinder bestMoveFinder(car, *world, *game, tileRoute, simulator, previousResult);
+	CBestMoveFinder bestMoveFinder(car, nextWaypointIndex, *world, *game, waypointTiles, simulator, previousResult);
 	CBestMoveFinder::CResult result = bestMoveFinder.Process();
 	previousResult = result;
 	*resultMove = result.CurrentMove.Convert();
@@ -314,8 +314,25 @@ void MyStrategy::processOil()
 }
 void MyStrategy::experiment()
 {
-	const double dist = wpDistMap.Query(car.Position.X, car.Position.Y, nextWaypointIndex);
+	double dist = CWaypointDistanceMap::Instance().Query(car.Position.X, car.Position.Y, nextWaypointIndex);
 	log.Stream() << dist;
+	for (int tileX = 0; tileX < CMyTile::SizeX(); tileX++) {
+		const int startX = tileX * CWaypointDistanceMap::tileSize / CWaypointDistanceMap::step;
+		const int endX = (tileX + 1) * CWaypointDistanceMap::tileSize / CWaypointDistanceMap::step;
+		for (int tileY = 0; tileY < CMyTile::SizeY(); tileY++) {
+			const int startY = tileY * CWaypointDistanceMap::tileSize / CWaypointDistanceMap::step;
+			const int endY = (tileY + 1) * CWaypointDistanceMap::tileSize / CWaypointDistanceMap::step;
+			for (int x = startX; x < endX; x++) {
+				for (int y = startY; y < endY; y++) {
+					const double worldX = x * CWaypointDistanceMap::step;
+					const double worldY = (y + 0.5) * CWaypointDistanceMap::step;
+					dist = CWaypointDistanceMap::Instance().Query(worldX, worldY, nextWaypointIndex);
+					dist;
+					//CDrawPlugin::Instance().Text(worldX, worldY, to_string((int)dist).c_str(), 0x000000);
+				}
+			}
+		}
+	}
 }
 
 void MyStrategy::predict()

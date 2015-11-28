@@ -4,6 +4,7 @@
 #include <algorithm>
 #include "DrawPlugin.h"
 #include "Log.h"
+#include "WaypointsDistanceMap.h"
 
 using namespace std;
 
@@ -33,15 +34,17 @@ const vector<pair<vector<CMyMove>, vector<int>>> CBestMoveFinder::allMovesWithLe
 
 CBestMoveFinder::CBestMoveFinder(
 		const CMyCar& car,
+		int nextWaypointIndex,
 		const model::World& world,
 		const model::Game& game,
-		const std::vector<CMyTile>& tileRoute,
+		const std::vector<CMyTile>& waypointTiles,
 		const CSimulator& simulator,
 		const CBestMoveFinder::CResult& previousResult ) :
 	car(car),
+	nextWaypointIndex(nextWaypointIndex),
 	world(world),
 	game(game),
-	tileRoute(tileRoute),
+	waypointTiles(waypointTiles),
 	simulator(simulator)
 {
 	bonuses = world.getBonuses();
@@ -123,7 +126,7 @@ void CBestMoveFinder::processPreviousMoveList()
 		return;
 	}
 
-	CState current(car, 0, 1, 0, bonuses.size());
+	CState current(car, 0, nextWaypointIndex, 0, bonuses.size());
 	const int simulationEnd = correctedPreviousMoveList.back().End;
 	for (current.Tick = 0; current.Tick < simulationEnd; current.Tick++) {
 		CMyMove move;
@@ -137,17 +140,9 @@ void CBestMoveFinder::processPreviousMoveList()
 		}
 		current.Car = simulator.Predict(current.Car, world, move.Convert());
 		simulationTicks++;
-		// Подсчёт очков за пройденную клетку маршрута. TODO: переделать
-		if (CMyTile(current.Car.Position) == tileRoute[current.NextRouteIndex]) {
-			current.RouteScore += 800;
-			current.NextRouteIndex = (current.NextRouteIndex + 1) % tileRoute.size();
-		}
-		// Штраф за торможение в самом начале.
-		if (current.Tick == 0 && move.Brake == 1) {
-			current.RouteScore -= 200;
-		}
-		// Подбор бонусов
-		processBonus(current);
+
+		processRouteScore(current, current.Tick == 0 && move.Brake == 1);
+
 		// Отсечка по коллизиям. TODO: не останавливаться, если коллизия была "мягкая"
 		if (current.Car.CollisionDetected) {
 			correctedPreviousMoveList[mi].End = current.Tick;
@@ -170,7 +165,7 @@ void CBestMoveFinder::processMoveIndex(size_t moveIndex, const std::vector<CMove
 
 	if (moveIndex == 0) {
 		stateCache.clear();
-		stateCache.push_back({ car, 0, 1, 0, bonuses.size() });
+		stateCache.push_back({ car, 0, nextWaypointIndex, 0, bonuses.size() });
 	}
 
 	for (const CMyMove& move : moveArray) {
@@ -187,17 +182,9 @@ void CBestMoveFinder::processMoveIndex(size_t moveIndex, const std::vector<CMove
 			for (; current.Tick < end; current.Tick++) {
 				current.Car = simulator.Predict(current.Car, world, move.Convert());
 				simulationTicks++;
-				// Подсчёт очков за пройденную клетку маршрута. TODO: переделать
-				if (CMyTile(current.Car.Position) == tileRoute[current.NextRouteIndex]) {
-					current.RouteScore += 800;
-					current.NextRouteIndex = (current.NextRouteIndex + 1) % tileRoute.size();
-				}
-				// Штраф за торможение в самом начале.
-				if (current.Tick == 0 && move.Brake == 1) {
-					current.RouteScore -= 200;
-				}
-				// Подбор бонусов
-				processBonus(current);
+
+				processRouteScore(current, current.Tick == 0 && move.Brake == 1);
+
 				// Отсечка по коллизиям. TODO: не останавливаться, если коллизия была "мягкая"
 				if (current.Car.CollisionDetected) {
 					break;
@@ -227,6 +214,25 @@ void CBestMoveFinder::processMoveIndex(size_t moveIndex, const std::vector<CMove
 			}
 		}
 	}
+}
+
+void CBestMoveFinder::processRouteScore(CState& state, bool firstTickBrake)
+{
+	// Подсчёт очков за пройденную клетку маршрута.
+	const CMyTile& nextWaypointTile = waypointTiles[state.NextWaypointIndex];
+	if (CMyTile(state.Car.Position) == nextWaypointTile) {
+		const int afterNextWaypointIndex = (state.NextWaypointIndex + 1) % waypointTiles.size();
+		const CVec2D nextWaypointVec = waypointTiles[state.NextWaypointIndex].ToVec();
+		state.RouteScore += CWaypointDistanceMap::Instance().Query(nextWaypointVec.X, nextWaypointVec.Y, afterNextWaypointIndex);
+		state.RouteScore += 800;
+		state.NextWaypointIndex = afterNextWaypointIndex;
+	}
+	// Штраф за торможение в самом начале.
+	if (firstTickBrake) {
+		state.RouteScore -= 200;
+	}
+	// Подбор бонусов
+	processBonus(state);
 }
 
 void CBestMoveFinder::processBonus(CState& state)
@@ -279,24 +285,6 @@ void CBestMoveFinder::processBonus(CState& state)
 
 double CBestMoveFinder::evaluate(const CState& state) const
 {
-	CMyTile carTile(state.Car.Position); // В каком тайле оказались.
-	CMyTile targetTile(tileRoute[state.NextRouteIndex]); // Какой следующий тайл по маршруту.
-	double score = state.RouteScore; // Очки за все предыдущие полностью пройденные тайлы из маршрута.
-	const int dx = targetTile.X - carTile.X;
-	const int dy = targetTile.Y - carTile.Y;
-	if (dx == 1 && dy == 0) {
-		score += state.Car.Position.X - (carTile.X) * 800;
-	} else if (dx == -1 && dy == 0) {
-		score += (carTile.X + 1) * 800 - state.Car.Position.X; 
-	} else if (dx == 0 && dy == 1) {
-		score += state.Car.Position.Y - (carTile.Y) * 800;
-	} else if (dx == 0 && dy == -1) {
-		score += (carTile.Y + 1) * 800 - state.Car.Position.Y; 
-	} else {
-		// Где-то далеко мы находимся.
-		//score -= (state.Car.Position - carTile.ToVec()).Length();
-		score -= 800;
-		//score -= 0; // Пока не штрафуем.
-	}
-	return score;
+	const double dist = CWaypointDistanceMap::Instance().Query(state.Car.Position.X, state.Car.Position.Y, state.NextWaypointIndex);
+	return state.RouteScore - dist;
 }

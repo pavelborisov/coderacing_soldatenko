@@ -36,7 +36,6 @@ private:
 	CMyTile currentTile;
 	std::vector<CMyTile> tileRoute;
 	int nextWaypointIndex;
-	CWaypointDistanceMap wpDistMap;
 
 	CSimulator simulator;
 	CMyCar prevPrediction;

@@ -31,9 +31,10 @@ public:
 
 	CBestMoveFinder(
 		const CMyCar& car,
+		int nextWaypointIndex,
 		const model::World& world,
 		const model::Game& game,
-		const std::vector<CMyTile>& tileRoute,
+		const std::vector<CMyTile>& waypointTiles,
 		const CSimulator& simulator,
 		const CBestMoveFinder::CResult& previousResult);
 	
@@ -43,20 +44,21 @@ private:
 	struct CState {
 		CMyCar Car;
 		int Tick = 0;
-		int NextRouteIndex = 1;
+		int NextWaypointIndex = -1;
 		double RouteScore = 0;
 		std::vector<bool> PickedBonuses;
-		CState(const CMyCar& Car, int Tick, int NextRouteIndex, double RouteScore, size_t BonusesSize) :
-			Car(Car), Tick(Tick), NextRouteIndex(NextRouteIndex), RouteScore(RouteScore)
+		CState(const CMyCar& Car, int Tick, int NextWaypointIndex, double RouteScore, size_t BonusesSize) :
+			Car(Car), Tick(Tick), NextWaypointIndex(NextWaypointIndex), RouteScore(RouteScore)
 		{
 			PickedBonuses.assign(BonusesSize, false);
 		}
 	};
 
 	const CMyCar& car;
+	int nextWaypointIndex;
 	const model::World& world;
 	const model::Game& game;
-	const std::vector<CMyTile>& tileRoute;
+	const std::vector<CMyTile>& waypointTiles;
 	const CSimulator& simulator;
 	std::vector<CMoveWithDuration> correctedPreviousMoveList;
 
@@ -73,6 +75,7 @@ private:
 
 	void processPreviousMoveList();
 	void processMoveIndex(size_t moveIndex, const std::vector<CMoveWithDuration>& prevMoveList);
+	void processRouteScore(CState& state, bool firstTickBrake);
 	void processBonus(CState& state);
 	double evaluate(const CState& state) const;
 

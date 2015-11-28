@@ -74,6 +74,15 @@ CWaypointDistanceMap::CData::CData(int sizeX, int sizeY, const CMyTile& wpTile, 
 			}
 		}
 	}
+
+	// Все клетки без соседей (соотв. EMPTY) добавим в закрытое множество.
+	for (size_t x = 0; x < lrTiles.size(); x++) {
+		for (size_t y = 0; y < lrTiles[0].size(); y++) {
+			if (lrTiles[x][y].NeighborsMask == 0) {
+				ClosedSet[x][y] = true;
+			}
+		}
+	}
 }
 
 void CWaypointDistanceMap::Initialize(const std::vector<CMyTile>& _waypoints)
