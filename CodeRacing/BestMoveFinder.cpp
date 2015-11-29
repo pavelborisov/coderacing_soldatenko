@@ -228,7 +228,7 @@ void CBestMoveFinder::processRouteScore(CState& state, bool firstTickBrake)
 		const double dist = CWaypointDistanceMap::Instance().QueryBestDirection(nextWaypointVec.X, nextWaypointVec.Y, afterNextWaypointIndex);
 		assert(dist >= 0);
 		state.RouteScore += dist;
-		state.RouteScore += 800;
+		state.RouteScore += 600;
 		state.NextWaypointIndex = afterNextWaypointIndex;
 	}
 	// Штраф за торможение в самом начале.
