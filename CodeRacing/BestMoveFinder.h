@@ -32,6 +32,7 @@ public:
 	CBestMoveFinder(
 		const CMyCar& car,
 		int nextWaypointIndex,
+		const model::Car& self,
 		const model::World& world,
 		const model::Game& game,
 		const std::vector<CMyTile>& waypointTiles,
@@ -56,6 +57,7 @@ private:
 
 	const CMyCar& car;
 	int nextWaypointIndex;
+	const model::Car& self;
 	const model::World& world;
 	const model::Game& game;
 	const std::vector<CMyTile>& waypointTiles;

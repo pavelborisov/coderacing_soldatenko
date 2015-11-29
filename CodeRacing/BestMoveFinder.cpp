@@ -33,15 +33,17 @@ const vector<pair<vector<CMyMove>, vector<int>>> CBestMoveFinder::allMovesWithLe
 };
 
 CBestMoveFinder::CBestMoveFinder(
-		const CMyCar& car,
-		int nextWaypointIndex,
-		const model::World& world,
-		const model::Game& game,
-		const std::vector<CMyTile>& waypointTiles,
-		const CSimulator& simulator,
-		const CBestMoveFinder::CResult& previousResult ) :
+	const CMyCar& car,
+	int nextWaypointIndex,
+	const model::Car& self,
+	const model::World& world,
+	const model::Game& game,
+	const std::vector<CMyTile>& waypointTiles,
+	const CSimulator& simulator,
+	const CBestMoveFinder::CResult& previousResult) :
 	car(car),
 	nextWaypointIndex(nextWaypointIndex),
+	self(self),
 	world(world),
 	game(game),
 	waypointTiles(waypointTiles),
@@ -264,19 +266,19 @@ void CBestMoveFinder::processBonus(CState& state)
 			switch (bonuses[i].getType()) {
 				case model::REPAIR_KIT:
 					// TODO: Durability
-					state.RouteScore += 300;
+					state.RouteScore += self.getDurability() < 0.3 ? 700 : 100;
 					break;
 				case model::AMMO_CRATE:
-					state.RouteScore += 300;
+					state.RouteScore += 200;
 					break;
 				case model::NITRO_BOOST:
 					state.RouteScore += 300;
 					break;
 				case model::OIL_CANISTER:
-					state.RouteScore += 300;
+					state.RouteScore += 100;
 					break;
 				case model::PURE_SCORE:
-					state.RouteScore += 900;
+					state.RouteScore += 700;
 					break;
 				default:
 					assert(false);
@@ -287,8 +289,10 @@ void CBestMoveFinder::processBonus(CState& state)
 
 double CBestMoveFinder::evaluate(const CState& state) const
 {
+	const CVec2D carDirectionUnitVector(cos(state.Car.Angle), sin(state.Car.Angle));
+	const double angle = (state.Car.Speed + carDirectionUnitVector).GetAngle();
 	const double dist = CWaypointDistanceMap::Instance().Query(
-		state.Car.Position.X, state.Car.Position.Y, state.Car.Angle, state.NextWaypointIndex);
+		state.Car.Position.X, state.Car.Position.Y, angle, state.NextWaypointIndex);
 	if (dist >= 0) {
 		return state.RouteScore - dist;
 	} else {

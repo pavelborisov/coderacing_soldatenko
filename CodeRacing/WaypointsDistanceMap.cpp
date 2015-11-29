@@ -292,12 +292,33 @@ static TDirection reverseDirection( TDirection dir )
 
 double CWaypointDistanceMap::Query(double x, double y, double angle, int waypointIndex)
 {
-	const int xLowRes = static_cast<int>(x / step);
-	const int yLowRes = static_cast<int>(y / step);
+	const double xLowRes = x / step;
+	const double yLowRes = y / step;
+	const int xLowResInt = static_cast<int>(xLowRes);
+	const int yLowResInt = static_cast<int>(yLowRes);
 	normalizeAngle(angle);
-	const TDirection dir = reverseDirection(angleToDirection(angle));
-	const double dist = findDistance(xLowRes, yLowRes, dir, dataByWp[waypointIndex]);
-	return dist == undefinedDistance ? undefinedDistance : step * dist;
+	const TDirection dir = angleToDirection(angle);
+	const double dist = findDistance(xLowResInt, yLowResInt, reverseDirection(dir), dataByWp[waypointIndex]);
+	double offset = 0;
+	static const double sqrt2 = sqrt(2);
+	if (dir == D_Right) {
+		offset = (xLowResInt + 1) - xLowRes;
+	} else if (dir == D_Bot) {
+		offset = (yLowResInt + 1) - yLowRes;
+	} else if (dir == D_Left) {
+		offset = xLowRes - xLowResInt;
+	} else if (dir == D_Top) {
+		offset = yLowRes - yLowResInt;
+	} else if (dir == D_RightBot) {
+		offset = sqrt2 * (((xLowResInt + 1) - xLowRes) + ((yLowResInt + 1) - yLowRes));
+	} else if (dir == D_LeftBot) {
+		offset = sqrt2 * (((yLowResInt + 1) - yLowRes) + (xLowRes - xLowResInt));
+	} else if (dir == D_LeftTop) {
+		offset = sqrt2 * ((xLowRes - xLowResInt) + (yLowRes - yLowResInt));
+	} else if (dir == D_RightTop) {
+		offset = sqrt2 * ((yLowRes - yLowResInt) + ((xLowResInt + 1) - xLowRes));
+	}
+	return dist == undefinedDistance ? undefinedDistance : step * (dist + offset);
 }
 
 
