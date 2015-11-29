@@ -124,7 +124,7 @@ CMyCar CSimulator::Predict(const CMyCar& startCar, const model::World& /*world*/
 		car.NitroCooldown = game.getUseNitroCooldownTicks();
 	}
 	const bool isNitro = car.NitroTicks > 0;
-	car.NitroTicks = max(0, car.NitroTicks - 1); // TODO: проверить
+	car.NitroTicks = max(0, car.NitroTicks - 1);
 	car.NitroCooldown = max(0, car.NitroCooldown - 1);
 
 	// Обновляем мощность двигателя.

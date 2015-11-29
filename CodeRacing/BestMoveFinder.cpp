@@ -8,7 +8,6 @@
 
 using namespace std;
 
-// TODO: Добавить четвёртый "ход", который только едет прямо.
 const vector<pair<vector<CMyMove>, vector<int>>> CBestMoveFinder::allMovesWithLengths = {
 	// Первое множество действий
 	{
@@ -266,7 +265,6 @@ void CBestMoveFinder::processBonus(CState& state)
 			state.PickedBonuses[i] = true;
 			switch (bonuses[i].getType()) {
 				case model::REPAIR_KIT:
-					// TODO: Durability
 					state.RouteScore += self.getDurability() < 0.3 ? 700 : 100;
 					break;
 				case model::AMMO_CRATE:
