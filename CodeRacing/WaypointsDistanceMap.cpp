@@ -43,17 +43,41 @@ static bool checkOpen(
 	assert(abs(ndx) <= 1 && abs(ndy) <= 1);
 
 	const CWaypointDistanceMap::CLowResTile& nlrTile = lrTiles[nx][ny];
-	if (ndx == 1) {
-		if ((lrTile.GatesMask & Right) == 0 || (nlrTile.GatesMask & Left) == 0) return false;
-	} else if (ndx == -1) {
-		if ((lrTile.GatesMask & Left) == 0 || (nlrTile.GatesMask & Right) == 0) return false;
+	//if (ndx == 1) {
+	//	if ((lrTile.GatesMask & Right) == 0 || (nlrTile.GatesMask & Left) == 0) return false;
+	//} else if (ndx == -1) {
+	//	if ((lrTile.GatesMask & Left) == 0 || (nlrTile.GatesMask & Right) == 0) return false;
+	//}
+	//if (ndy == 1) {
+	//	if ((lrTile.GatesMask & Bottom) == 0 || (nlrTile.GatesMask & Top) == 0) return false;
+	//} else if(ndy == -1) {
+	//	if ((lrTile.GatesMask & Top) == 0 || (nlrTile.GatesMask & Bottom) == 0) return false;
+	//}
+	//return true;
+
+	if (ndx == 1 && ndy == 0) {
+		return (lrTile.GatesMask & Right) != 0 && (nlrTile.GatesMask & Left) != 0;
+	} else if (ndx == -1 && ndy == 0) {
+		return (lrTile.GatesMask & Left) != 0 && (nlrTile.GatesMask & Right) != 0;
+	} else if (ndx == 0 && ndy == 1) {
+		return (lrTile.GatesMask & Bottom) != 0 && (nlrTile.GatesMask & Top) != 0;
+	} else if (ndx == 0 && ndy == -1) {
+		return (lrTile.GatesMask & Top) != 0 && (nlrTile.GatesMask & Bottom) != 0;
+	} else if (ndx == 1 && ndy == 1) {
+		return ((lrTile.GatesMask & Right) != 0 && (nlrTile.GatesMask & Top) != 0)
+			&& ((lrTile.GatesMask & Bottom) != 0 && (nlrTile.GatesMask & Left) != 0);
+	} else if (ndx == -1 && ndy == 1) {
+		return ((lrTile.GatesMask & Left) != 0 && (nlrTile.GatesMask & Top) != 0)
+			&& ((lrTile.GatesMask & Bottom) != 0 && (nlrTile.GatesMask & Right) != 0);
+	} else if (ndx == 1 && ndy == -1) {
+		return ((lrTile.GatesMask & Right) != 0 && (nlrTile.GatesMask & Bottom) != 0)
+			&& ((lrTile.GatesMask & Top) != 0 && (nlrTile.GatesMask & Left) != 0);
+	} else if (ndx == -1 && ndy == -1) {
+		return ((lrTile.GatesMask & Left) != 0 && (nlrTile.GatesMask & Bottom) != 0)
+			&& ((lrTile.GatesMask & Top) != 0 && (nlrTile.GatesMask & Right) != 0);
 	}
-	if (ndy == 1) {
-		if ((lrTile.GatesMask & Bottom) == 0 || (nlrTile.GatesMask & Top) == 0) return false;
-	} else if(ndy == -1) {
-		if ((lrTile.GatesMask & Top) == 0 || (nlrTile.GatesMask & Bottom) == 0) return false;
-	}
-	return true;
+	assert(false);
+	return false;
 }
 
 static TDirection toDirection(int dx, int dy)
@@ -88,46 +112,42 @@ static vector<CWaypointDistanceMap::CLowResTile> findNeighbors(
 	vector<CWaypointDistanceMap::CLowResTile> neighbors;
 	if (dy == 0) {
 		// straight
-		int ndx = 1;
-		int ndy = 0;
+		int ndx = 1, ndx1 = 1, ndx2 = 1;
+		int ndy = 0, ndy1 = 1, ndy2 = -1;
 		simpleRotate(ndx, ndy, angle);
+		simpleRotate(ndx1, ndy1, angle);
+		simpleRotate(ndx2, ndy2, angle);
 		if (checkOpen(lrTile, ndx, ndy, lrTiles)) {
 			neighbors.emplace_back(CWaypointDistanceMap::CLowResTile(x + ndx, y + ndy, toDirection(ndx, ndy), lrTiles[x + ndx][y + ndy].GatesMask));
+			neighbors.emplace_back(CWaypointDistanceMap::CLowResTile(x + ndx, y + ndy, toDirection(ndx1, ndy1), lrTiles[x + ndx][y + ndy].GatesMask));
+			neighbors.emplace_back(CWaypointDistanceMap::CLowResTile(x + ndx, y + ndy, toDirection(ndx2, ndy2), lrTiles[x + ndx][y + ndy].GatesMask));
 		}
-		// turns
-		ndx = 1;
-		ndy = 1;
-		simpleRotate(ndx, ndy, angle);
-		if (checkOpen(lrTile, ndx, ndy, lrTiles)) {
-			neighbors.emplace_back(CWaypointDistanceMap::CLowResTile(x + ndx, y + ndy, toDirection(ndx, ndy), lrTiles[x + ndx][y + ndy].GatesMask));
-		}
-		ndx = 1;
-		ndy = -1;
-		simpleRotate(ndx, ndy, angle);
-		if (checkOpen(lrTile, ndx, ndy, lrTiles)) {
-			neighbors.emplace_back(CWaypointDistanceMap::CLowResTile(x + ndx, y + ndy, toDirection(ndx, ndy), lrTiles[x + ndx][y + ndy].GatesMask));
-		}
+		//// turns
+		//if (checkOpen(lrTile, ndx1, ndy1, lrTiles)) {
+		//	neighbors.emplace_back(CWaypointDistanceMap::CLowResTile(x + ndx1, y + ndy1, toDirection(ndx1, ndy1), lrTiles[x + ndx1][y + ndy1].GatesMask));
+		//}
+		//if (checkOpen(lrTile, ndx2, ndy2, lrTiles)) {
+		//	neighbors.emplace_back(CWaypointDistanceMap::CLowResTile(x + ndx2, y + ndy2, toDirection(ndx2, ndy2), lrTiles[x + ndx2][y + ndy2].GatesMask));
+		//}
 	} else if (dy == 1) {
 		// diagonal
-		int ndx = 1;
-		int ndy = 1;
+		int ndx = 1, ndx1 = 1, ndx2 = 0;
+		int ndy = 1, ndy1 = 0, ndy2 = 1;
 		simpleRotate(ndx, ndy, angle);
+		simpleRotate(ndx1, ndy1, angle);
+		simpleRotate(ndx2, ndy2, angle);
 		if (checkOpen(lrTile, ndx, ndy, lrTiles)) {
 			neighbors.emplace_back(CWaypointDistanceMap::CLowResTile(x + ndx, y + ndy, toDirection(ndx, ndy), lrTiles[x + ndx][y + ndy].GatesMask));
+			neighbors.emplace_back(CWaypointDistanceMap::CLowResTile(x + ndx, y + ndy, toDirection(ndx1, ndy1), lrTiles[x + ndx][y + ndy].GatesMask));
+			neighbors.emplace_back(CWaypointDistanceMap::CLowResTile(x + ndx, y + ndy, toDirection(ndx2, ndy2), lrTiles[x + ndx][y + ndy].GatesMask));
 		}
-		// turns
-		ndx = 1;
-		ndy = 0;
-		simpleRotate(ndx, ndy, angle);
-		if (checkOpen(lrTile, ndx, ndy, lrTiles)) {
-			neighbors.emplace_back(CWaypointDistanceMap::CLowResTile(x + ndx, y + ndy, toDirection(ndx, ndy), lrTiles[x + ndx][y + ndy].GatesMask));
-		}
-		ndx = 0;
-		ndy = 1;
-		simpleRotate(ndx, ndy, angle);
-		if (checkOpen(lrTile, ndx, ndy, lrTiles)) {
-			neighbors.emplace_back(CWaypointDistanceMap::CLowResTile(x + ndx, y + ndy, toDirection(ndx, ndy), lrTiles[x + ndx][y + ndy].GatesMask));
-		}
+		//// turns
+		//if (checkOpen(lrTile, ndx1, ndy1, lrTiles)) {
+		//	neighbors.emplace_back(CWaypointDistanceMap::CLowResTile(x + ndx1, y + ndy1, toDirection(ndx1, ndy1), lrTiles[x + ndx1][y + ndy1].GatesMask));
+		//}
+		//if (checkOpen(lrTile, ndx2, ndy2, lrTiles)) {
+		//	neighbors.emplace_back(CWaypointDistanceMap::CLowResTile(x + ndx2, y + ndy2, toDirection(ndx2, ndy2), lrTiles[x + ndx2][y + ndy2].GatesMask));
+		//}
 	} else {
 		assert(false);
 	}

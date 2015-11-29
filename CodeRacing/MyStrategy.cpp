@@ -198,6 +198,7 @@ void MyStrategy::predictEnemyPositions()
 {
 	static const int predictionLength = 50;
 	enemyPredictions.clear();
+	enemyCars.clear();
 	//CDrawPlugin::Instance().SetColor(128, 255, 0);
 	for (const auto& otherCar : world->getCars()) {
 		if (otherCar.getPlayerId() != self->getPlayerId()) {
@@ -224,6 +225,13 @@ void MyStrategy::processShooting()
 	static const int predictionLength = 40;
 	double dmgScore = 0;
 	//CDrawPlugin::Instance().SetColor(255, 0, 0);
+
+	vector<double> enemyDurabilities(enemyPredictions.size(), 0);
+	for (size_t enemyIndex = 0; enemyIndex < enemyPredictions.size(); enemyIndex++) {
+		enemyDurabilities[enemyIndex] = enemyCars[enemyIndex].getDurability();
+	}
+
+	int bulletsHit = 0;
 	for (int offsetIndex = -1; offsetIndex <= 1; offsetIndex++) {
 		double projectileAngle = car.Angle + offsetIndex * game->getSideWasherAngle();
 		normalizeAngle(projectileAngle);
@@ -231,38 +239,59 @@ void MyStrategy::processShooting()
 		CVec2D projectileSpeed(game->getWasherInitialSpeed(), 0);
 		projectileSpeed.Rotate(projectileAngle);
 		double projectileRadiusSqr = pow(game->getWasherRadius(), 2);
+		//double projectileRadiusSqr = 0; // для повышенной точности
 		double projectileDmg = game->getWasherDamage();
 
 		const double carEffectiveRadiusSqr = pow((game->getCarHeight()) / 2, 2);
 		
+		bool hit = false;
 		for (int tick = 1; tick <= predictionLength; tick++) {
 			projectilePos += projectileSpeed;
 			// TODO: Нормальная проверка коллизий.
-			for (size_t enemyIndex = 0; enemyIndex < enemyPredictions.size(); enemyIndex++ ) {
-				const model::Car& enemyCar = enemyCars[enemyIndex];
-				const double enemyDurability = enemyCar.getDurability();
-				if (enemyCar.isFinishedTrack() || enemyCar.getDurability() <= 1e-10) {
+			for (size_t enemyIndex = 0; enemyIndex < enemyPredictions.size(); enemyIndex++) {
+				double& enemyDurability = enemyDurabilities[enemyIndex];
+				if (enemyCars[enemyIndex].isFinishedTrack() || enemyDurability <= 1e-5) {
 					// TODO: Почему-то часто стреляем по трупам.
 					continue;
 				}
 				const CVec2D& enemyPos = enemyPredictions[enemyIndex][tick].Position;
 				const double distSqr = (enemyPos - projectilePos).LengthSquared();
 				if (distSqr < projectileRadiusSqr + carEffectiveRadiusSqr) {
-					dmgScore += min(enemyCar.getDurability(), projectileDmg) * game->getCarDamageScoreFactor();
-					if (enemyCar.getDurability() < projectileDmg) {
-						dmgScore += game->getCarEliminationScore();
+					if (enemyDurability > 1e-5) {
+						if (enemyDurability < projectileDmg) {
+							dmgScore += enemyDurability * game->getCarDamageScoreFactor();
+							dmgScore += game->getCarEliminationScore();
+							enemyDurability = 0;
+						} else {
+							dmgScore += projectileDmg * game->getCarDamageScoreFactor();
+							enemyDurability -= projectileDmg;
+						}
 					}
 					//CDrawPlugin::Instance().FillCircle(enemyPos, game->getWasherRadius());
+					hit = true;
+					bulletsHit++;
 					break;
 				}
 			}
+			if (hit) break;
 			//CDrawPlugin::Instance().FillCircle(projectilePos, game->getWasherRadius());
 		}
 	}
 
+	if (dmgScore > 0) {
+		log.Stream() << "ApproxDmg: " << dmgScore << "; Bullets hit: " << bulletsHit << endl;
+		log.Stream() << enemyDurabilities[0] << " " << enemyDurabilities[1] << " " << enemyDurabilities[2] << endl;
+	}
+
 	// Стреляем, если предполагаем, что наберём какой-то минимум очков.
-	if (dmgScore > 40) {
-		resultMove->setThrowProjectile(true);
+	if (self->getProjectileCount() == 1) {
+		if (dmgScore >= 100) {
+			resultMove->setThrowProjectile(true);
+		}
+	} else if (self->getProjectileCount() > 1) {
+		if (dmgScore >= 40) {
+			resultMove->setThrowProjectile(true);
+		}
 	}
 }
 
@@ -365,9 +394,9 @@ void MyStrategy::doDraw()
 	CVec2D nextWaypoint = waypointTiles[nextWaypointIndex].ToVec();
 	draw.FillCircle(nextWaypoint.X, nextWaypoint.Y, 50, 0xFF0000);
 
-	for (size_t i = 1; i < min(10U, tileRoute.size()); i++) {
-		CVec2D from = tileRoute[i - 1].ToVec();
-		CVec2D to = tileRoute[i].ToVec();
-		draw.Line(from.X, from.Y, to.X, to.Y, 0x00FF00);
-	}
+	//for (size_t i = 1; i < min(10U, tileRoute.size()); i++) {
+	//	CVec2D from = tileRoute[i - 1].ToVec();
+	//	CVec2D to = tileRoute[i].ToVec();
+	//	draw.Line(from.X, from.Y, to.X, to.Y, 0x00FF00);
+	//}
 }

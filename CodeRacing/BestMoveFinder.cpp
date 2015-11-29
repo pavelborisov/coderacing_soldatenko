@@ -228,7 +228,7 @@ void CBestMoveFinder::processRouteScore(CState& state, bool firstTickBrake)
 		const double dist = CWaypointDistanceMap::Instance().QueryBestDirection(nextWaypointVec.X, nextWaypointVec.Y, afterNextWaypointIndex);
 		assert(dist >= 0);
 		state.RouteScore += dist;
-		state.RouteScore += 600;
+		state.RouteScore += 400;
 		state.NextWaypointIndex = afterNextWaypointIndex;
 	}
 	// Штраф за торможение в самом начале.
@@ -243,7 +243,8 @@ void CBestMoveFinder::processBonus(CState& state)
 {
 	static const double distToCenterSqrCutoff = pow(170 + 30, 2);
 	static const double distToCenterSqrSure = pow(70 + 20, 2);
-	static const double bonusRadiusSqr = pow(20, 2);
+	//static const double bonusRadiusSqr = pow(20, 2);
+	static const double bonusRadiusSqr = pow(18, 2); // -2 для точности
 	for (size_t i = 0; i < bonuses.size(); i++) {
 		if (state.PickedBonuses[i]) continue;
 		const double distToCenterSqr = (bonusPositions[i] - state.Car.Position).LengthSquared();
