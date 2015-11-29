@@ -223,7 +223,9 @@ void CBestMoveFinder::processRouteScore(CState& state, bool firstTickBrake)
 	if (CMyTile(state.Car.Position) == nextWaypointTile) {
 		const int afterNextWaypointIndex = (state.NextWaypointIndex + 1) % waypointTiles.size();
 		const CVec2D nextWaypointVec = waypointTiles[state.NextWaypointIndex].ToVec();
-		state.RouteScore += CWaypointDistanceMap::Instance().Query(nextWaypointVec.X, nextWaypointVec.Y, afterNextWaypointIndex);
+		const double dist = CWaypointDistanceMap::Instance().QueryBestDirection(nextWaypointVec.X, nextWaypointVec.Y, afterNextWaypointIndex);
+		assert(dist >= 0);
+		state.RouteScore += dist;
 		state.RouteScore += 800;
 		state.NextWaypointIndex = afterNextWaypointIndex;
 	}
@@ -285,6 +287,12 @@ void CBestMoveFinder::processBonus(CState& state)
 
 double CBestMoveFinder::evaluate(const CState& state) const
 {
-	const double dist = CWaypointDistanceMap::Instance().Query(state.Car.Position.X, state.Car.Position.Y, state.NextWaypointIndex);
-	return state.RouteScore - dist;
+	const double dist = CWaypointDistanceMap::Instance().Query(
+		state.Car.Position.X, state.Car.Position.Y, state.Car.Angle, state.NextWaypointIndex);
+	if (dist >= 0) {
+		return state.RouteScore - dist;
+	} else {
+		//assert(false);
+		return -1000000;
+	}
 }

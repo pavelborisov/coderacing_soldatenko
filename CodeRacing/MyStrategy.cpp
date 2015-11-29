@@ -314,7 +314,7 @@ void MyStrategy::processOil()
 }
 void MyStrategy::experiment()
 {
-	double dist = CWaypointDistanceMap::Instance().Query(car.Position.X, car.Position.Y, nextWaypointIndex);
+	double dist = CWaypointDistanceMap::Instance().Query(car.Position.X, car.Position.Y, car.Angle, nextWaypointIndex);
 	log.Stream() << dist;
 	for (int tileX = 0; tileX < CMyTile::SizeX(); tileX++) {
 		const int startX = tileX * CWaypointDistanceMap::tileSize / CWaypointDistanceMap::step;
@@ -324,11 +324,12 @@ void MyStrategy::experiment()
 			const int endY = (tileY + 1) * CWaypointDistanceMap::tileSize / CWaypointDistanceMap::step;
 			for (int x = startX; x < endX; x++) {
 				for (int y = startY; y < endY; y++) {
-					const double worldX = x * CWaypointDistanceMap::step;
+					const double worldX = (x + 0.5) * CWaypointDistanceMap::step;
 					const double worldY = (y + 0.5) * CWaypointDistanceMap::step;
-					dist = CWaypointDistanceMap::Instance().Query(worldX, worldY, nextWaypointIndex);
-					dist;
-					//CDrawPlugin::Instance().Text(worldX, worldY, to_string((int)dist).c_str(), 0x000000);
+					//dist = CWaypointDistanceMap::Instance().QueryBestDirection(worldX, worldY, nextWaypointIndex);
+					dist = CWaypointDistanceMap::Instance().Query(worldX, worldY, car.Angle, nextWaypointIndex);
+					//dist;
+					CDrawPlugin::Instance().Text(worldX, worldY, to_string((int)dist).c_str(), 0x000000);
 				}
 			}
 		}
