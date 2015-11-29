@@ -100,7 +100,6 @@ void MyStrategy::findTileRoute()
 	const int currentY = static_cast<int>(self->getY() / game->getTrackTileSize());
 	currentTile = CMyTile(currentX, currentY);
 
-	// TODO: Сделать поиск маршрута в зависимости от направления скорости машины в начальной точке.
 	int dx = 0;
 	int dy = 0;
 	if (abs(car.Angle) < PI / 4) {
@@ -134,7 +133,6 @@ void MyStrategy::makeMove()
 
 	predictEnemyPositions();
 
-	// TODO: Оценивать предыдущую лучшую последовательность - может, стоит её продолжить?
 	CBestMoveFinder bestMoveFinder(car, nextWaypointIndex, *self, *world, *game, waypointTiles, simulator, previousResult);
 	CBestMoveFinder::CResult result = bestMoveFinder.Process();
 	previousResult = result;
@@ -143,7 +141,6 @@ void MyStrategy::makeMove()
 	processOil();
 
 	// Тупой задний ход
-	// TODO: Запомнить, куда мы поворачивали колеса в последний раз и задним ходом делать наборот.
 	static int rear = 0;
 	double angleToTarget = (tileRoute[1].ToVec() - car.Position).GetAngle();
 	double angle = angleToTarget - car.Angle;
@@ -177,7 +174,6 @@ void MyStrategy::makeMove()
 		if (rear == 0) rear = -120;
 	}
 
-	// TODO: Проверка на прямые участки.
 	// Тупое нитро.
 	if (result.Success) {
 		// Сколько тиков поворачиваем.
@@ -253,7 +249,6 @@ void MyStrategy::processShooting()
 			for (size_t enemyIndex = 0; enemyIndex < enemyPredictions.size(); enemyIndex++) {
 				double& enemyDurability = enemyDurabilities[enemyIndex];
 				if (enemyCars[enemyIndex].isFinishedTrack() || enemyDurability <= 1e-5) {
-					// TODO: Почему-то часто стреляем по трупам.
 					continue;
 				}
 				const CVec2D& enemyPos = enemyPredictions[enemyIndex][tick].Position;
