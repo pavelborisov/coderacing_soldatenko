@@ -36,7 +36,7 @@ void MyStrategy::move(const Car& _self, const World& _world, const Game& _game, 
 	game = &_game;
 	resultMove = &_resultMove;
 
-	if (world->getPlayers().size() == 2) return;
+	if (world->getPlayers().size() == 2 && self->getType() == JEEP) return;
 
 	CDrawPluginSwitcher drawSwitcher(draw); 
 	currentTick = world->getTick();

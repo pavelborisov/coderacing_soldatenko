@@ -62,7 +62,7 @@ bool CMyTile::IsLeftOpen() const
 		case BOTTOM_HEADED_T:
 		case CROSSROADS:
 		case UNKNOWN:
-			return true;
+			return X > 0;
 		default:
 			return false;
 	}
@@ -79,7 +79,7 @@ bool CMyTile::IsRightOpen() const
 		case BOTTOM_HEADED_T:
 		case CROSSROADS:
 		case UNKNOWN:
-			return true;
+			return X < SizeX() - 1;
 		default:
 			return false;
 	}
@@ -96,7 +96,7 @@ bool CMyTile::IsBottomOpen() const
 		case RIGHT_HEADED_T:
 		case CROSSROADS:
 		case UNKNOWN:
-			return true;
+			return Y < SizeY() - 1;
 		default:
 			return false;
 	}
@@ -113,7 +113,7 @@ bool CMyTile::IsTopOpen() const
 		case RIGHT_HEADED_T:
 		case CROSSROADS:
 		case UNKNOWN:
-			return true;
+			return Y > 0;
 		default:
 			return false;
 	}
