@@ -18,10 +18,12 @@ struct CMyCar {
 	double MedianAngularSpeed;
 	double EnginePower;
 	double WheelTurn;
+	double Durability;
 	int NitroCount;
 	int NitroTicks;
 	int NitroCooldown;
 	int OiledTicks;
+	int DeadTicks;
 	int Type;
 	int Id;
 	bool CollisionDetected;
@@ -31,5 +33,5 @@ struct CMyCar {
 	explicit CMyCar(const model::Car& car);
 
 	void UpdateRotatedRect();
-	void SaveMedianAngularSpeedHistory();
+	void SaveHistory();
 };

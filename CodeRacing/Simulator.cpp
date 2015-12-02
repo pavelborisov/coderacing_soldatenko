@@ -119,14 +119,27 @@ CMyCar CSimulator::Predict(const CMyCar& startCar, const model::World& /*world*/
 	// Ортогональное направление.
 	CVec2D crosswiseUnitVector(lengthwiseUnitVector.Y, -lengthwiseUnitVector.X);
 
+	// Проверка дохлости.
+	if (car.Durability < 1e-5) {
+		if (car.DeadTicks == 0) {
+			car.DeadTicks = game.getCarReactivationTimeTicks();
+		}
+	}
+	const double isDead = car.DeadTicks > 0;
+	assert(isDead || car.Durability > 1e-5);
+	car.DeadTicks = max(0, car.DeadTicks - 1);
+	if (isDead && car.DeadTicks == 0) {
+		car.Durability = 1;
+	}
+
 	// Нитро.
-	if (move.isUseNitro()) {
+	if (move.isUseNitro() && !isDead) {
 		assert(car.NitroCount > 0 && car.NitroTicks == 0 && car.NitroCooldown == 0);
 		car.NitroCount--;
 		car.NitroTicks = game.getNitroDurationTicks();
 		car.NitroCooldown = game.getUseNitroCooldownTicks();
 	}
-	const bool isNitro = car.NitroTicks > 0;
+	const bool isNitro = car.NitroTicks > 0 && !isDead;
 	car.NitroTicks = max(0, car.NitroTicks - 1);
 	car.NitroCooldown = max(0, car.NitroCooldown - 1);
 
@@ -135,7 +148,11 @@ CMyCar CSimulator::Predict(const CMyCar& startCar, const model::World& /*world*/
 	car.OiledTicks = max(0, car.OiledTicks - 1);
 
 	// Тормоз
-	const bool isBrake = move.isBrake();
+	const bool isBrake = move.isBrake() && !isDead;
+
+	// Команды на двигатель и на руль.
+	const double enginePower = isDead ? 0 : move.getEnginePower();
+	const double wheelTurn = isDead ? car.WheelTurn : move.getWheelTurn();
 
 	// Обновляем мощность двигателя.
 	if (isNitro) {
@@ -143,7 +160,7 @@ CMyCar CSimulator::Predict(const CMyCar& startCar, const model::World& /*world*/
 	} else {
 		// После окончания нитро надо не забыть обрезать мощность до 1 перед изменением мощности.
 		car.EnginePower = limit(car.EnginePower, 1.0);
-		car.EnginePower += limit(move.getEnginePower() - car.EnginePower, game.getCarEnginePowerChangePerTick());
+		car.EnginePower += limit(enginePower - car.EnginePower, game.getCarEnginePowerChangePerTick());
 		car.EnginePower = limit(car.EnginePower, 1.0);
 	}
 	// Вектор ускорения. Будет постоянный для всех итераций физики.
@@ -157,7 +174,7 @@ CMyCar CSimulator::Predict(const CMyCar& startCar, const model::World& /*world*/
 		// К сожалению, такой хак приводит к небольшой потере точности при предсказании руления на первом тике.
 		car.MedianAngularSpeed = game.getCarAngularSpeedFactor() * car.WheelTurn * lengthwiseUnitVector.DotProduct(car.Speed);
 	}
-	car.WheelTurn += limit(move.getWheelTurn() - car.WheelTurn, game.getCarWheelTurnChangePerTick());
+	car.WheelTurn += limit(wheelTurn - car.WheelTurn, game.getCarWheelTurnChangePerTick());
 	car.WheelTurn = limit(car.WheelTurn, 1.0);
 	// Теперь считается базовая скорость на весь текущий тик.
 	car.AngularSpeed -= car.MedianAngularSpeed;
