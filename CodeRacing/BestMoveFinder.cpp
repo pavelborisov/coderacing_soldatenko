@@ -121,6 +121,16 @@ CBestMoveFinder::CResult CBestMoveFinder::Process()
 	return result;
 }
 
+static bool chance(int percentage)
+{
+	return rand() % 100 < percentage;
+}
+
+static int uniform(int start, int end)
+{
+	return start + rand() % (end - start);
+}
+
 void CBestMoveFinder::processPreviousMoveList()
 {
 	if (correctedPreviousMoveList.size() == 0) {
@@ -161,8 +171,53 @@ void CBestMoveFinder::processPreviousMoveList()
 void CBestMoveFinder::processMoveIndex(size_t moveIndex, const std::vector<CMoveWithDuration>& prevMoveList)
 {
 	const bool lastMove = moveIndex == allMovesWithLengths.size() - 1;
-	const vector<CMyMove>& moveArray = allMovesWithLengths[moveIndex].first;
-	const vector<int>& lengthsArray = allMovesWithLengths[moveIndex].second;
+	//const vector<CMyMove>& moveArray = allMovesWithLengths[moveIndex].first;
+	//const vector<int>& lengthsArray = allMovesWithLengths[moveIndex].second;
+	vector<CMyMove> moveArray;
+	vector<int> lengthsArray;
+
+	if (moveIndex == 0) {
+		moveArray.push_back({ 0, 0 });
+		if (chance(50)) {
+			moveArray.push_back({ 1, 0 });
+			moveArray.push_back({ 1, 1 });
+		} else {
+			moveArray.push_back({ -1, 0 });
+			moveArray.push_back({ -1, 1 });
+		}
+		lengthsArray.push_back(0);
+		lengthsArray.push_back(uniform(2, 7));
+		lengthsArray.push_back(uniform(7, 15));
+		lengthsArray.push_back(uniform(15, 30));
+		lengthsArray.push_back(uniform(30, 50));
+		sort(lengthsArray.begin(), lengthsArray.end());
+	} else if (moveIndex == 1) {
+		moveArray.push_back({ 0, 0 });
+		if (chance(50)) {
+			moveArray.push_back({ 1, 0 });
+			moveArray.push_back({ 1, 1 });
+		} else {
+			moveArray.push_back({ -1, 0 });
+			moveArray.push_back({ -1, 1 });
+		}
+		lengthsArray.push_back(0);
+		lengthsArray.push_back(uniform(30, 50));
+		sort(lengthsArray.begin(), lengthsArray.end());
+	} else if (moveIndex == 2) {
+		moveArray.push_back({ 0, 0 });
+		if (chance(50)) {
+			moveArray.push_back({ 1, 0 });
+		} else {
+			moveArray.push_back({ -1, 0 });
+		}
+		lengthsArray.push_back(0);
+		lengthsArray.push_back(uniform(30, 50));
+		sort(lengthsArray.begin(), lengthsArray.end());
+	} else if (moveIndex == 3) {
+		moveArray.push_back({ 0, 0 });
+		lengthsArray.push_back(1000);
+		sort(lengthsArray.begin(), lengthsArray.end());
+	}
 
 	if (moveIndex == 0) {
 		stateCache.clear();
@@ -265,19 +320,19 @@ void CBestMoveFinder::processBonus(CState& state)
 			state.PickedBonuses[i] = true;
 			switch (bonuses[i].getType()) {
 				case model::REPAIR_KIT:
-					state.RouteScore += self.getDurability() < 0.3 ? 700 : 100;
+					state.RouteScore += self.getDurability() < 0.3 ? 1500 : 200;
 					break;
 				case model::AMMO_CRATE:
-					state.RouteScore += 200;
+					state.RouteScore += 400;
 					break;
 				case model::NITRO_BOOST:
-					state.RouteScore += 300;
+					state.RouteScore += 1000;
 					break;
 				case model::OIL_CANISTER:
-					state.RouteScore += 100;
+					state.RouteScore += 200;
 					break;
 				case model::PURE_SCORE:
-					state.RouteScore += 700;
+					state.RouteScore += 1500;
 					break;
 				default:
 					assert(false);
@@ -288,8 +343,9 @@ void CBestMoveFinder::processBonus(CState& state)
 
 double CBestMoveFinder::evaluate(const CState& state) const
 {
-	const CVec2D carDirectionUnitVector(cos(state.Car.Angle), sin(state.Car.Angle));
-	const double angle = (state.Car.Speed + carDirectionUnitVector).GetAngle();
+	//const CVec2D carDirectionUnitVector(cos(state.Car.Angle), sin(state.Car.Angle));
+	//const double angle = (state.Car.Speed + carDirectionUnitVector).GetAngle();
+	const double angle = state.Car.Angle;
 	const double dist = CWaypointDistanceMap::Instance().Query(
 		state.Car.Position.X, state.Car.Position.Y, angle, state.NextWaypointIndex);
 	if (dist >= 0) {
