@@ -3,6 +3,7 @@
 #include <algorithm>
 #include "math.h"
 #include "assert.h"
+#include "Log.h"
 #include "MyTile.h"
 #include "DrawPlugin.h"
 #include "Tools.h"
@@ -36,7 +37,7 @@ void CSimulator::Initialize(const model::Game& _game)
 
 	lengthwiseFrictionFactorDt = game.getCarLengthwiseMovementFrictionFactor() * dTime;
 	crosswiseFrictionFactorDt = game.getCarCrosswiseMovementFrictionFactor() * dTime;
-	rotationFrictionFactorDt = game.getCarRotationFrictionFactor() * dTime;
+	rotationFrictionFactorDt = game.getCarRotationFrictionFactor() * dTime / 5; // WHY /5 ???
 
 	movementAirFrictionFactorDt = pow(1 - game.getCarMovementAirFrictionFactor(), dTime);
 	rotationAirFrictionFactorDt = pow(1 - game.getCarRotationAirFrictionFactor(), dTime);
@@ -56,7 +57,9 @@ static const double limit(double val, double lim)
 
 CMyCar CSimulator::Predict(const CMyCar& startCar, const model::World& /*world*/, const model::Move& move) const
 {
-	// TODO: Коллизии. Со стенами, другими машинами, бонусами(!)
+	// TODO: Коллизии. Со стенами, мазутом, другими машинами, бонусами(!)
+	// TODO: Правильно считать, если мы дохлые
+	// TODO: Учитывать уже летящие в нас снаряды
 	CMyCar car(startCar);
 
 	///////////////
@@ -127,6 +130,13 @@ CMyCar CSimulator::Predict(const CMyCar& startCar, const model::World& /*world*/
 	car.NitroTicks = max(0, car.NitroTicks - 1);
 	car.NitroCooldown = max(0, car.NitroCooldown - 1);
 
+	// Лужа
+	const bool isOiled = car.OiledTicks > 0;
+	car.OiledTicks = max(0, car.OiledTicks - 1);
+
+	// Тормоз
+	const bool isBrake = move.isBrake();
+
 	// Обновляем мощность двигателя.
 	if (isNitro) {
 		car.EnginePower = game.getNitroEnginePowerFactor();
@@ -141,16 +151,18 @@ CMyCar CSimulator::Predict(const CMyCar& startCar, const model::World& /*world*/
 		lengthwiseUnitVector * forwardAccelByType[car.Type] * car.EnginePower * dTime :
 		lengthwiseUnitVector * rearAccelByType[car.Type] * car.EnginePower * dTime;
 
-	// Обновляем угол поворота колёс.
+	// Обновляем угол поворота колёс и базовые (медианные) скорости.
+	if (car.MedianAngularSpeed == UndefinedMedianAngularSpeed) {
+		// Попытка оценить базовую скорость, если машина была создана из model::Car - там этих данных нет :(
+		// К сожалению, такой хак приводит к небольшой потере точности при предсказании руления на первом тике.
+		car.MedianAngularSpeed = game.getCarAngularSpeedFactor() * car.WheelTurn * lengthwiseUnitVector.DotProduct(car.Speed);
+	}
 	car.WheelTurn += limit(move.getWheelTurn() - car.WheelTurn, game.getCarWheelTurnChangePerTick());
 	car.WheelTurn = limit(car.WheelTurn, 1.0);
-	// Сначала считается "базовая" угловая скорость. Она будет одна на все подтики.
-	// NOTE: На форуме была какая-то идея типа вычитать из угловой скорости MedianAngularSpeed от прошлого тика.
-	// Но если просто посчитать новую "базовую" скорость и сделать начальную угловую скорость равную ей - то всё
-	// работает точно.
-	double medianAngularSpeed = game.getCarAngularSpeedFactor() * car.WheelTurn
-		* lengthwiseUnitVector.DotProduct(car.Speed);
-	car.AngularSpeed = medianAngularSpeed;
+	// Теперь считается базовая скорость на весь текущий тик.
+	car.AngularSpeed -= car.MedianAngularSpeed;
+	car.MedianAngularSpeed = game.getCarAngularSpeedFactor() * car.WheelTurn * lengthwiseUnitVector.DotProduct(car.Speed);
+	car.AngularSpeed += car.MedianAngularSpeed;
 
 	// Физика считается в несколько итераций.
 	for (int i = 0; i < subtickCount; i++) {
@@ -159,7 +171,7 @@ CMyCar CSimulator::Predict(const CMyCar& startCar, const model::World& /*world*/
 
 		// Обновление скорости.
 		// 1. Ускорение.
-		if (!move.isBrake()) {
+		if (!isBrake) {
 			car.Speed += accelerationDt;
 		}
 		// 2. Трение об воздух - пропорционально скорости и равномерно по всем направлениям.
@@ -168,10 +180,10 @@ CMyCar CSimulator::Predict(const CMyCar& startCar, const model::World& /*world*/
 		//    применить такое же трение, что и к поперечному.
 		const double frictionLengthwise = limit(
 			car.Speed.DotProduct(lengthwiseUnitVector),
-			move.isBrake() ? crosswiseFrictionFactorDt : lengthwiseFrictionFactorDt);
+			isBrake && !isOiled ? crosswiseFrictionFactorDt : lengthwiseFrictionFactorDt);
 		const double frictionCrosswise = limit(
 			car.Speed.DotProduct(crosswiseUnitVector),
-			crosswiseFrictionFactorDt);
+			isOiled ? lengthwiseFrictionFactorDt : crosswiseFrictionFactorDt);
 		car.Speed -= lengthwiseUnitVector * frictionLengthwise + crosswiseUnitVector * frictionCrosswise;
 
 		// Обновление угла.
@@ -180,8 +192,11 @@ CMyCar CSimulator::Predict(const CMyCar& startCar, const model::World& /*world*/
 		crosswiseUnitVector = CVec2D(lengthwiseUnitVector.Y, -lengthwiseUnitVector.X);
 
 		// Обновление угловой скорости.
-		// TODO: Как учесть rotationFrictionFactorDt?
-		car.AngularSpeed = medianAngularSpeed + (car.AngularSpeed - medianAngularSpeed) * rotationAirFrictionFactorDt;
+		// Все трения применяются к той части, которая отличается от базовой скорости. Сначала воздушное трение, потом общее трение.
+		car.AngularSpeed -= car.MedianAngularSpeed;
+		car.AngularSpeed *= rotationAirFrictionFactorDt;
+		car.AngularSpeed -= limit(car.AngularSpeed, rotationFrictionFactorDt);
+		car.AngularSpeed += car.MedianAngularSpeed;
 	}
 
 	normalizeAngle(car.Angle);

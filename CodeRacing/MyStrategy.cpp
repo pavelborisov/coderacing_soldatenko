@@ -52,6 +52,8 @@ void MyStrategy::move(const Car& _self, const World& _world, const Game& _game, 
 	doDraw();
 
 	prevPrediction = prediction;
+	car.MedianAngularSpeed = prediction.MedianAngularSpeed;
+	car.SaveMedianAngularSpeedHistory();
 }
 
 void MyStrategy::firstTick()
@@ -379,6 +381,7 @@ void MyStrategy::doLog()
 	logIfDiffers(car.NitroCooldown, prevPrediction.NitroCooldown, "NitroCooldown", log);
 	logIfDiffers(car.NitroCount, prevPrediction.NitroCount, "NitroCount", log);
 	logIfDiffers(car.NitroTicks, prevPrediction.NitroTicks, "NitroTicks", log);
+	logIfDiffers(car.OiledTicks, prevPrediction.OiledTicks, "OiledTicks", log);
 	logIfDiffers(car.Position.X, prevPrediction.Position.X, "Position.X", log);
 	logIfDiffers(car.Position.Y, prevPrediction.Position.Y, "Position.Y", log);
 	logIfDiffers(car.Speed.X, prevPrediction.Speed.X, "Speed.X", log);
