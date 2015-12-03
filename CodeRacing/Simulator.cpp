@@ -3,9 +3,10 @@
 #include <algorithm>
 #include "math.h"
 #include "assert.h"
+#include "DrawPlugin.h"
+#include "GlobalPredictions.h"
 #include "Log.h"
 #include "MyTile.h"
-#include "DrawPlugin.h"
 #include "Tools.h"
 
 using namespace std;
@@ -55,7 +56,7 @@ static const double limit(double val, double lim)
 	return max(-lim, min(lim, val));
 }
 
-CMyCar CSimulator::Predict(const CMyCar& startCar, const model::World& /*world*/, const model::Move& move) const
+CMyCar CSimulator::Predict(const CMyCar& startCar, const model::World& /*world*/, const model::Move& move, int tick) const
 {
 	// TODO: Коллизии. Со стенами, мазутом, другими машинами, бонусами(!)
 	// TODO: Правильно считать, если мы дохлые
@@ -144,6 +145,13 @@ CMyCar CSimulator::Predict(const CMyCar& startCar, const model::World& /*world*/
 	car.NitroCooldown = max(0, car.NitroCooldown - 1);
 
 	// Лужа
+	// TODO: Более быстрая проверка луж?
+	for (const auto& o : CGlobalPredictions::Oils) {
+		if (tick >= o.LastTick) continue;
+		if ((car.Position - o.Position).LengthSquared() <= 150 * 150) {
+			car.OiledTicks = min(o.LastTick - tick, game.getMaxOiledStateDurationTicks());
+		}
+	}
 	const bool isOiled = car.OiledTicks > 0;
 	car.OiledTicks = max(0, car.OiledTicks - 1);
 

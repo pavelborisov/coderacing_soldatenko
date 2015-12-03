@@ -7,6 +7,7 @@
 #include <set>
 #include <string>
 #include <assert.h>
+#include "GlobalPredictions.h"
 #include "Tools.h"
 #include "WaypointsDistanceMap.h"
 
@@ -132,6 +133,8 @@ void MyStrategy::makeMove()
 		return;
 	}
 
+	// Заполняем предсказания
+	predictObjects();
 	predictEnemyPositions();
 
 	CBestMoveFinder bestMoveFinder(car, nextWaypointIndex, *self, *world, *game, waypointTiles, simulator, previousResult);
@@ -193,6 +196,36 @@ void MyStrategy::makeMove()
 	}
 }
 
+void MyStrategy::predictObjects()
+{
+	CGlobalPredictions::Clear();
+
+	auto bonuses = world->getBonuses();
+	for (const auto& b : bonuses) {
+		CGlobalPredictions::Bonuses.push_back({ CVec2D(b.getX(), b.getY()), b.getType(), INT_MAX });
+	}
+
+	auto oils = world->getOilSlicks();
+	for (const auto& o : oils) {
+		CGlobalPredictions::Oils.push_back({ CVec2D(o.getX(), o.getY()), o.getRemainingLifetime() });
+	}
+
+	//auto projectiles = world->getProjectiles();
+	//CGlobalPredictions::WashersPerTick;
+	//for (auto& p : projectiles) {
+	//	for (int tick = 0; tick < CGlobalPredictions::PredictionDepth; tick++) {
+	//		if (p.getType() == WASHER) {
+	//			if (tick == 0) {
+	//				CGlobalPredictions::WashersPerTick[tick].push_back({ CVec2D(p.getX(), p.getY()), CVec2D(p.getSpeedX(), p.getSpeedY()) });
+	//			}
+	//			
+	//		} else {
+
+	//		}
+	//	}
+	//}
+}
+
 void MyStrategy::predictEnemyPositions()
 {
 	static const int predictionLength = 50;
@@ -206,7 +239,7 @@ void MyStrategy::predictEnemyPositions()
 			model::Move simpleMove;
 			simpleMove.setEnginePower(otherCar.getEnginePower());
 			for (int tick = 1; tick <= predictionLength; tick++) {
-				predictions[tick] = simulator.Predict(predictions[tick - 1], *world, simpleMove);
+				predictions[tick] = simulator.Predict(predictions[tick - 1], *world, simpleMove, tick); // TODO: check off by one error (tick)
 				//CDrawPlugin::Instance().FillCircle(predictions[tick].Position, 5);
 			}
 			enemyPredictions.emplace_back(predictions);
@@ -365,7 +398,7 @@ void MyStrategy::experiment()
 
 void MyStrategy::predict()
 {
-	prediction = simulator.Predict(car, *world, *resultMove);
+	prediction = simulator.Predict(car, *world, *resultMove, 1);
 }
 
 void MyStrategy::doLog()

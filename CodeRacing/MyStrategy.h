@@ -52,6 +52,7 @@ private:
 	void findTileRoute();
 	void firstTick();
 	void makeMove();
+	void predictObjects();
 	void predictEnemyPositions();
 	void processShooting();
 	void processOil();

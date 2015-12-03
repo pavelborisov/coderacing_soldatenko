@@ -13,7 +13,7 @@ public:
 	void Initialize(const model::Game& game);
 	bool IsInitialized() const;
 
-	CMyCar Predict(const CMyCar& car, const model::World& world, const model::Move& move) const;
+	CMyCar Predict(const CMyCar& car, const model::World& world, const model::Move& move, int tick) const;
 
 private:
 	bool isInitialized;

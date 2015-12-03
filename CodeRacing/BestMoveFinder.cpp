@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <algorithm>
 #include "DrawPlugin.h"
+#include "GlobalPredictions.h"
 #include "Log.h"
 #include "WaypointsDistanceMap.h"
 
@@ -48,11 +49,6 @@ CBestMoveFinder::CBestMoveFinder(
 	waypointTiles(waypointTiles),
 	simulator(simulator)
 {
-	bonuses = world.getBonuses();
-	for (const auto& b : bonuses) {
-		bonusPositions.push_back(CVec2D(b.getX(), b.getY()));
-	}
-
 	correctedPreviousMoveList = previousResult.MoveList;
 
 	for (int i = correctedPreviousMoveList.size() - 1; i >= 0; i--) {
@@ -109,7 +105,7 @@ CBestMoveFinder::CResult CBestMoveFinder::Process()
 				simMove = m.Move.Convert();
 			}
 		}
-		simCar = simulator.Predict(simCar, world, simMove);
+		simCar = simulator.Predict(simCar, world, simMove, tick);
 		CDrawPlugin::Instance().FillCircle(simCar.Position.X, simCar.Position.Y, 5, 0x0000FF);
 	}
 	const double halfHeight = game.getCarHeight() / 2;
@@ -137,7 +133,7 @@ void CBestMoveFinder::processPreviousMoveList()
 		return;
 	}
 
-	CState current(car, 0, nextWaypointIndex, 0, bonuses.size());
+	CState current(car, 0, nextWaypointIndex, 0, CGlobalPredictions::Bonuses.size());
 	const int simulationEnd = correctedPreviousMoveList.back().End;
 	for (current.Tick = 0; current.Tick < simulationEnd; current.Tick++) {
 		CMyMove move;
@@ -149,7 +145,7 @@ void CBestMoveFinder::processPreviousMoveList()
 				break;
 			}
 		}
-		current.Car = simulator.Predict(current.Car, world, move.Convert());
+		current.Car = simulator.Predict(current.Car, world, move.Convert(), current.Tick);
 		simulationTicks++;
 
 		processRouteScore(current, current.Tick == 0 && move.Brake == 1);
@@ -221,7 +217,7 @@ void CBestMoveFinder::processMoveIndex(size_t moveIndex, const std::vector<CMove
 
 	if (moveIndex == 0) {
 		stateCache.clear();
-		stateCache.push_back({ car, 0, nextWaypointIndex, 0, bonuses.size() });
+		stateCache.push_back({ car, 0, nextWaypointIndex, 0, CGlobalPredictions::Bonuses.size() });
 	}
 
 	for (const CMyMove& move : moveArray) {
@@ -236,7 +232,7 @@ void CBestMoveFinder::processMoveIndex(size_t moveIndex, const std::vector<CMove
 			assert(current.Tick <= end); // Проверка правильного порядка в массиве lenghtsArray
 			// Продолжаем симулировать с того места, откуда закончили в предыдущий раз.
 			for (; current.Tick < end; current.Tick++) {
-				current.Car = simulator.Predict(current.Car, world, move.Convert());
+				current.Car = simulator.Predict(current.Car, world, move.Convert(), current.Tick);
 				simulationTicks++;
 
 				processRouteScore(current, current.Tick == 0 && move.Brake == 1);
@@ -289,6 +285,10 @@ void CBestMoveFinder::processRouteScore(CState& state, bool firstTickBrake)
 	if (firstTickBrake) {
 		state.RouteScore -= 200;
 	}
+	// Штраф за въезд в лужу. Растёт от скорости.
+	if (state.Car.OiledTicks == 59 && state.Car.Speed.Length() > 10) {
+		state.RouteScore -= (state.Car.Speed.Length() - 10) * 100;
+	}
 	// Подбор бонусов
 	processBonus(state);
 }
@@ -299,9 +299,11 @@ void CBestMoveFinder::processBonus(CState& state)
 	static const double distToCenterSqrSure = pow(70 + 20, 2);
 	//static const double bonusRadiusSqr = pow(20, 2);
 	static const double bonusRadiusSqr = pow(18, 2); // -2 для точности
-	for (size_t i = 0; i < bonuses.size(); i++) {
+	for (size_t i = 0; i < CGlobalPredictions::Bonuses.size(); i++) {
 		if (state.PickedBonuses[i]) continue;
-		const double distToCenterSqr = (bonusPositions[i] - state.Car.Position).LengthSquared();
+		const CBonusPrediction& bonus = CGlobalPredictions::Bonuses[i];
+		if (state.Tick >= bonus.LastTick) continue;
+		const double distToCenterSqr = (bonus.Position - state.Car.Position).LengthSquared();
 		if (distToCenterSqr > distToCenterSqrCutoff) continue;
 		bool pickedUp = false;
 		if (distToCenterSqr < distToCenterSqrSure) {
@@ -309,7 +311,7 @@ void CBestMoveFinder::processBonus(CState& state)
 		}
 		if (!pickedUp) {
 			for (const auto& c : state.Car.RotatedRect.Corners) {
-				const double distSqr = (bonusPositions[i] - c).LengthSquared();
+				const double distSqr = (bonus.Position - c).LengthSquared();
 				if (distSqr < bonusRadiusSqr) {
 					pickedUp = true;
 					break;
@@ -318,7 +320,7 @@ void CBestMoveFinder::processBonus(CState& state)
 		}
 		if (pickedUp) {
 			state.PickedBonuses[i] = true;
-			switch (bonuses[i].getType()) {
+			switch (bonus.Type) {
 				case model::REPAIR_KIT:
 					state.RouteScore += self.getDurability() < 0.3 ? 1500 : 200;
 					break;

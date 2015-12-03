@@ -25,7 +25,7 @@ struct CMyCar {
 	int OiledTicks;
 	int DeadTicks;
 	int Type;
-	int Id;
+	int PlayerId;
 	bool CollisionDetected;
 
 	CMyCar();

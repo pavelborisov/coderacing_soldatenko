@@ -64,9 +64,6 @@ private:
 	const CSimulator& simulator;
 	std::vector<CMoveWithDuration> correctedPreviousMoveList;
 
-	std::vector<model::Bonus> bonuses;
-	std::vector<CVec2D> bonusPositions;
-
 	int simulationTicks = 0;
 	double bestScore = INT_MIN;
 	std::vector<CMoveWithDuration> bestMoveList;

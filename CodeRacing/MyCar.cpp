@@ -1,16 +1,26 @@
 #include "MyCar.h"
 
 #include <math.h>
+#include <assert.h>
 
-static double MedianAngularSpeedHistory[4] =
+static double MedianAngularSpeedHistory[10] =
 {
-	UndefinedMedianAngularSpeed,
-	UndefinedMedianAngularSpeed,
-	UndefinedMedianAngularSpeed, 
-	UndefinedMedianAngularSpeed
+	UndefinedMedianAngularSpeed, UndefinedMedianAngularSpeed,
+	UndefinedMedianAngularSpeed, UndefinedMedianAngularSpeed,
+	UndefinedMedianAngularSpeed, UndefinedMedianAngularSpeed,
+	UndefinedMedianAngularSpeed, UndefinedMedianAngularSpeed,
+	UndefinedMedianAngularSpeed, UndefinedMedianAngularSpeed,
 };
 
-static int DeadTicksHistory[4] = { 0, 0, 0, 0 };
+static int DeadTicksHistory[10] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+
+static int HistoryId(int PlayerId, int Type)
+{
+	assert(PlayerId >= 1 && PlayerId <= 4 && (Type == 0 || Type == 1));
+	const int id = PlayerId * 2 + Type;
+	assert(id >= 0 && id < 10);
+	return id;
+}
 
 CMyCar::CMyCar() :
 	Angle(0),
@@ -25,7 +35,7 @@ CMyCar::CMyCar() :
 	OiledTicks(0),
 	DeadTicks(0),
 	Type(0),
-	Id(0),
+	PlayerId(0),
 	CollisionDetected(false)
 {
 }
@@ -46,7 +56,7 @@ CMyCar::CMyCar(const CMyCar& car) :
 	OiledTicks(car.OiledTicks),
 	DeadTicks(car.DeadTicks),
 	Type(car.Type),
-	Id(car.Id),
+	PlayerId(car.PlayerId),
 	CollisionDetected(car.CollisionDetected)
 {
 }
@@ -66,11 +76,11 @@ CMyCar::CMyCar(const model::Car& car) :
 	OiledTicks(car.getRemainingOiledTicks()),
 	DeadTicks(0), // Как узнать, сколько тиков ещё машина будет дохлой?
 	Type(car.getType()),
-	Id(static_cast<int>(car.getId())),
+	PlayerId(static_cast<int>(car.getPlayerId())),
 	CollisionDetected(false)
 {
-	MedianAngularSpeed = MedianAngularSpeedHistory[Id];
-	DeadTicks = Durability > 1e-5 ? 0 : DeadTicksHistory[Id];
+	MedianAngularSpeed = MedianAngularSpeedHistory[HistoryId(PlayerId, Type)];
+	DeadTicks = Durability > 1e-5 ? 0 : DeadTicksHistory[HistoryId(PlayerId, Type)];
 	UpdateRotatedRect();
 }
 
@@ -89,6 +99,6 @@ void CMyCar::UpdateRotatedRect()
 
 void CMyCar::SaveHistory()
 {
-	MedianAngularSpeedHistory[Id] = MedianAngularSpeed;
-	DeadTicksHistory[Id] = DeadTicks;
+	MedianAngularSpeedHistory[HistoryId(PlayerId, Type)] = MedianAngularSpeed;
+	DeadTicksHistory[HistoryId(PlayerId, Type)] = DeadTicks;
 }
