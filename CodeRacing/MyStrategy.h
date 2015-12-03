@@ -43,9 +43,6 @@ private:
 	CMyCar prediction;
 	CBestMoveFinder::CResult previousResult;
 
-	std::vector<std::vector<CMyCar>> enemyPredictions;
-	std::vector<model::Car> enemyCars;
-
 	MyStrategy& operator = (const MyStrategy&) { return *this; }
 
 	void updateWaypoints();
@@ -53,7 +50,6 @@ private:
 	void firstTick();
 	void makeMove();
 	void predictObjects();
-	void predictEnemyPositions();
 	void processShooting();
 	void processOil();
 	void experiment();

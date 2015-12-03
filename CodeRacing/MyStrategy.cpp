@@ -135,7 +135,6 @@ void MyStrategy::makeMove()
 
 	// Заполняем предсказания
 	predictObjects();
-	predictEnemyPositions();
 
 	CBestMoveFinder bestMoveFinder(car, nextWaypointIndex, *self, *world, *game, waypointTiles, simulator, previousResult);
 	CBestMoveFinder::CResult result = bestMoveFinder.Process();
@@ -210,40 +209,32 @@ void MyStrategy::predictObjects()
 		CGlobalPredictions::Oils.push_back({ CVec2D(o.getX(), o.getY()), o.getRemainingLifetime() });
 	}
 
-	//auto projectiles = world->getProjectiles();
-	//CGlobalPredictions::WashersPerTick;
-	//for (auto& p : projectiles) {
-	//	for (int tick = 0; tick < CGlobalPredictions::PredictionDepth; tick++) {
-	//		if (p.getType() == WASHER) {
-	//			if (tick == 0) {
-	//				CGlobalPredictions::WashersPerTick[tick].push_back({ CVec2D(p.getX(), p.getY()), CVec2D(p.getSpeedX(), p.getSpeedY()) });
-	//			}
-	//			
-	//		} else {
-
-	//		}
-	//	}
-	//}
-}
-
-void MyStrategy::predictEnemyPositions()
-{
-	static const int predictionLength = 50;
-	enemyPredictions.clear();
-	enemyCars.clear();
-	//CDrawPlugin::Instance().SetColor(128, 255, 0);
-	for (const auto& otherCar : world->getCars()) {
-		if (otherCar.getPlayerId() != self->getPlayerId()) {
-			vector<CMyCar> predictions(predictionLength + 1);
-			predictions[0] = CMyCar(otherCar);
-			model::Move simpleMove;
-			simpleMove.setEnginePower(otherCar.getEnginePower());
-			for (int tick = 1; tick <= predictionLength; tick++) {
-				predictions[tick] = simulator.Predict(predictions[tick - 1], *world, simpleMove, tick); // TODO: check off by one error (tick)
-				//CDrawPlugin::Instance().FillCircle(predictions[tick].Position, 5);
-			}
-			enemyPredictions.emplace_back(predictions);
-			enemyCars.push_back(otherCar);
+	auto projectiles = world->getProjectiles();
+	auto cars = world->getCars();
+	const int depth = CGlobalPredictions::PredictionDepth;
+	model::Move defaultEnemyMove;
+	defaultEnemyMove.setEnginePower(1.0);
+	for (const auto& c : cars) {
+		if (c.getPlayerId() == self->getPlayerId() || c.isFinishedTrack()) continue;
+		CGlobalPredictions::EnemyCarsPerTick.push_back(vector<CMyCar>(depth + 1));
+		CGlobalPredictions::EnemyCarsPerTick.back()[0] = CMyCar(c);
+	}
+	for (const auto& p : projectiles) {
+		if (p.getType() == WASHER) {
+			CWasherPrediction washer = { CVec2D(p.getX(), p.getY()), CVec2D(p.getSpeedX(), p.getSpeedY()) };
+			CGlobalPredictions::WashersPerTick.push_back(vector<CWasherPrediction>(depth + 1));
+			CGlobalPredictions::WashersPerTick.back()[0] = washer;
+		} else {
+			CTirePrediction tire = { CVec2D(p.getX(), p.getY()), CVec2D(p.getSpeedX(), p.getSpeedY()), p.getAngularSpeed() };
+			CGlobalPredictions::TiresPerTick.push_back(vector<CTirePrediction>(depth + 1));
+			CGlobalPredictions::TiresPerTick.back()[0] = tire;
+		}
+	}
+	for (int tick = 1; tick <= depth; tick++) {
+		for (size_t i = 0; i < CGlobalPredictions::EnemyCarsPerTick.size(); i++) {
+			CMyCar enemyCar = CGlobalPredictions::EnemyCarsPerTick[i][tick - 1];
+			enemyCar = simulator.Predict(enemyCar, *world, defaultEnemyMove, tick);
+			CGlobalPredictions::EnemyCarsPerTick[i][tick] = enemyCar;
 		}
 	}
 }
@@ -258,9 +249,9 @@ void MyStrategy::processShooting()
 	double dmgScore = 0;
 	//CDrawPlugin::Instance().SetColor(255, 0, 0);
 
-	vector<double> enemyDurabilities(enemyPredictions.size(), 0);
-	for (size_t enemyIndex = 0; enemyIndex < enemyPredictions.size(); enemyIndex++) {
-		enemyDurabilities[enemyIndex] = enemyCars[enemyIndex].getDurability();
+	vector<double> enemyDurabilities(CGlobalPredictions::EnemyCarsPerTick.size(), 0);
+	for (size_t enemyIndex = 0; enemyIndex < CGlobalPredictions::EnemyCarsPerTick.size(); enemyIndex++) {
+		enemyDurabilities[enemyIndex] = CGlobalPredictions::EnemyCarsPerTick[enemyIndex][0].Durability;
 	}
 
 	int bulletsHit = 0;
@@ -280,12 +271,12 @@ void MyStrategy::processShooting()
 		for (int tick = 1; tick <= predictionLength; tick++) {
 			projectilePos += projectileSpeed;
 			// TODO: Нормальная проверка коллизий.
-			for (size_t enemyIndex = 0; enemyIndex < enemyPredictions.size(); enemyIndex++) {
+			for (size_t enemyIndex = 0; enemyIndex < CGlobalPredictions::EnemyCarsPerTick.size(); enemyIndex++) {
 				double& enemyDurability = enemyDurabilities[enemyIndex];
-				if (enemyCars[enemyIndex].isFinishedTrack() || enemyDurability <= 1e-5) {
+				if (enemyDurability <= 1e-5) {
 					continue;
 				}
-				const CVec2D& enemyPos = enemyPredictions[enemyIndex][tick].Position;
+				const CVec2D& enemyPos = CGlobalPredictions::EnemyCarsPerTick[enemyIndex][tick].Position;
 				const double distSqr = (enemyPos - projectilePos).LengthSquared();
 				if (distSqr < projectileRadiusSqr + carEffectiveRadiusSqr) {
 					if (enemyDurability > 1e-5) {
@@ -353,9 +344,9 @@ void MyStrategy::processOil()
 	// Выбрасываем лужу только, когда мы уверены, что в неё попадёт какой-либо враг сзади.
 	// Попадание в мазут считается если центр машины попал внутрь окружности мазута.
 	const double oilRadiusSqr = pow(oilRadius, 2);
-	for (size_t enemyIndex = 0; enemyIndex < enemyPredictions.size(); enemyIndex++) {
+	for (size_t enemyIndex = 0; enemyIndex < CGlobalPredictions::EnemyCarsPerTick.size(); enemyIndex++) {
 		for (int tick = 1; tick <= predictionLength; tick++) {
-			const CMyCar& enemy = enemyPredictions[enemyIndex][tick];
+			const CMyCar& enemy = CGlobalPredictions::EnemyCarsPerTick[enemyIndex][tick];
 			// Проверка, что автомобиль попал.
 			if ((enemy.Position - oilPos).LengthSquared() < oilRadiusSqr) {
 				double enemySpeedRelAngle = enemy.Speed.GetAngle() - enemy.Angle;
