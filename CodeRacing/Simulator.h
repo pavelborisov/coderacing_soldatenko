@@ -7,6 +7,7 @@
 #include "model/Move.h"
 #include "GlobalPredictions.h"
 #include "MyCar.h"
+#include "Vec3D.h"
 
 class CSimulator {
 public:
@@ -43,5 +44,25 @@ private:
 
 	void processWallCollision(CVec2D& position, CVec2D& speed, double& angle, double& angularSpeed,
 		double radius, CRotatedRect& rotatedRect) const;
+
+	void resolveCollisionStatic(
+		const CVec2D& collisionNormalB2D, const CVec2D& collisionPoint, double depth,
+		CVec2D& positionA, CVec2D& speedA, double& angularSpeedA,
+		CVec2D& relativeVelocityC2D,
+		double invertedMassA, double invertedAngularMassA,
+		double momentumTransferFactorAB, double surfaceFrictionFactorAB) const;
+	void resolveImpactStatic(
+		const CVec3D& vectorAC, const CVec3D& collisionNormalB, const CVec3D& relativeVelocityC,
+		CVec2D& speedA, double& angularSpeedA,
+		double invertedMassA, double invertedAngularMassA,
+		double momentumTransferFactorAB) const;
+	void resolveSurfaceFrictionStatic(
+		const CVec3D& vectorAC, const CVec3D& collisionNormalB, const CVec3D& relativeVelocityC,
+		CVec2D& speedA, double& angularSpeedA,
+		double invertedMassA, double invertedAngularMassA,
+		double surfaceFrictionFactorAB) const;
+	void pushBackBodiesStatic(
+		const CVec2D& collisionNormalB2D, double depth,
+		CVec2D& positionA ) const;
 
 };

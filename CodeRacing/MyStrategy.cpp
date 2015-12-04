@@ -43,6 +43,9 @@ void MyStrategy::move(const Car& _self, const World& _world, const Game& _game, 
 	currentTick = world->getTick();
 
 	car = CMyCar(*self);
+	log.LogTick(currentTick);
+	log.LogMyCar(car, "Current            ");
+
 	firstTick();
 	updateWaypoints();
 	findTileRoute();
@@ -410,8 +413,6 @@ void MyStrategy::predict()
 
 void MyStrategy::doLog()
 {
-	log.LogTick(currentTick);
-	log.LogMyCar(car,        "Current            ");
 	log.LogMyCar(prediction, "Prediction         ");
 
 	logIfDiffers(car.Angle, prevPrediction.Angle, "Angle", log);

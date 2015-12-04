@@ -13,6 +13,7 @@ using namespace std;
 
 static const int subtickCount = 10;
 static const double dTime = 1.0 / subtickCount;
+static const double epsilon = 1e-7;
 
 CSimulator::CSimulator() :
 	isInitialized(false),
@@ -251,7 +252,6 @@ void CSimulator::processWallCollision(CVec2D& position, CVec2D& speed, double& a
 {
 	static const double tileSize = 800;
 	static const double wallRadius = 80;
-	static const double epsilon = 1e-7;
 	if (radius > 0) {
 		position;
 		speed;
@@ -261,10 +261,19 @@ void CSimulator::processWallCollision(CVec2D& position, CVec2D& speed, double& a
 		rotatedRect;
 
 	} else {
+		static const double momentumTransferFactor = 0.25;
+		static const double surfaceFrictionFactor = 0; // TODO: определить
+
 		// TODO откуда-то надо брать ширину и высоту, как и радиусы. а пока предполагаем, что
 		// все прямоугольники, которые мы хотим обработать - это есть автомобиль.
 		static const double width = 210;
 		static const double height = 140;
+
+		const double mass = 1; // todo: масса в зависимости от машины.
+		const double invertedMass = 1 / mass;
+		const double angularMass = 1.0 / 12 * mass * (width * width + height * height); // Момент инерции прямоугольника
+		const double invertedAngularMass = 1 / angularMass;
+
 		static const double biggerRadius = sqrt(pow(width / 2, 2) + pow(height / 2, 2));
 		const int currentTileX = static_cast<int>(position.X / tileSize);
 		const int currentTileY = static_cast<int>(position.Y / tileSize);
@@ -299,88 +308,12 @@ void CSimulator::processWallCollision(CVec2D& position, CVec2D& speed, double& a
 					}
 					if (cornersInsideWall > 0) {
 						cornersSum *= 1.0 / cornersInsideWall;
-						CVec3D collisionNormalB(1, 0, 0);
-						// TODO: Проблема, если проникло более двух углов - как правильно определять точку столкновения и глубину?
+						CVec2D collisionNormalB(1, 0);
 						CVec2D collisionPoint(tileLeftWallX, cornersSum.Y);
-
-						CVec3D vectorAC(collisionPoint - position);
-						CVec3D angularVelocityPartAC = CVec3D(angularSpeed).Cross(vectorAC);
-						CVec3D velocityAC = angularVelocityPartAC + CVec3D(speed);
-						CVec3D relativeVelocityC = velocityAC;
-						const double normalRelativeVelocityLengthC = -relativeVelocityC.DotProduct(collisionNormalB);
-						CLog::Instance().Stream() << "Corners inside left wall: " << cornersInsideWall << endl;
-						CLog::Instance().Stream() << "Impact velocity: " << normalRelativeVelocityLengthC << endl;
-						if (normalRelativeVelocityLengthC > -epsilon) {
-							const double mass = 1;
-							const double invertedMass = 1 / mass;
-							const double angularMass = 1.0 / 12 * mass * (width * width + height * height);
-							const double invertedAngularMass = 1 / angularMass;
-							//resolveImpact
-							{
-								// TODO: Определить. 
-								static const double momentumTransferFactor = 0.25;
-								// TODO: Брать массу текущей машины?
-								// Момент инерции прямоугольника
-								CVec3D denominatorPartA = vectorAC.Cross(collisionNormalB);
-								denominatorPartA *= invertedAngularMass;
-								denominatorPartA = denominatorPartA.Cross(vectorAC);
-								const double denominator = invertedMass + collisionNormalB.DotProduct(denominatorPartA);
-								const double impulseChange = -(1 + momentumTransferFactor) * relativeVelocityC.DotProduct(collisionNormalB) / denominator;
-								CLog::Instance().Stream() << "Impulse change: " << impulseChange << endl;
-								//if (impulseChange < epsilon) {
-								//	return;
-								//}
-								if (impulseChange > epsilon) {
-									CVec3D velocityChangeA = collisionNormalB * (impulseChange * invertedMass);
-									speed = { speed.X + velocityChangeA.X, speed.Y + velocityChangeA.Y };
-
-									CVec3D angularVelocityChangeA = vectorAC.Cross(collisionNormalB * impulseChange) * invertedAngularMass;
-									angularSpeed = angularSpeed + angularVelocityChangeA.Z;
-								}
-							}
-
-							//resolveSurfaceFriction
-							{
-								CVec3D tangent = relativeVelocityC - (collisionNormalB * (relativeVelocityC.DotProduct(collisionNormalB)));
-								//if (tangent.LengthSquared() < epsilon * epsilon) {
-								//	return;
-								//}
-								if (tangent.LengthSquared() > epsilon * epsilon) {
-									tangent *= 1.0 / tangent.Length();
-									// TODO: определить
-									static const double surfaceFrictionFactorA = 0;
-									static const double surfaceFrictionFactorB = 0;
-									static const double sqrt2 = sqrt(2);
-									static const double surfaceFrictionFactorABSqrt = sqrt2 * sqrt(surfaceFrictionFactorA * surfaceFrictionFactorB);
-									const double surfaceFriction = surfaceFrictionFactorABSqrt * abs(relativeVelocityC.DotProduct(collisionNormalB)) / relativeVelocityC.Length();
-									//if (surfaceFriction < epsilon) {
-									//	return;
-									//}
-									if (surfaceFriction > epsilon) {
-										CVec3D denominatorPartA = vectorAC.Cross(tangent);
-										denominatorPartA *= invertedAngularMass;
-										denominatorPartA = denominatorPartA.Cross(tangent);
-										const double denominator = invertedMass + tangent.DotProduct(denominatorPartA);
-										const double impulseChange = -surfaceFriction * relativeVelocityC.DotProduct(tangent) / denominator;
-										//if (abs(impulseChange) < epsilon) {
-										//	return;
-										//}
-										if (abs(impulseChange) > epsilon) {
-											CVec3D velocityChangeA = tangent * (impulseChange * invertedMass);
-											speed = { speed.X + velocityChangeA.X, speed.Y + velocityChangeA.Y };
-
-											CVec3D angularVelocityChangeA = vectorAC.Cross(tangent * impulseChange) * invertedAngularMass;
-											angularSpeed = angularSpeed + angularVelocityChangeA.Z;
-										}
-									}
-								}
-							}
-							//pushBackBodies
-							{
-								CVec2D collisionNormalB2D(collisionNormalB.X, collisionNormalB.Y);
-								position += collisionNormalB2D * (depth + epsilon);;
-							}
-						}
+						CVec2D collisionSpeed;
+						resolveCollisionStatic(collisionNormalB, collisionPoint, depth,
+							position, speed, angularSpeed, collisionSpeed,
+							invertedMass, invertedAngularMass, momentumTransferFactor, surfaceFrictionFactor);
 					}
 				}
 				if (!tile.IsRightOpen() && centerOffsetX > tileSize - wallRadius - biggerRadius) {
@@ -397,3 +330,93 @@ void CSimulator::processWallCollision(CVec2D& position, CVec2D& speed, double& a
 	}
 }
 
+void CSimulator::resolveCollisionStatic(
+	const CVec2D& collisionNormalB2D, const CVec2D& collisionPoint, double depth,
+	CVec2D& positionA, CVec2D& speedA, double& angularSpeedA,
+	CVec2D& relativeVelocityC2D,
+	double invertedMassA, double invertedAngularMassA,
+	double momentumTransferFactorAB, double surfaceFrictionFactorAB) const
+{
+	CVec3D collisionNormalB(collisionNormalB2D);
+	CVec3D vectorAC(collisionPoint - positionA);
+	CVec3D angularVelocityPartAC = CVec3D(angularSpeedA).Cross(vectorAC);
+	CVec3D velocityAC = angularVelocityPartAC + CVec3D(speedA);
+	CVec3D relativeVelocityC = velocityAC;
+	relativeVelocityC2D = { relativeVelocityC.X, relativeVelocityC.Y };
+
+	const double normalRelativeVelocityLengthC = -relativeVelocityC.DotProduct(collisionNormalB);
+	CLog::Instance().Stream() << "Impact velocity: " << normalRelativeVelocityLengthC << endl;
+	if (normalRelativeVelocityLengthC > -epsilon) {
+		resolveImpactStatic(vectorAC, collisionNormalB, relativeVelocityC,
+			speedA, angularSpeedA,
+			invertedMassA, invertedAngularMassA, momentumTransferFactorAB);
+		resolveSurfaceFrictionStatic(vectorAC, collisionNormalB, relativeVelocityC,
+			speedA, angularSpeedA,
+			invertedMassA, invertedAngularMassA, surfaceFrictionFactorAB);
+	}
+	pushBackBodiesStatic(collisionNormalB2D, depth, positionA);
+}
+
+void CSimulator::resolveImpactStatic(
+	const CVec3D& vectorAC, const CVec3D& collisionNormalB, const CVec3D& relativeVelocityC,
+	CVec2D& speedA, double& angularSpeedA,
+	double invertedMassA, double invertedAngularMassA,
+	double momentumTransferFactorAB) const
+{
+	CVec3D denominatorPartA = vectorAC.Cross(collisionNormalB);
+	denominatorPartA *= invertedAngularMassA;
+	denominatorPartA = denominatorPartA.Cross(vectorAC);
+	const double denominator = invertedMassA + collisionNormalB.DotProduct(denominatorPartA);
+	const double impulseChange = -(1 + momentumTransferFactorAB) * relativeVelocityC.DotProduct(collisionNormalB) / denominator;
+	if (impulseChange < epsilon) {
+		return;
+	}
+	CLog::Instance().Stream() << "resolveImpactStatic: Impulse change: " << impulseChange << endl;
+
+	CVec3D velocityChangeA = collisionNormalB * (impulseChange * invertedMassA);
+	speedA = { speedA.X + velocityChangeA.X, speedA.Y + velocityChangeA.Y };
+	CVec3D angularVelocityChangeA = vectorAC.Cross(collisionNormalB * impulseChange) * invertedAngularMassA;
+	angularSpeedA = angularSpeedA + angularVelocityChangeA.Z;
+}
+
+void CSimulator::resolveSurfaceFrictionStatic(
+	const CVec3D& vectorAC, const CVec3D& collisionNormalB, const CVec3D& relativeVelocityC,
+	CVec2D& speedA, double& angularSpeedA,
+	double invertedMassA, double invertedAngularMassA,
+	double surfaceFrictionFactorAB) const
+{
+	CVec3D tangent = relativeVelocityC - (collisionNormalB * (relativeVelocityC.DotProduct(collisionNormalB)));
+	if (tangent.LengthSquared() < epsilon * epsilon) {
+		return;
+	}
+
+	tangent *= 1.0 / tangent.Length();
+	static const double sqrt2 = sqrt(2);
+	const double surfaceFrictionFactorABSqrt = sqrt2 * sqrt(surfaceFrictionFactorAB);
+	const double surfaceFriction = surfaceFrictionFactorABSqrt * abs(relativeVelocityC.DotProduct(collisionNormalB)) / relativeVelocityC.Length();
+	if (surfaceFriction < epsilon) {
+		return;
+	}
+
+	CVec3D denominatorPartA = vectorAC.Cross(tangent);
+	denominatorPartA *= invertedAngularMassA;
+	denominatorPartA = denominatorPartA.Cross(tangent);
+	const double denominator = invertedMassA + tangent.DotProduct(denominatorPartA);
+	const double impulseChange = -surfaceFriction * relativeVelocityC.DotProduct(tangent) / denominator;
+	if (abs(impulseChange) < epsilon) {
+		return;
+	}
+	CLog::Instance().Stream() << "resolveSurfaceFrictionStatic: Impulse change: " << impulseChange << endl;
+
+	CVec3D velocityChangeA = tangent * (impulseChange * invertedMassA);
+	speedA = { speedA.X + velocityChangeA.X, speedA.Y + velocityChangeA.Y };
+	CVec3D angularVelocityChangeA = vectorAC.Cross(tangent * impulseChange) * invertedAngularMassA;
+	angularSpeedA = angularSpeedA + angularVelocityChangeA.Z;
+}
+
+void CSimulator::pushBackBodiesStatic(
+	const CVec2D& collisionNormalB2D, double depth,
+	CVec2D& positionA) const
+{
+	positionA += collisionNormalB2D * (depth + epsilon);
+}
