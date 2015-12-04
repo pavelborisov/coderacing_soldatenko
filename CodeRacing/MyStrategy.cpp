@@ -138,18 +138,7 @@ void MyStrategy::makeMove()
 	}
 
 	// Заполняем предсказания
-	//predictObjects();
-
-	//if (world->getTick() < 1000000) {
-	//	//resultMove->setThrowProjectile(true);
-	//	//resultMove->setBrake(true);
-	//	if (world->getTick() == 180) {
-	//		resultMove->setUseNitro(true);
-	//	}
-	//	//resultMove->setEnginePower(1.0);
-	//	//resultMove->setWheelTurn(0.2);
-	//	//return;
-	//}
+	predictObjects();
 
 	CBestMoveFinder bestMoveFinder(car, nextWaypointIndex, *self, *world, *game, waypointTiles, simulator, previousResult);
 	CBestMoveFinder::CResult result = bestMoveFinder.Process();
@@ -158,39 +147,39 @@ void MyStrategy::makeMove()
 	processShooting();
 	processOil();
 
-	//// Тупой задний ход
-	//static int rear = 0;
-	//double angleToTarget = (tileRoute[1].ToVec() - car.Position).GetAngle();
-	//double angle = angleToTarget - car.Angle;
-	//normalizeAngle(angle);
-	//// Когда симулятор хз что делать.
-	//if (!result.Success || result.MoveList.back().End < 10) {
-	//	CDrawPlugin::Instance().FillCircle(car.Position.X, car.Position.Y, 50, 0x888888);
-	//	resultMove->setEnginePower(1.0);
-	//	resultMove->setWheelTurn(angle * 32 / PI);
-	//}
-	//if (rear == 0) {
-	//	if (self->getDurability() == 0) {
-	//		rear = -game->getCarReactivationTimeTicks() - 50;
-	//	} else if (world->getTick() > 200 && car.Speed.Length() < 1) {
-	//		rear = 120 + static_cast<int>(self->getEnginePower() / game->getCarEnginePowerChangePerTick());
-	//	}
-	//} else if (rear < 0) {
-	//	rear++;
-	//} else if (rear > 0) {
-	//	resultMove->setBrake(false);
-	//	CDrawPlugin::Instance().FillCircle(car.Position.X, car.Position.Y, 50, 0x880088);
-	//	if (rear < 30) {
-	//		resultMove->setEnginePower(0);
-	//		resultMove->setBrake(true);
-	//		resultMove->setWheelTurn(0);
-	//	} else {
-	//		resultMove->setEnginePower(-1.0);
-	//		resultMove->setWheelTurn(angle > 0 ? -1 : 1);
-	//	}
-	//	rear--;
-	//	if (rear == 0) rear = -120;
-	//}
+	// Тупой задний ход
+	static int rear = 0;
+	double angleToTarget = (tileRoute[1].ToVec() - car.Position).GetAngle();
+	double angle = angleToTarget - car.Angle;
+	normalizeAngle(angle);
+	// Когда симулятор хз что делать.
+	if (!result.Success || result.MoveList.back().End < 10) {
+		CDrawPlugin::Instance().FillCircle(car.Position.X, car.Position.Y, 50, 0x888888);
+		resultMove->setEnginePower(1.0);
+		resultMove->setWheelTurn(angle * 32 / PI);
+	}
+	if (rear == 0) {
+		if (self->getDurability() == 0) {
+			rear = -game->getCarReactivationTimeTicks() - 50;
+		} else if (world->getTick() > 200 && car.Speed.Length() < 1) {
+			rear = 120 + static_cast<int>(self->getEnginePower() / game->getCarEnginePowerChangePerTick());
+		}
+	} else if (rear < 0) {
+		rear++;
+	} else if (rear > 0) {
+		resultMove->setBrake(false);
+		CDrawPlugin::Instance().FillCircle(car.Position.X, car.Position.Y, 50, 0x880088);
+		if (rear < 30) {
+			resultMove->setEnginePower(0);
+			resultMove->setBrake(true);
+			resultMove->setWheelTurn(0);
+		} else {
+			resultMove->setEnginePower(-1.0);
+			resultMove->setWheelTurn(angle > 0 ? -1 : 1);
+		}
+		rear--;
+		if (rear == 0) rear = -120;
+	}
 
 	// Тупое нитро.
 	if (result.Success) {
@@ -395,11 +384,24 @@ void MyStrategy::processOil()
 }
 void MyStrategy::experiment()
 {
-	//for (const auto& p : CGlobalPredictions::WashersPerTick) {
-	//	for (int i = 0; i < 3; i++) {
-	//		CLog::Instance().Stream() << "Washer Tick " << i << ": "
-	//			<< p[i].Position.X << "," << p[i].Position.Y << " "
-	//			<< p[i].Speed.X << "," << p[i].Speed.Y << endl;
+	//double dist = CWaypointDistanceMap::Instance().Query(car.Position.X, car.Position.Y, car.Angle, nextWaypointIndex);
+	//log.Stream() << dist;
+	//for (int tileX = 0; tileX < CMyTile::SizeX(); tileX++) {
+	//	const int startX = tileX * CWaypointDistanceMap::tileSize / CWaypointDistanceMap::step;
+	//	const int endX = (tileX + 1) * CWaypointDistanceMap::tileSize / CWaypointDistanceMap::step;
+	//	for (int tileY = 0; tileY < CMyTile::SizeY(); tileY++) {
+	//		const int startY = tileY * CWaypointDistanceMap::tileSize / CWaypointDistanceMap::step;
+	//		const int endY = (tileY + 1) * CWaypointDistanceMap::tileSize / CWaypointDistanceMap::step;
+	//		for (int x = startX; x < endX; x++) {
+	//			for (int y = startY; y < endY; y++) {
+	//				const double worldX = (x + 0.5) * CWaypointDistanceMap::step;
+	//				const double worldY = (y + 0.5) * CWaypointDistanceMap::step;
+	//				//dist = CWaypointDistanceMap::Instance().QueryBestDirection(worldX, worldY, nextWaypointIndex);
+	//				dist = CWaypointDistanceMap::Instance().Query(worldX, worldY, car.Angle, nextWaypointIndex);
+	//				//dist;
+	//				CDrawPlugin::Instance().Text(worldX, worldY, to_string((int)dist).c_str(), 0x000000);
+	//			}
+	//		}
 	//	}
 	//}
 	//for (const auto& t : CGlobalPredictions::TiresPerTick) {
@@ -410,22 +412,6 @@ void MyStrategy::experiment()
 	//			<< t[i].AngularSpeed << endl;
 	//	}
 	//}
-
-	for (int x = 0; x < CMyTile::SizeX(); x++) {
-		for (int y = 0; y < CMyTile::SizeY(); y++) {
-			CMyTile tile(x, y);
-			const auto& straightWalls = tile.GetStraightWalls();
-			for (const auto& w : straightWalls) {
-				CDrawPlugin::Instance().Line(w.first.X, w.first.Y, w.second.X, w.second.Y, 0xFF0000);
-			}
-			const auto& arcWalls = tile.GetArcWalls();
-			for (const auto& w : arcWalls) {
-				CDrawPlugin::Instance().Circle(w.Center.X, w.Center.Y, w.Radius, 0xFF2000);
-				//CDrawPlugin::Instance().FillCircle(w.Point1.X, w.Point1.Y, 2, 0xFF2000);
-				//CDrawPlugin::Instance().FillCircle(w.Point2.X, w.Point2.Y, 2, 0xFF2000);
-			}
-		}
-	}
 }
 
 void MyStrategy::predict()
@@ -460,9 +446,9 @@ void MyStrategy::doDraw()
 	CVec2D nextWaypoint = waypointTiles[nextWaypointIndex].ToVec();
 	draw.FillCircle(nextWaypoint.X, nextWaypoint.Y, 50, 0xFF0000);
 
-	for (const auto& c : prediction.RotatedRect.Corners) {
-		draw.FillCircle(c.X, c.Y, 1, 0x005500);
-	}
+	//for (const auto& c : prediction.RotatedRect.Corners) {
+	//	draw.FillCircle(c.X, c.Y, 1, 0x005500);
+	//}
 
 	//for (size_t i = 1; i < min(10U, tileRoute.size()); i++) {
 	//	CVec2D from = tileRoute[i - 1].ToVec();

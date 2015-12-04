@@ -29,7 +29,7 @@ struct CMyCar {
 	int DeadTicks;
 	int Type;
 	int PlayerId;
-	bool CollisionDetected;
+	int CollisionsDetected;
 	double CollisionDeltaSpeed;
 
 	CMyCar();

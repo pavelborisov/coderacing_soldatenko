@@ -67,7 +67,6 @@ CMyCar CSimulator::Predict(const CMyCar& startCar, const model::Move& move, int 
 	// TODO: Правильно считать, если мы дохлые
 	// TODO: Учитывать уже летящие в нас снаряды
 	CMyCar car(startCar);
-	car.CollisionDetected = false;
 	car.CollisionDeltaSpeed = 0;
 
 	bool isOiled = false;
@@ -91,7 +90,7 @@ CMyCar CSimulator::Predict(const CMyCar& startCar, const model::Move& move, int 
 	static const double durabilityEps = 0.01;
 	const double durabilityChange = durabilityFactor * car.CollisionDeltaSpeed;
 	if (car.CollisionDeltaSpeed > 0) {
-		car.CollisionDetected = true;
+		car.CollisionsDetected += 1;
 	}
 	if (durabilityChange >= durabilityEps) {
 		car.Durability = max(0.0, car.Durability - durabilityChange);

@@ -9,6 +9,8 @@
 
 using namespace std;
 
+static const int maxCollisionsDetected = 2;
+
 const vector<pair<vector<CMyMove>, vector<int>>> CBestMoveFinder::allMovesWithLengths = {
 	// Первое множество действий
 	{
@@ -151,7 +153,7 @@ void CBestMoveFinder::processPreviousMoveList()
 		processRouteScore(current, current.Tick == 0 && move.Brake == 1);
 
 		// Отсечка по коллизиям. TODO: не останавливаться, если коллизия была "мягкая"
-		if (current.Car.CollisionDetected) {
+		if (current.Car.CollisionsDetected > maxCollisionsDetected) {
 			correctedPreviousMoveList[mi].End = current.Tick;
 			correctedPreviousMoveList.erase(correctedPreviousMoveList.begin() + mi + 1, correctedPreviousMoveList.end());
 			break;
@@ -239,7 +241,7 @@ void CBestMoveFinder::processMoveIndex(size_t moveIndex, const std::vector<CMove
 				processRouteScore(current, current.Tick == 0 && move.Brake == 1);
 
 				// Отсечка по коллизиям. TODO: не останавливаться, если коллизия была "мягкая"
-				if (current.Car.CollisionDetected) {
+				if (current.Car.CollisionsDetected > maxCollisionsDetected) {
 					break;
 				}
 				if (lastMove) {
@@ -290,9 +292,6 @@ void CBestMoveFinder::processRouteScore(CState& state, bool firstTickBrake)
 	if (state.Car.OiledTicks == 59 && state.Car.Speed.Length() > 10) {
 		state.RouteScore -= (state.Car.Speed.Length() - 10) * 100;
 	}
-	//// Штраф за потерю хп.
-	//state.RouteScore += 10000 * state.Car.Durability;
-	//if (state.Car.Durability > 1e-7) state.RouteScore += 10000;
 	// Подбор бонусов
 	processBonus(state);
 }
@@ -354,10 +353,16 @@ double CBestMoveFinder::evaluate(const CState& state) const
 	const double angle = state.Car.Angle;
 	const double dist = CWaypointDistanceMap::Instance().Query(
 		state.Car.Position.X, state.Car.Position.Y, angle, state.NextWaypointIndex);
+	double score = 0;
 	if (dist >= 0) {
-		return state.RouteScore - dist;
+		score += state.RouteScore - dist;
 	} else {
 		//assert(false);
-		return -1000000;
+		score += -1000000;
 	}
+	// Штраф за потерю хп.
+	score += 20000 * state.Car.Durability;
+	if (state.Car.Durability > 1e-7) score += 100000;
+
+	return score;
 }
