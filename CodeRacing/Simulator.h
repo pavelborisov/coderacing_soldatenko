@@ -14,8 +14,9 @@ public:
 	void Initialize(const model::Game& game);
 	bool IsInitialized() const;
 
-	CMyCar Predict(const CMyCar& car, const model::World& world, const model::Move& move, int currentTick) const;
-	CMyTire Predict(const CMyTire& tire, const model::World& world, int currentTick) const;
+	CMyCar Predict(const CMyCar& startCar, const model::Move& move, int currentTick) const;
+	CMyWasher Predict(const CMyWasher& startWasher, int currentTick) const;
+	CMyTire Predict(const CMyTire& startTire, int currentTick) const;
 
 private:
 	bool isInitialized;
@@ -33,16 +34,14 @@ private:
 	void updateCar(const model::Move& move, int currentTick, CMyCar& car,
 		bool& isOiled, bool& isBrake,
 		CVec2D& lengthwiseUnitVector, CVec2D& accelerationDt) const;
-	void updateCarPosition(
+	void updatePosition(
 		CVec2D& position, CVec2D& speed, double& angle, double& angularSpeed, double& medianAngularSpeed,
 		CVec2D& lengthwiseUnitVector, CVec2D& crosswiseUnitVector, const CVec2D& accelerationDt,
 		double movementAirFrictionFactorDt, double lengthwiseFrictionFactorDt, double crosswiseFrictionFactorDt,
-		double rotationAirFrictionFactorDt, double rotationFrictionFactorDt) const;
-	void updateCirclePosition(
-		CVec2D& position, CVec2D& speed, double& angle, double& angularSpeed,
-		double movementAirFrictionFactorDt, double movementFrictionFactorDt,
-		double rotationAirFrictionFactorDt, double rotationFrictionFactorDt) const;
+		double rotationAirFrictionFactorDt, double rotationFrictionFactorDt,
+		bool passThroughWalls, double radius, CRotatedRect& rotatedRect ) const;
 
-	void processWallCollision(const CMyCar& startCar, CMyCar& car) const;
+	void processWallCollision(CVec2D& position, CVec2D& speed, double& angle, double& angularSpeed,
+		double radius, CRotatedRect& rotatedRect) const;
 
 };

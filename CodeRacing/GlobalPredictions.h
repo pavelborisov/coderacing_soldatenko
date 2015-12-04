@@ -19,12 +19,16 @@ struct CMyBonus {
 struct CMyWasher {
 	CVec2D Position;
 	CVec2D Speed;
+
+	static const double Radius;
 };
 
 struct CMyTire {
 	CVec2D Position;
 	CVec2D Speed;
 	double AngularSpeed;
+
+	static const double Radius;
 };
 
 struct CGlobalPredictions {

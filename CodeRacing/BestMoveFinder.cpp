@@ -105,7 +105,7 @@ CBestMoveFinder::CResult CBestMoveFinder::Process()
 				simMove = m.Move.Convert();
 			}
 		}
-		simCar = simulator.Predict(simCar, world, simMove, tick);
+		simCar = simulator.Predict(simCar, simMove, tick);
 		CDrawPlugin::Instance().FillCircle(simCar.Position.X, simCar.Position.Y, 5, 0x0000FF);
 	}
 	const double halfHeight = game.getCarHeight() / 2;
@@ -145,7 +145,7 @@ void CBestMoveFinder::processPreviousMoveList()
 				break;
 			}
 		}
-		current.Car = simulator.Predict(current.Car, world, move.Convert(), current.Tick);
+		current.Car = simulator.Predict(current.Car, move.Convert(), current.Tick);
 		simulationTicks++;
 
 		processRouteScore(current, current.Tick == 0 && move.Brake == 1);
@@ -232,7 +232,7 @@ void CBestMoveFinder::processMoveIndex(size_t moveIndex, const std::vector<CMove
 			assert(current.Tick <= end); // ѕроверка правильного пор€дка в массиве lenghtsArray
 			// ѕродолжаем симулировать с того места, откуда закончили в предыдущий раз.
 			for (; current.Tick < end; current.Tick++) {
-				current.Car = simulator.Predict(current.Car, world, move.Convert(), current.Tick);
+				current.Car = simulator.Predict(current.Car, move.Convert(), current.Tick);
 				simulationTicks++;
 
 				processRouteScore(current, current.Tick == 0 && move.Brake == 1);

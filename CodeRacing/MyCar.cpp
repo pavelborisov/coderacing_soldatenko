@@ -22,6 +22,19 @@ static int HistoryId(int PlayerId, int Type)
 	return id;
 }
 
+CRotatedRect::CRotatedRect(const CVec2D& center, double width, double height, double angle)
+{
+	const double halfWidth = width / 2;
+	const double halfHeight = height / 2;
+	for (int i = 0; i < 4; i++) {
+		CVec2D& c = Corners[i];
+		c.X = i % 2 == 0 ? halfWidth : -halfWidth;
+		c.Y = i / 2 == 0 ? halfHeight : -halfHeight;
+		c.Rotate(angle);
+		c += center;
+	}
+}
+
 CMyCar::CMyCar() :
 	Angle(0),
 	AngularSpeed(0),
@@ -81,20 +94,7 @@ CMyCar::CMyCar(const model::Car& car) :
 {
 	MedianAngularSpeed = MedianAngularSpeedHistory[HistoryId(PlayerId, Type)];
 	DeadTicks = Durability > 1e-5 ? 0 : DeadTicksHistory[HistoryId(PlayerId, Type)];
-	UpdateRotatedRect();
-}
-
-void CMyCar::UpdateRotatedRect()
-{
-	const double halfWidth = 210 / 2;//game.getCarWidth() / 2;
-	const double halfHeight = 140 / 2;//game.getCarHeight() / 2;
-	for (int i = 0; i < 4; i++) {
-		CVec2D& c = RotatedRect.Corners[i];
-		c.X = i % 2 == 0 ? halfWidth : -halfWidth;
-		c.Y = i / 2 == 0 ? halfHeight : -halfHeight;
-		c.Rotate(Angle);
-		c += Position;
-	}
+	RotatedRect = CRotatedRect(Position, 210, 140, Angle);
 }
 
 void CMyCar::SaveHistory()

@@ -5,11 +5,14 @@
 
 const double UndefinedMedianAngularSpeed = -123456;
 
-struct CMyCar {
-	struct CRotatedRect {
-		CVec2D Corners[4];
-	};
+struct CRotatedRect {
+	CVec2D Corners[4];
 
+	CRotatedRect() {};
+	CRotatedRect(const CVec2D& center, double width, double height, double angle);
+};
+
+struct CMyCar {
 	CVec2D Position;
 	double Angle;
 	CRotatedRect RotatedRect;
@@ -32,6 +35,5 @@ struct CMyCar {
 	CMyCar(const CMyCar& car);
 	explicit CMyCar(const model::Car& car);
 
-	void UpdateRotatedRect();
 	void SaveHistory();
 };

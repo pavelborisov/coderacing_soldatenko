@@ -136,6 +136,17 @@ void MyStrategy::makeMove()
 	// Заполняем предсказания
 	predictObjects();
 
+#define TEST
+#ifdef TEST
+	if (world->getTick() < 1000000) {
+		//resultMove->setThrowProjectile(true);
+		//resultMove->setBrake(true);
+		resultMove->setEnginePower(1.0);
+		//resultMove->setWheelTurn(-1.0);
+		return;
+	}
+#endif
+
 	CBestMoveFinder bestMoveFinder(car, nextWaypointIndex, *self, *world, *game, waypointTiles, simulator, previousResult);
 	CBestMoveFinder::CResult result = bestMoveFinder.Process();
 	previousResult = result;
@@ -231,9 +242,19 @@ void MyStrategy::predictObjects()
 		}
 	}
 	for (int tick = 0; tick < depth; tick++) {
+		for (size_t i = 0; i < CGlobalPredictions::WashersPerTick.size(); i++) {
+			CMyWasher washer = CGlobalPredictions::WashersPerTick[i][tick];
+			washer = simulator.Predict(washer, tick);
+			CGlobalPredictions::WashersPerTick[i][tick + 1] = washer;
+		}
+		for (size_t i = 0; i < CGlobalPredictions::TiresPerTick.size(); i++) {
+			CMyTire tire = CGlobalPredictions::TiresPerTick[i][tick];
+			tire = simulator.Predict(tire, tick);
+			CGlobalPredictions::TiresPerTick[i][tick + 1] = tire;
+		}
 		for (size_t i = 0; i < CGlobalPredictions::EnemyCarsPerTick.size(); i++) {
 			CMyCar enemyCar = CGlobalPredictions::EnemyCarsPerTick[i][tick];
-			enemyCar = simulator.Predict(enemyCar, *world, defaultEnemyMove, tick);
+			enemyCar = simulator.Predict(enemyCar, defaultEnemyMove, tick);
 			CGlobalPredictions::EnemyCarsPerTick[i][tick + 1] = enemyCar;
 		}
 	}
@@ -365,31 +386,26 @@ void MyStrategy::processOil()
 }
 void MyStrategy::experiment()
 {
-	//double dist = CWaypointDistanceMap::Instance().Query(car.Position.X, car.Position.Y, car.Angle, nextWaypointIndex);
-	//log.Stream() << dist;
-	//for (int tileX = 0; tileX < CMyTile::SizeX(); tileX++) {
-	//	const int startX = tileX * CWaypointDistanceMap::tileSize / CWaypointDistanceMap::step;
-	//	const int endX = (tileX + 1) * CWaypointDistanceMap::tileSize / CWaypointDistanceMap::step;
-	//	for (int tileY = 0; tileY < CMyTile::SizeY(); tileY++) {
-	//		const int startY = tileY * CWaypointDistanceMap::tileSize / CWaypointDistanceMap::step;
-	//		const int endY = (tileY + 1) * CWaypointDistanceMap::tileSize / CWaypointDistanceMap::step;
-	//		for (int x = startX; x < endX; x++) {
-	//			for (int y = startY; y < endY; y++) {
-	//				const double worldX = (x + 0.5) * CWaypointDistanceMap::step;
-	//				const double worldY = (y + 0.5) * CWaypointDistanceMap::step;
-	//				//dist = CWaypointDistanceMap::Instance().QueryBestDirection(worldX, worldY, nextWaypointIndex);
-	//				dist = CWaypointDistanceMap::Instance().Query(worldX, worldY, car.Angle, nextWaypointIndex);
-	//				//dist;
-	//				CDrawPlugin::Instance().Text(worldX, worldY, to_string((int)dist).c_str(), 0x000000);
-	//			}
-	//		}
-	//	}
-	//}
+	for (const auto& p : CGlobalPredictions::WashersPerTick) {
+		for (int i = 0; i < 3; i++) {
+			CLog::Instance().Stream() << "Washer Tick " << i << ": "
+				<< p[i].Position.X << "," << p[i].Position.Y << " "
+				<< p[i].Speed.X << "," << p[i].Speed.Y << endl;
+		}
+	}
+	for (const auto& t : CGlobalPredictions::TiresPerTick) {
+		for (int i = 0; i < 3; i++) {
+			CLog::Instance().Stream() << "Tire Tick " << i << ": "
+				<< t[i].Position.X << "," << t[i].Position.Y << " "
+				<< t[i].Speed.X << "," << t[i].Speed.Y << " "
+				<< t[i].AngularSpeed << endl;
+		}
+	}
 }
 
 void MyStrategy::predict()
 {
-	prediction = simulator.Predict(car, *world, *resultMove, 0);
+	prediction = simulator.Predict(car, *resultMove, 0);
 }
 
 void MyStrategy::doLog()

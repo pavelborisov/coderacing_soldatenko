@@ -2,6 +2,9 @@
 
 using namespace std;
 
+const double CMyWasher::Radius = 40 / 2;
+const double CMyTire::Radius = 140 / 2;
+
 vector<CMyOil> CGlobalPredictions::Oils;
 vector<CMyBonus> CGlobalPredictions::Bonuses;
 vector<vector<CMyWasher>> CGlobalPredictions::WashersPerTick;
