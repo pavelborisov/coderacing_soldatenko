@@ -301,7 +301,7 @@ void CBestMoveFinder::processBonus(CState& state)
 	static const double bonusRadiusSqr = pow(18, 2); // -2 для точности
 	for (size_t i = 0; i < CGlobalPredictions::Bonuses.size(); i++) {
 		if (state.PickedBonuses[i]) continue;
-		const CBonusPrediction& bonus = CGlobalPredictions::Bonuses[i];
+		const CMyBonus& bonus = CGlobalPredictions::Bonuses[i];
 		if (state.Tick >= bonus.LastTick) continue;
 		const double distToCenterSqr = (bonus.Position - state.Car.Position).LengthSquared();
 		if (distToCenterSqr > distToCenterSqrCutoff) continue;

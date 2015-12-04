@@ -2,10 +2,10 @@
 
 using namespace std;
 
-vector<COilPrediction> CGlobalPredictions::Oils;
-vector<CBonusPrediction> CGlobalPredictions::Bonuses;
-vector<vector<CWasherPrediction>> CGlobalPredictions::WashersPerTick;
-vector<vector<CTirePrediction>> CGlobalPredictions::TiresPerTick;
+vector<CMyOil> CGlobalPredictions::Oils;
+vector<CMyBonus> CGlobalPredictions::Bonuses;
+vector<vector<CMyWasher>> CGlobalPredictions::WashersPerTick;
+vector<vector<CMyTire>> CGlobalPredictions::TiresPerTick;
 vector<vector<CMyCar>> CGlobalPredictions::EnemyCarsPerTick;
 
 void CGlobalPredictions::Clear()

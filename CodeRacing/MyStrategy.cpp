@@ -221,20 +221,20 @@ void MyStrategy::predictObjects()
 	}
 	for (const auto& p : projectiles) {
 		if (p.getType() == WASHER) {
-			CWasherPrediction washer = { CVec2D(p.getX(), p.getY()), CVec2D(p.getSpeedX(), p.getSpeedY()) };
-			CGlobalPredictions::WashersPerTick.push_back(vector<CWasherPrediction>(depth + 1));
+			CMyWasher washer = { CVec2D(p.getX(), p.getY()), CVec2D(p.getSpeedX(), p.getSpeedY()) };
+			CGlobalPredictions::WashersPerTick.push_back(vector<CMyWasher>(depth + 1));
 			CGlobalPredictions::WashersPerTick.back()[0] = washer;
 		} else {
-			CTirePrediction tire = { CVec2D(p.getX(), p.getY()), CVec2D(p.getSpeedX(), p.getSpeedY()), p.getAngularSpeed() };
-			CGlobalPredictions::TiresPerTick.push_back(vector<CTirePrediction>(depth + 1));
+			CMyTire tire = { CVec2D(p.getX(), p.getY()), CVec2D(p.getSpeedX(), p.getSpeedY()), p.getAngularSpeed() };
+			CGlobalPredictions::TiresPerTick.push_back(vector<CMyTire>(depth + 1));
 			CGlobalPredictions::TiresPerTick.back()[0] = tire;
 		}
 	}
-	for (int tick = 1; tick <= depth; tick++) {
+	for (int tick = 0; tick < depth; tick++) {
 		for (size_t i = 0; i < CGlobalPredictions::EnemyCarsPerTick.size(); i++) {
-			CMyCar enemyCar = CGlobalPredictions::EnemyCarsPerTick[i][tick - 1];
+			CMyCar enemyCar = CGlobalPredictions::EnemyCarsPerTick[i][tick];
 			enemyCar = simulator.Predict(enemyCar, *world, defaultEnemyMove, tick);
-			CGlobalPredictions::EnemyCarsPerTick[i][tick] = enemyCar;
+			CGlobalPredictions::EnemyCarsPerTick[i][tick + 1] = enemyCar;
 		}
 	}
 }
@@ -389,7 +389,7 @@ void MyStrategy::experiment()
 
 void MyStrategy::predict()
 {
-	prediction = simulator.Predict(car, *world, *resultMove, 1);
+	prediction = simulator.Predict(car, *world, *resultMove, 0);
 }
 
 void MyStrategy::doLog()

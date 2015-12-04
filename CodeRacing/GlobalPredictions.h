@@ -5,36 +5,36 @@
 #include "MyCar.h"
 #include "Vec2D.h"
 
-struct COilPrediction {
+struct CMyOil {
 	CVec2D Position;
 	int LastTick;
 };
 
-struct CBonusPrediction {
+struct CMyBonus {
 	CVec2D Position;
 	model::BonusType Type;
 	int LastTick;
 };
 
-struct CWasherPrediction {
+struct CMyWasher {
 	CVec2D Position;
 	CVec2D Speed;
 };
 
-struct CTirePrediction {
+struct CMyTire {
 	CVec2D Position;
 	CVec2D Speed;
 	double AngularSpeed;
 };
 
 struct CGlobalPredictions {
-	static std::vector<COilPrediction> Oils;
-	static std::vector<CBonusPrediction> Bonuses;
+	static std::vector<CMyOil> Oils;
+	static std::vector<CMyBonus> Bonuses;
 
 	// Tick dependent
 	static const int PredictionDepth = 100;
-	static std::vector<std::vector<CWasherPrediction>> WashersPerTick;
-	static std::vector<std::vector<CTirePrediction>> TiresPerTick;
+	static std::vector<std::vector<CMyWasher>> WashersPerTick;
+	static std::vector<std::vector<CMyTire>> TiresPerTick;
 	static std::vector<std::vector<CMyCar>> EnemyCarsPerTick;
 
 	static void Clear();
