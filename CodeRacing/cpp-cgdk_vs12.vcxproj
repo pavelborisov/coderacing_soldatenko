@@ -126,6 +126,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Arc2D.cpp" />
     <ClCompile Include="BestMoveFinder.cpp" />
     <ClCompile Include="Debug.cpp" />
     <ClCompile Include="DrawPlugin.cpp" />

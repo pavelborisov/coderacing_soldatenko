@@ -176,10 +176,10 @@ void CBestMoveFinder::processMoveIndex(size_t moveIndex, const std::vector<CMove
 		moveArray.push_back({ 0, 0 });
 		if (chance(50)) {
 			moveArray.push_back({ 1, 0 });
-			moveArray.push_back({ 1, 1 });
+			//moveArray.push_back({ 1, 1 });
 		} else {
 			moveArray.push_back({ -1, 0 });
-			moveArray.push_back({ -1, 1 });
+			//moveArray.push_back({ -1, 1 });
 		}
 		lengthsArray.push_back(0);
 		lengthsArray.push_back(uniform(2, 7));
@@ -191,10 +191,10 @@ void CBestMoveFinder::processMoveIndex(size_t moveIndex, const std::vector<CMove
 		moveArray.push_back({ 0, 0 });
 		if (chance(50)) {
 			moveArray.push_back({ 1, 0 });
-			moveArray.push_back({ 1, 1 });
+			//moveArray.push_back({ 1, 1 });
 		} else {
 			moveArray.push_back({ -1, 0 });
-			moveArray.push_back({ -1, 1 });
+			//moveArray.push_back({ -1, 1 });
 		}
 		lengthsArray.push_back(0);
 		lengthsArray.push_back(uniform(30, 50));
@@ -289,6 +289,9 @@ void CBestMoveFinder::processRouteScore(CState& state, bool firstTickBrake)
 	if (state.Car.OiledTicks == 59 && state.Car.Speed.Length() > 10) {
 		state.RouteScore -= (state.Car.Speed.Length() - 10) * 100;
 	}
+	// Штраф за потерю хп.
+	state.RouteScore += 10000 * state.Car.Durability;
+	if (state.Car.Durability > 1e-7) state.RouteScore += 10000;
 	// Подбор бонусов
 	processBonus(state);
 }

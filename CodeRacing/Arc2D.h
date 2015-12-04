@@ -6,9 +6,10 @@ struct CArc2D {
 	CVec2D Center;
 	double Radius;
 	double StartAngle;
-	double SectorAngle;
+	double FinishAngle;
+	CVec2D Point1;
+	CVec2D Point2;
 
-	CArc2D() : Radius(0), StartAngle(0), SectorAngle(0) {}
-	CArc2D(const CVec2D& Center, double Radius, double StartAngle, double SectorAngle) :
-		Center(Center), Radius(Radius), StartAngle(StartAngle), SectorAngle(SectorAngle) {}
+	CArc2D() : Radius(0), StartAngle(0), FinishAngle(0) {}
+	CArc2D(const CVec2D& Center, double Radius, double StartAngle, double SectorAngle);
 };

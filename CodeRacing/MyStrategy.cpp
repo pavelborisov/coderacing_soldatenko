@@ -420,6 +420,8 @@ void MyStrategy::experiment()
 			const auto& arcWalls = tile.GetArcWalls();
 			for (const auto& w : arcWalls) {
 				CDrawPlugin::Instance().Circle(w.Center.X, w.Center.Y, w.Radius, 0xFF2000);
+				//CDrawPlugin::Instance().FillCircle(w.Point1.X, w.Point1.Y, 2, 0xFF2000);
+				//CDrawPlugin::Instance().FillCircle(w.Point2.X, w.Point2.Y, 2, 0xFF2000);
 			}
 		}
 	}

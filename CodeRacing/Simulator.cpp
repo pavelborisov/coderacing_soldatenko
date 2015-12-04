@@ -2,6 +2,8 @@
 
 #include <algorithm>
 #include "math.h"
+
+#undef NDEBUG
 #include "assert.h"
 #include "DrawPlugin.h"
 #include "Log.h"
@@ -72,7 +74,7 @@ CMyCar CSimulator::Predict(const CMyCar& startCar, const model::Move& move, int 
 	updateCar(move, currentTick, car, isOiled, isBrake, lengthwiseUnitVector, accelerationDt);
 
 	CVec2D crosswiseUnitVector(lengthwiseUnitVector.Y, -lengthwiseUnitVector.X);
-	updatePosition(car.Position, car.Speed, car.Angle, car.AngularSpeed, car.MedianAngularSpeed, car.RotatedRect,
+	updatePosition(car.Position, car.Speed, car.Angle, car.AngularSpeed, car.MedianAngularSpeed, car.RotatedRect, car.Durability,
 		lengthwiseUnitVector, crosswiseUnitVector,
 		isBrake ? CVec2D(0, 0) : accelerationDt,
 		carMovementAirFrictionFactorDt,
@@ -81,6 +83,25 @@ CMyCar CSimulator::Predict(const CMyCar& startCar, const model::Move& move, int 
 		carRotationAirFrictionFactorDt,
 		isOiled ? carRotationFrictionFactorDt / 5 : carRotationFrictionFactorDt,
 		false, -1 );
+
+	if (car.Durability < startCar.Durability) {
+		//CLog::Instance().Stream() << "There was a collision for " << startCar.Durability - car.Durability << " durability damage" << endl;
+		//car.CollisionDetected = true;
+	}
+	for (const auto& c : car.RotatedRect.Corners) {
+		if (c.X > CMyTile::SizeX() * 800 - 80) {
+			assert(false);
+		}
+		if (c.X < 80) {
+			assert(false);
+		}
+		if (c.Y > CMyTile::SizeX() * 800 - 80) {
+			assert(false);
+		}
+		if (c.Y < 80) {
+			assert(false);
+		}
+	}
 
 	return car;
 }
@@ -96,8 +117,9 @@ CMyWasher CSimulator::Predict(const CMyWasher& startWasher, int /*currentTick*/)
 	CVec2D unit2(0, -1);
 	CVec2D noAcc(0, 0);
 	CRotatedRect noCorners;
+	double durability = 0;
 
-	updatePosition(washer.Position, washer.Speed, angle, angularSpeed, medianAngularSpeed, noCorners,
+	updatePosition(washer.Position, washer.Speed, angle, angularSpeed, medianAngularSpeed, noCorners, durability,
 		unit1, unit2, noAcc,
 		0, 0, 0, 0, 0,
 		true, CMyWasher::Radius);
@@ -115,8 +137,9 @@ CMyTire CSimulator::Predict(const CMyTire& startTire, int /*currentTick*/) const
 	CVec2D unit2(0, -1);
 	CVec2D noAcc(0, 0);
 	CRotatedRect noCorners;
+	double durability = 0;
 
-	updatePosition(tire.Position, tire.Speed, angle, tire.AngularSpeed, medianAngularSpeed, noCorners,
+	updatePosition(tire.Position, tire.Speed, angle, tire.AngularSpeed, medianAngularSpeed, noCorners, durability,
 		unit1, unit2, noAcc,
 		0, 0, 0, 0, 0,
 		true, CMyWasher::Radius);
@@ -202,7 +225,7 @@ void CSimulator::updateCar(const model::Move& move, int currentTick, CMyCar& car
 }
 
 void CSimulator::updatePosition(
-	CVec2D& position, CVec2D& speed, double& angle, double& angularSpeed, double& medianAngularSpeed, CRotatedRect& rotatedRect,
+	CVec2D& position, CVec2D& speed, double& angle, double& angularSpeed, double& medianAngularSpeed, CRotatedRect& rotatedRect, double& durability,
 	CVec2D& lengthwiseUnitVector, CVec2D& crosswiseUnitVector, const CVec2D& accelerationDt,
 	double movementAirFrictionFactorDt, double lengthwiseFrictionFactorDt, double crosswiseFrictionFactorDt,
 	double rotationAirFrictionFactorDt, double rotationFrictionFactorDt,
@@ -241,7 +264,7 @@ void CSimulator::updatePosition(
 			rotatedRect = CRotatedRect(position, 210, 140, angle);
 		}
 		if (!passThroughWalls) {
-			processWallsCollision(position, speed, angle, angularSpeed, radius, rotatedRect);
+			processWallsCollision(position, speed, angle, angularSpeed, radius, rotatedRect, durability);
 		}
 	}
 
@@ -249,7 +272,7 @@ void CSimulator::updatePosition(
 }
 
 void CSimulator::processWallsCollision(CVec2D& position, CVec2D& speed, double& angle, double& angularSpeed,
-	double radius, CRotatedRect& rotatedRect) const
+	double radius, CRotatedRect& rotatedRect, double& durability) const
 {
 	static const double tileSize = 800;
 	static const double wallRadius = 80;
@@ -307,7 +330,7 @@ void CSimulator::processWallsCollision(CVec2D& position, CVec2D& speed, double& 
 					{
 						// Тела A и B перепутаны
 						resolveCollisionStatic(-collisionNormalB, collisionPoint, depth,
-							position, speed, angularSpeed, rotatedRect,
+							position, speed, angularSpeed, rotatedRect, durability,
 							invertedMass, invertedAngularMass, momentumTransferFactor, surfaceFrictionFactor);
 					}
 				}
@@ -322,7 +345,7 @@ void CSimulator::processWallsCollision(CVec2D& position, CVec2D& speed, double& 
 						collisionNormalB, collisionPoint, depth))
 					{
 						resolveCollisionStatic(collisionNormalB, collisionPoint, depth,
-							position, speed, angularSpeed, rotatedRect,
+							position, speed, angularSpeed, rotatedRect, durability,
 							invertedMass, invertedAngularMass, momentumTransferFactor, surfaceFrictionFactor);
 					}
 				}
@@ -343,7 +366,7 @@ bool CSimulator::findLineWithRotatedRectCollision(
 	}
 
 	CLine2D intersectionLineB;
-	static const int maxIntersectionPoints = 2;
+	static const int maxIntersectionPoints = 3;
 	CVec2D intersectionPoints[maxIntersectionPoints];
 	int intersectionPointsCount = 0;
 
@@ -381,6 +404,29 @@ bool CSimulator::findLineWithRotatedRectCollision(
 	if (intersectionPointsCount == 0) {
 		return false; // TODO check line inside rectangle
 	} else if (intersectionPointsCount == 1) {
+		// TODO: Есть баг, когда точка машины находится от стенки на расстоянии меньше epsilon, 
+		// и на предыдущем этапе одно продолжение грани машины считается, что пересеклось со стеной,
+		// а другое - уже нет. Это зависит от угла машины. В общем, может так получиться, что вместо 0 или 2 точек
+		// пересечения появляется одна. И этот код нас выносит за пределы стены далеко-далеко.
+		//return false;
+		// Проверка на то, что хотя бы один край стены находится внутри прямоугольника
+		bool isPoint1AInside = true;
+		bool isPoint2AInside = true;
+		for (int pointBIndex = 0; pointBIndex < pointBCount; pointBIndex++) {
+			const CVec2D& point1B = rotatedRectB.Corners[pointBIndex];
+			const CVec2D& point2B = rotatedRectB.Corners[pointBIndex == pointBCount - 1 ? 0 : pointBIndex + 1];
+			CLine2D line = CLine2D::FromPoints(point1B, point2B);
+			if (line.GetSignedDistanceFrom(point1A) > 0) {
+				isPoint1AInside = false;
+			}
+			if (line.GetSignedDistanceFrom(point1A) > 0) {
+				isPoint2AInside = false;
+			}
+		}
+		if (!isPoint1AInside && !isPoint2AInside) {
+			return false;
+		}
+		
 		collisionNormalB = intersectionLineB.GetProjectionOf(positionB) - positionB;
 		collisionNormalB *= 1 / collisionNormalB.Length();
 		CLine2D parallelLine1A = intersectionLineB.GetParallelLine(point1A);
@@ -391,7 +437,7 @@ bool CSimulator::findLineWithRotatedRectCollision(
 		collisionPoint = intersectionPoints[0];
 		return true;
 	} else {
-		assert(intersectionPointsCount == 2);
+		//assert(intersectionPointsCount == 2);
 		CVec2D pointBWithMinDistanceFromA = rotatedRectB.Corners[0];
 		double minDistanceBFromA = lineA.GetSignedDistanceFrom(pointBWithMinDistanceFromA);
 		CVec2D pointBWithMaxDistanceFromA = pointBWithMinDistanceFromA;
@@ -432,24 +478,204 @@ bool CSimulator::findLineWithRotatedRectCollision(
 	}
 }
 
+static void updateNearestPoint(
+	const CVec2D& positionB, const CVec2D& point, CVec2D& nearestPoint, double& distanceToNearestPoint)
+{
+	double distanceToPoint = (positionB - point).Length();
+
+	if (distanceToPoint >= epsilon
+		&& (distanceToNearestPoint == INT_MAX || distanceToPoint < distanceToNearestPoint))
+	{
+		nearestPoint = point;
+		distanceToNearestPoint = distanceToPoint;
+	}
+}
+
+static void updateFarthestPoint(
+	const CVec2D& positionB, const CVec2D& point, CVec2D& farthestPoint, double& distanceToFarthestPoint,
+	double startAngle, double finishAngle)
+{
+	double distanceToPoint = (positionB - point).Length();
+
+	//if (GeometryUtil.isAngleBetween(new Vector2D(body.getPosition(), point).getAngle(), startAngle, finishAngle)
+	CVec2D angleVector(positionB, point);
+	const double angle = angleVector.GetAngle();
+	if (startAngle <= angle && angle <= finishAngle
+		&& (distanceToFarthestPoint == INT_MIN || distanceToPoint > distanceToFarthestPoint))
+	{
+		farthestPoint = point;
+		distanceToFarthestPoint = distanceToPoint;
+	}
+}
+
+static bool doesPointBelongToAAndB(
+	const CVec2D& point, double leftA, double topA, double rightA, double bottomA,
+	const CArc2D& arcB)
+{
+	bool belongsToA = (point.X > leftA - epsilon)
+		&& (point.X < rightA + epsilon)
+		&& (point.Y > topA - epsilon)
+		&& (point.Y < bottomA + epsilon);
+
+	double pointAngleB = CVec2D(arcB.Center, point).GetAngle();
+	//if (pointAngleB < startAngleB) {
+	//	pointAngleB += DOUBLE_PI;
+	//}
+
+	bool belongsToB = arcB.StartAngle <= pointAngleB && pointAngleB <= arcB.FinishAngle;
+
+	return belongsToA && belongsToB;
+}
+
+struct CIntersectionInfo {
+	CVec2D Point;
+	vector<CLine2D> Lines;
+	vector<pair<CVec2D, CVec2D>> LinePointPairs;
+};
+
+static void addIntersectionInfo(
+	const CVec2D& point, const CVec2D& point1A, const CVec2D& point2A, const CLine2D& lineA, vector<CIntersectionInfo>& intersectionInfos)
+{
+	bool alreadyAdded = false;
+
+	for (auto& intersectionInfo : intersectionInfos) {
+		if (intersectionInfo.Point.NearlyEquals(point)) {
+			intersectionInfo.Lines.push_back(lineA);
+			intersectionInfo.LinePointPairs.push_back(make_pair(point1A, point2A));
+			alreadyAdded = true;
+			break;
+		}
+	}
+
+	if (!alreadyAdded) {
+		intersectionInfos.push_back(CIntersectionInfo());
+		CIntersectionInfo& intersectionInfo = intersectionInfos.back();
+		intersectionInfo.Point = point;
+		intersectionInfo.Lines.push_back(lineA);
+		intersectionInfo.LinePointPairs.push_back(make_pair(point1A, point2A));
+	}
+}
+
 bool CSimulator::findArcWithRotatedRectCollision(
 	const CArc2D& arcB,
-	const CVec2D& position, const CRotatedRect& rotatedRect, double circumcircleRadius,
+	const CVec2D& positionA, const CRotatedRect& rotatedRectA, double circumcircleRadiusA,
 	CVec2D& collisionNormalB, CVec2D& collisionPoint, double& depth) const
 {
-	arcB;
-	position;
-	rotatedRect;
-	circumcircleRadius;
 	collisionNormalB;
 	collisionPoint;
 	depth;
+	// Упрощённый случай - мы знаем, что у нас есть только два случая: 
+	// 1) когда мы углом машины попали в "вогнутую" арку - тогда центр окружности находится внутри автомобиля и есть 2 точки пересечения.
+	// 2) когда мы углом или стороной машины попали в "выпуклую" арку - тогда центр окружности находится снаружи автомобиля и есть 2 точки пересечения.
+	const double radiusA = circumcircleRadiusA;
+	const double radiusB = arcB.Radius;
+	const double distanceSqr = (arcB.Center - positionA).LengthSquared();
+	if (distanceSqr > pow(radiusA + radiusB, 2)) {
+		return false;
+	}
+	const double radiusBSqr = pow(arcB.Radius, 2);
+
+	//static const int maxIntersectionPoints = 2;
+	//CVec2D intersectionPoints[maxIntersectionPoints];
+	//int intersectionPointsCount = 0;
+	//static const int maxIntersectionInfos = 4;
+	vector<CIntersectionInfo> intersectionInfos;
+
+	static const int pointACount = 4;
+	for (int pointAIndex = 0; pointAIndex < pointACount; pointAIndex++) {
+		const CVec2D& point1A = rotatedRectA.Corners[pointAIndex];
+		const CVec2D& point2A = rotatedRectA.Corners[pointAIndex == pointACount - 1 ? 0 : pointAIndex + 1];
+		CLine2D lineA = CLine2D::FromPoints(point1A, point2A);
+
+		if (lineA.GetSignedDistanceFrom(positionA) > 0) {
+			assert(false);
+		}
+
+		const double distanceFromB = lineA.GetSignedDistanceFrom(arcB.Center);
+		if (distanceFromB > arcB.Radius) {
+			continue;
+		}
+		// Точки пересечения окружности с прямой находятся в projectionOfB +- offsetVector
+		CVec2D projectionOfB = lineA.GetProjectionOf(arcB.Center);
+		const double offset = sqrt(radiusBSqr - pow(distanceFromB, 2));
+		CVec2D offsetVector = CVec2D(point1A, point2A);
+		offsetVector *= offset / offsetVector.Length();
+
+		const double leftA = min(point1A.X, point2A.X);
+		const double topA = min(point1A.Y, point2A.Y);
+		const double rightA = max(point1A.X, point2A.X);
+		const double bottomA = max(point1A.Y, point2A.Y);
+
+		CVec2D intersectionPoint1 = projectionOfB + offsetVector;
+		if (doesPointBelongToAAndB(intersectionPoint1, leftA, topA, rightA, bottomA, arcB)) {
+			addIntersectionInfo(intersectionPoint1, point1A, point2A, lineA, intersectionInfos);
+		}
+		//assert(intersectionInfos.size() < maxIntersectionInfos);
+		
+		CVec2D intersectionPoint2 = projectionOfB - offsetVector;
+		if (doesPointBelongToAAndB(intersectionPoint1, leftA, topA, rightA, bottomA, arcB)) {
+			addIntersectionInfo(intersectionPoint2, point1A, point2A, lineA, intersectionInfos);
+		}
+		//assert(intersectionInfos.size() < maxIntersectionInfos);
+	}
+
+	const int intersectionCount = intersectionInfos.size();
+	if (intersectionCount == 0) {
+		// TODO check arc inside rectangle
+		return false;
+	} else if (intersectionCount == 1) {
+		// Пока такое не считаем
+		return false;
+	} else {
+		//assert(intersectionCount == 2);
+		CVec2D vectorCB = arcB.Center - intersectionInfos[0].Point;
+		CVec2D vectorCA = positionA - intersectionInfos[0].Point;
+		const double distance = sqrt(distanceSqr);
+		if (distance > radiusB - epsilon && vectorCB.DotProduct(vectorCA) < 0) {
+			CVec2D nearestPoint;
+			double distanceToNearestPoint = INT_MAX;
+			for (const auto& ii : intersectionInfos) {
+				updateNearestPoint(arcB.Center, ii.Point, nearestPoint, distanceToNearestPoint);
+				for (const auto& pp : ii.LinePointPairs) {
+					updateNearestPoint(arcB.Center, pp.first, nearestPoint, distanceToNearestPoint);
+					updateNearestPoint(arcB.Center, pp.second, nearestPoint, distanceToNearestPoint);
+				}
+			}
+			if (distanceToNearestPoint == INT_MAX) {
+				return false;
+			}
+			collisionPoint = nearestPoint;
+			collisionNormalB = nearestPoint - arcB.Center;
+			collisionNormalB *= 1 / collisionNormalB.Length();
+			depth = radiusB - distanceToNearestPoint;
+			return true;
+		} else {
+			CVec2D farthestPoint;
+			double distanceToFarthestPoint = INT_MIN;
+			for (const auto& ii : intersectionInfos) {
+				updateFarthestPoint(arcB.Center, ii.Point, farthestPoint, distanceToFarthestPoint, arcB.StartAngle, arcB.FinishAngle);
+				for (const auto& pp : ii.LinePointPairs) {
+					updateFarthestPoint(arcB.Center, pp.first, farthestPoint, distanceToFarthestPoint, arcB.StartAngle, arcB.FinishAngle);
+					updateFarthestPoint(arcB.Center, pp.second, farthestPoint, distanceToFarthestPoint, arcB.StartAngle, arcB.FinishAngle);
+				}
+			}
+			if (distanceToFarthestPoint == INT_MIN) {
+				return false;
+			}
+			collisionPoint = farthestPoint;
+			collisionNormalB = arcB.Center - farthestPoint;
+			collisionNormalB *= 1 / collisionNormalB.Length();
+			depth = distanceToFarthestPoint - radiusB;
+			return true;
+		}
+	}
+
 	return false;
 }
 
 void CSimulator::resolveCollisionStatic(
 	const CVec2D& collisionNormalB2D, const CVec2D& collisionPoint, double depth, 
-	CVec2D& positionA, CVec2D& speedA, double& angularSpeedA, CRotatedRect& rotatedRect,
+	CVec2D& positionA, CVec2D& speedA, double& angularSpeedA, CRotatedRect& rotatedRect, double& durability,
 	double invertedMassA, double invertedAngularMassA,
 	double momentumTransferFactorAB, double surfaceFrictionFactorAB) const
 {
@@ -460,7 +686,7 @@ void CSimulator::resolveCollisionStatic(
 	CVec3D relativeVelocityC = velocityAC;
 
 	const double normalRelativeVelocityLengthC = -relativeVelocityC.DotProduct(collisionNormalB);
-	CLog::Instance().Stream() << "Impact velocity: " << normalRelativeVelocityLengthC << endl;
+	//CLog::Instance().Stream() << "Impact velocity: " << normalRelativeVelocityLengthC << endl;
 	if (normalRelativeVelocityLengthC > -epsilon) {
 		resolveImpactStatic(vectorAC, collisionNormalB, relativeVelocityC,
 			speedA, angularSpeedA,
@@ -470,7 +696,13 @@ void CSimulator::resolveCollisionStatic(
 			invertedMassA, invertedAngularMassA, surfaceFrictionFactorAB);
 	}
 	pushBackBodiesStatic(collisionNormalB2D, depth, positionA, rotatedRect);
-	// TODO: обновить прочность. dDurability = 0.003 * |relativeVelocityC|, порог 0.01
+
+	static const double durabilityFactor = 0.003;
+	static const double durabilityEps = 0.01;
+	const double durabilityChange = durabilityFactor * normalRelativeVelocityLengthC;
+	if (durabilityChange >= durabilityEps) {
+		durability = max(0.0, durability - durabilityChange);
+	}
 }
 
 void CSimulator::resolveImpactStatic(

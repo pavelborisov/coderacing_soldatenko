@@ -38,26 +38,26 @@ private:
 		bool& isOiled, bool& isBrake,
 		CVec2D& lengthwiseUnitVector, CVec2D& accelerationDt) const;
 	void updatePosition(
-		CVec2D& position, CVec2D& speed, double& angle, double& angularSpeed, double& medianAngularSpeed, CRotatedRect& rotatedRect,
+		CVec2D& position, CVec2D& speed, double& angle, double& angularSpeed, double& medianAngularSpeed, CRotatedRect& rotatedRect, double& durability,
 		CVec2D& lengthwiseUnitVector, CVec2D& crosswiseUnitVector, const CVec2D& accelerationDt,
 		double movementAirFrictionFactorDt, double lengthwiseFrictionFactorDt, double crosswiseFrictionFactorDt,
 		double rotationAirFrictionFactorDt, double rotationFrictionFactorDt,
 		bool passThroughWalls, double radius) const;
 
 	void processWallsCollision(CVec2D& position, CVec2D& speed, double& angle, double& angularSpeed,
-		double radius, CRotatedRect& rotatedRect) const;
+		double radius, CRotatedRect& rotatedRect, double& durability) const;
 
 	bool findLineWithRotatedRectCollision(
 		const CVec2D& point1A, const CVec2D& point2A,
 		const CVec2D& position, const CRotatedRect& rotatedRect, double circumcircleRadius,
 		CVec2D& collisionNormalB, CVec2D& collisionPoint, double& depth) const;
 	bool findArcWithRotatedRectCollision(
-		const CArc2D& arcA,
-		const CVec2D& position, const CRotatedRect& rotatedRect, double circumcircleRadius,
+		const CArc2D& arcB,
+		const CVec2D& positionA, const CRotatedRect& rotatedRectA, double circumcircleRadiusA,
 		CVec2D& collisionNormalB, CVec2D& collisionPoint, double& depth) const;
 	void resolveCollisionStatic(
 		const CVec2D& collisionNormalB2D, const CVec2D& collisionPoint, double depth, 
-		CVec2D& positionA, CVec2D& speedA, double& angularSpeedA, CRotatedRect& rotatedRect,
+		CVec2D& positionA, CVec2D& speedA, double& angularSpeedA, CRotatedRect& rotatedRect, double& durability,
 		double invertedMassA, double invertedAngularMassA,
 		double momentumTransferFactorAB, double surfaceFrictionFactorAB) const;
 	void resolveImpactStatic(
