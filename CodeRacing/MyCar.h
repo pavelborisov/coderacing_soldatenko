@@ -30,6 +30,7 @@ struct CMyCar {
 	int Type;
 	int PlayerId;
 	bool CollisionDetected;
+	double CollisionDeltaSpeed;
 
 	CMyCar();
 	CMyCar(const CMyCar& car);

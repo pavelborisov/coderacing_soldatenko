@@ -45,7 +45,7 @@ private:
 		bool passThroughWalls, double radius) const;
 
 	void processWallsCollision(CVec2D& position, CVec2D& speed, double& angle, double& angularSpeed,
-		double radius, CRotatedRect& rotatedRect, double& durability) const;
+		double radius, CRotatedRect& rotatedRect, double& collisionDeltaSpeed) const;
 
 	bool findLineWithRotatedRectCollision(
 		const CVec2D& point1A, const CVec2D& point2A,
@@ -57,7 +57,7 @@ private:
 		CVec2D& collisionNormalB, CVec2D& collisionPoint, double& depth) const;
 	void resolveCollisionStatic(
 		const CVec2D& collisionNormalB2D, const CVec2D& collisionPoint, double depth, 
-		CVec2D& positionA, CVec2D& speedA, double& angularSpeedA, CRotatedRect& rotatedRect, double& durability,
+		CVec2D& positionA, CVec2D& speedA, double& angularSpeedA, CRotatedRect& rotatedRect, double& collisionDeltaSpeed,
 		double invertedMassA, double invertedAngularMassA,
 		double momentumTransferFactorAB, double surfaceFrictionFactorAB) const;
 	void resolveImpactStatic(

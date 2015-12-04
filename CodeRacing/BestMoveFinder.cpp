@@ -166,20 +166,21 @@ void CBestMoveFinder::processPreviousMoveList()
 
 void CBestMoveFinder::processMoveIndex(size_t moveIndex, const std::vector<CMoveWithDuration>& prevMoveList)
 {
-	const bool lastMove = moveIndex == allMovesWithLengths.size() - 1;
+	//bool lastMove = moveIndex == allMovesWithLengths.size() - 1;
 	//const vector<CMyMove>& moveArray = allMovesWithLengths[moveIndex].first;
 	//const vector<int>& lengthsArray = allMovesWithLengths[moveIndex].second;
 	vector<CMyMove> moveArray;
 	vector<int> lengthsArray;
+	bool lastMove = moveIndex == 3;
 
 	if (moveIndex == 0) {
 		moveArray.push_back({ 0, 0 });
 		if (chance(50)) {
 			moveArray.push_back({ 1, 0 });
-			//moveArray.push_back({ 1, 1 });
+			moveArray.push_back({ 1, 1 });
 		} else {
 			moveArray.push_back({ -1, 0 });
-			//moveArray.push_back({ -1, 1 });
+			moveArray.push_back({ -1, 1 });
 		}
 		lengthsArray.push_back(0);
 		lengthsArray.push_back(uniform(2, 7));
@@ -191,23 +192,23 @@ void CBestMoveFinder::processMoveIndex(size_t moveIndex, const std::vector<CMove
 		moveArray.push_back({ 0, 0 });
 		if (chance(50)) {
 			moveArray.push_back({ 1, 0 });
-			//moveArray.push_back({ 1, 1 });
+			moveArray.push_back({ 1, 1 });
 		} else {
 			moveArray.push_back({ -1, 0 });
-			//moveArray.push_back({ -1, 1 });
+			moveArray.push_back({ -1, 1 });
 		}
 		lengthsArray.push_back(0);
 		lengthsArray.push_back(uniform(30, 50));
 		sort(lengthsArray.begin(), lengthsArray.end());
 	} else if (moveIndex == 2) {
 		moveArray.push_back({ 0, 0 });
-		//if (chance(50)) {
-		//	moveArray.push_back({ 1, 0 });
-		//} else {
-		//	moveArray.push_back({ -1, 0 });
-		//}
+		if (chance(50)) {
+			moveArray.push_back({ 1, 0 });
+		} else {
+			moveArray.push_back({ -1, 0 });
+		}
 		lengthsArray.push_back(0);
-		//lengthsArray.push_back(uniform(30, 50));
+		lengthsArray.push_back(uniform(30, 50));
 		sort(lengthsArray.begin(), lengthsArray.end());
 	} else if (moveIndex == 3) {
 		moveArray.push_back({ 0, 0 });
@@ -289,9 +290,9 @@ void CBestMoveFinder::processRouteScore(CState& state, bool firstTickBrake)
 	if (state.Car.OiledTicks == 59 && state.Car.Speed.Length() > 10) {
 		state.RouteScore -= (state.Car.Speed.Length() - 10) * 100;
 	}
-	// Штраф за потерю хп.
-	state.RouteScore += 10000 * state.Car.Durability;
-	if (state.Car.Durability > 1e-7) state.RouteScore += 10000;
+	//// Штраф за потерю хп.
+	//state.RouteScore += 10000 * state.Car.Durability;
+	//if (state.Car.Durability > 1e-7) state.RouteScore += 10000;
 	// Подбор бонусов
 	processBonus(state);
 }

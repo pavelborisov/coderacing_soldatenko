@@ -1,9 +1,11 @@
 #include "Simulator.h"
 
+#ifdef LOGGING
+#undef NDEBUG
+#endif
+
 #include <algorithm>
 #include "math.h"
-
-#undef NDEBUG
 #include "assert.h"
 #include "DrawPlugin.h"
 #include "Log.h"
@@ -13,7 +15,7 @@
 
 using namespace std;
 
-static const int subtickCount = 10;
+static const int subtickCount = 2;
 static const double dTime = 1.0 / subtickCount;
 static const double epsilon = 1e-7;
 
@@ -66,6 +68,7 @@ CMyCar CSimulator::Predict(const CMyCar& startCar, const model::Move& move, int 
 	// TODO: Учитывать уже летящие в нас снаряды
 	CMyCar car(startCar);
 	car.CollisionDetected = false;
+	car.CollisionDeltaSpeed = 0;
 
 	bool isOiled = false;
 	bool isBrake = false;
@@ -74,7 +77,7 @@ CMyCar CSimulator::Predict(const CMyCar& startCar, const model::Move& move, int 
 	updateCar(move, currentTick, car, isOiled, isBrake, lengthwiseUnitVector, accelerationDt);
 
 	CVec2D crosswiseUnitVector(lengthwiseUnitVector.Y, -lengthwiseUnitVector.X);
-	updatePosition(car.Position, car.Speed, car.Angle, car.AngularSpeed, car.MedianAngularSpeed, car.RotatedRect, car.Durability,
+	updatePosition(car.Position, car.Speed, car.Angle, car.AngularSpeed, car.MedianAngularSpeed, car.RotatedRect, car.CollisionDeltaSpeed,
 		lengthwiseUnitVector, crosswiseUnitVector,
 		isBrake ? CVec2D(0, 0) : accelerationDt,
 		carMovementAirFrictionFactorDt,
@@ -83,6 +86,16 @@ CMyCar CSimulator::Predict(const CMyCar& startCar, const model::Move& move, int 
 		carRotationAirFrictionFactorDt,
 		isOiled ? carRotationFrictionFactorDt / 5 : carRotationFrictionFactorDt,
 		false, -1 );
+
+	static const double durabilityFactor = 0.003;
+	static const double durabilityEps = 0.01;
+	const double durabilityChange = durabilityFactor * car.CollisionDeltaSpeed;
+	if (car.CollisionDeltaSpeed > 0) {
+		car.CollisionDetected = true;
+	}
+	if (durabilityChange >= durabilityEps) {
+		car.Durability = max(0.0, car.Durability - durabilityChange);
+	}
 
 	if (car.Durability < startCar.Durability) {
 		//CLog::Instance().Stream() << "There was a collision for " << startCar.Durability - car.Durability << " durability damage" << endl;
@@ -117,9 +130,9 @@ CMyWasher CSimulator::Predict(const CMyWasher& startWasher, int /*currentTick*/)
 	CVec2D unit2(0, -1);
 	CVec2D noAcc(0, 0);
 	CRotatedRect noCorners;
-	double durability = 0;
+	double collisionDeltaSpeed = 0;
 
-	updatePosition(washer.Position, washer.Speed, angle, angularSpeed, medianAngularSpeed, noCorners, durability,
+	updatePosition(washer.Position, washer.Speed, angle, angularSpeed, medianAngularSpeed, noCorners, collisionDeltaSpeed,
 		unit1, unit2, noAcc,
 		0, 0, 0, 0, 0,
 		true, CMyWasher::Radius);
@@ -137,9 +150,9 @@ CMyTire CSimulator::Predict(const CMyTire& startTire, int /*currentTick*/) const
 	CVec2D unit2(0, -1);
 	CVec2D noAcc(0, 0);
 	CRotatedRect noCorners;
-	double durability = 0;
+	double collisionDeltaSpeed = 0;
 
-	updatePosition(tire.Position, tire.Speed, angle, tire.AngularSpeed, medianAngularSpeed, noCorners, durability,
+	updatePosition(tire.Position, tire.Speed, angle, tire.AngularSpeed, medianAngularSpeed, noCorners, collisionDeltaSpeed,
 		unit1, unit2, noAcc,
 		0, 0, 0, 0, 0,
 		true, CMyWasher::Radius);
@@ -225,7 +238,7 @@ void CSimulator::updateCar(const model::Move& move, int currentTick, CMyCar& car
 }
 
 void CSimulator::updatePosition(
-	CVec2D& position, CVec2D& speed, double& angle, double& angularSpeed, double& medianAngularSpeed, CRotatedRect& rotatedRect, double& durability,
+	CVec2D& position, CVec2D& speed, double& angle, double& angularSpeed, double& medianAngularSpeed, CRotatedRect& rotatedRect, double& collisionDeltaSpeed,
 	CVec2D& lengthwiseUnitVector, CVec2D& crosswiseUnitVector, const CVec2D& accelerationDt,
 	double movementAirFrictionFactorDt, double lengthwiseFrictionFactorDt, double crosswiseFrictionFactorDt,
 	double rotationAirFrictionFactorDt, double rotationFrictionFactorDt,
@@ -264,7 +277,7 @@ void CSimulator::updatePosition(
 			rotatedRect = CRotatedRect(position, 210, 140, angle);
 		}
 		if (!passThroughWalls) {
-			processWallsCollision(position, speed, angle, angularSpeed, radius, rotatedRect, durability);
+			processWallsCollision(position, speed, angle, angularSpeed, radius, rotatedRect, collisionDeltaSpeed);
 		}
 	}
 
@@ -272,7 +285,7 @@ void CSimulator::updatePosition(
 }
 
 void CSimulator::processWallsCollision(CVec2D& position, CVec2D& speed, double& angle, double& angularSpeed,
-	double radius, CRotatedRect& rotatedRect, double& durability) const
+	double radius, CRotatedRect& rotatedRect, double& collisionDeltaSpeed) const
 {
 	static const double tileSize = 800;
 	static const double wallRadius = 80;
@@ -330,7 +343,7 @@ void CSimulator::processWallsCollision(CVec2D& position, CVec2D& speed, double& 
 					{
 						// Тела A и B перепутаны
 						resolveCollisionStatic(-collisionNormalB, collisionPoint, depth,
-							position, speed, angularSpeed, rotatedRect, durability,
+							position, speed, angularSpeed, rotatedRect, collisionDeltaSpeed,
 							invertedMass, invertedAngularMass, momentumTransferFactor, surfaceFrictionFactor);
 					}
 				}
@@ -345,7 +358,7 @@ void CSimulator::processWallsCollision(CVec2D& position, CVec2D& speed, double& 
 						collisionNormalB, collisionPoint, depth))
 					{
 						resolveCollisionStatic(collisionNormalB, collisionPoint, depth,
-							position, speed, angularSpeed, rotatedRect, durability,
+							position, speed, angularSpeed, rotatedRect, collisionDeltaSpeed,
 							invertedMass, invertedAngularMass, momentumTransferFactor, surfaceFrictionFactor);
 					}
 				}
@@ -675,7 +688,7 @@ bool CSimulator::findArcWithRotatedRectCollision(
 
 void CSimulator::resolveCollisionStatic(
 	const CVec2D& collisionNormalB2D, const CVec2D& collisionPoint, double depth, 
-	CVec2D& positionA, CVec2D& speedA, double& angularSpeedA, CRotatedRect& rotatedRect, double& durability,
+	CVec2D& positionA, CVec2D& speedA, double& angularSpeedA, CRotatedRect& rotatedRect, double& collisionDeltaSpeed,
 	double invertedMassA, double invertedAngularMassA,
 	double momentumTransferFactorAB, double surfaceFrictionFactorAB) const
 {
@@ -694,15 +707,10 @@ void CSimulator::resolveCollisionStatic(
 		resolveSurfaceFrictionStatic(vectorAC, collisionNormalB, relativeVelocityC,
 			speedA, angularSpeedA,
 			invertedMassA, invertedAngularMassA, surfaceFrictionFactorAB);
+		collisionDeltaSpeed += normalRelativeVelocityLengthC;
 	}
 	pushBackBodiesStatic(collisionNormalB2D, depth, positionA, rotatedRect);
 
-	static const double durabilityFactor = 0.003;
-	static const double durabilityEps = 0.01;
-	const double durabilityChange = durabilityFactor * normalRelativeVelocityLengthC;
-	if (durabilityChange >= durabilityEps) {
-		durability = max(0.0, durability - durabilityChange);
-	}
 }
 
 void CSimulator::resolveImpactStatic(
