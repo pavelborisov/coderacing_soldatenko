@@ -9,7 +9,9 @@
 
 using namespace std;
 
-static const int maxCollisionsDetected = 2;
+static const int maxCollisionsDetected = 40;
+//static const double veryBadScoreDif = -10000;
+static const double veryBadScoreDif = -1000000;
 
 const vector<pair<vector<CMyMove>, vector<int>>> CBestMoveFinder::allMovesWithLengths = {
 	// Первое множество действий
@@ -69,6 +71,9 @@ CBestMoveFinder::CResult CBestMoveFinder::Process()
 	simulationTicks = 0;
 	bestScore = INT_MIN;
 	bestMoveList.clear();
+
+	CState start(car, 0, nextWaypointIndex, 0, CGlobalPredictions::Bonuses.size());
+	startScore = evaluate(start);
 
 	CResult result;
 	processPreviousMoveList();
@@ -177,27 +182,36 @@ void CBestMoveFinder::processMoveIndex(size_t moveIndex, const std::vector<CMove
 
 	if (moveIndex == 0) {
 		moveArray.push_back({ 0, 0 });
-		if (chance(50)) {
-			moveArray.push_back({ 1, 0 });
-			moveArray.push_back({ 1, 1 });
+		bool shouldTryRear = car.Speed.DotProduct(CVec2D(cos(car.Angle), sin(car.Angle))) < 2;
+		if (shouldTryRear) {
+			moveArray.push_back({ 0, 0, -1 });
+			moveArray.push_back({ 1, 0, -1 });
+			moveArray.push_back({ -1, 0, -1 });
+			lengthsArray.push_back(0);
+			lengthsArray.push_back(uniform(50, 70));
 		} else {
-			moveArray.push_back({ -1, 0 });
-			moveArray.push_back({ -1, 1 });
+			if (chance(50)) {
+				moveArray.push_back({ 1, 0 });
+				moveArray.push_back({ 1, 1 });
+			} else {
+				moveArray.push_back({ -1, 0 });
+				moveArray.push_back({ -1, 1 });
+			}
+			lengthsArray.push_back(0);
+			lengthsArray.push_back(uniform(2, 7));
+			lengthsArray.push_back(uniform(7, 15));
+			lengthsArray.push_back(uniform(15, 30));
+			lengthsArray.push_back(uniform(30, 50));
 		}
-		lengthsArray.push_back(0);
-		lengthsArray.push_back(uniform(2, 7));
-		lengthsArray.push_back(uniform(7, 15));
-		lengthsArray.push_back(uniform(15, 30));
-		lengthsArray.push_back(uniform(30, 50));
 		sort(lengthsArray.begin(), lengthsArray.end());
 	} else if (moveIndex == 1) {
 		moveArray.push_back({ 0, 0 });
 		if (chance(50)) {
 			moveArray.push_back({ 1, 0 });
-			moveArray.push_back({ 1, 1 });
+			//moveArray.push_back({ 1, 1 });
 		} else {
 			moveArray.push_back({ -1, 0 });
-			moveArray.push_back({ -1, 1 });
+			//moveArray.push_back({ -1, 1 });
 		}
 		lengthsArray.push_back(0);
 		lengthsArray.push_back(uniform(30, 50));
@@ -244,14 +258,17 @@ void CBestMoveFinder::processMoveIndex(size_t moveIndex, const std::vector<CMove
 				if (current.Car.CollisionsDetected > maxCollisionsDetected) {
 					break;
 				}
-				if (lastMove) {
+				//if (lastMove) {
 					double score = evaluate(current);
 					if (score > bestScore) {
 						bestScore = score;
 						bestMoveList = prevMoveList;
 						bestMoveList.push_back({ move, start, current.Tick });
+					} else if (score - startScore < veryBadScoreDif) {
+						// Отсечение по очкам
+						break;
 					}
-				}
+				//}
 			}
 
 			if (!lastMove) {
@@ -361,8 +378,14 @@ double CBestMoveFinder::evaluate(const CState& state) const
 		score += -1000000;
 	}
 	// Штраф за потерю хп.
-	score += 20000 * state.Car.Durability;
-	if (state.Car.Durability > 1e-7) score += 100000;
+	if (state.Car.Durability < 1e-7) {
+		score += -1000000;
+	} else {
+		// == -10000 при durability == 1 и == -100000 при durability == 0.01
+		score += -10000 * sqrt(1 / state.Car.Durability);
+	}
+	//score += 20000 * state.Car.Durability;
+	//if (state.Car.Durability > 1e-7) score += 100000;
 
 	return score;
 }

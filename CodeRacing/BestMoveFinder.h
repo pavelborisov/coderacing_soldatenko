@@ -65,12 +65,13 @@ private:
 	std::vector<CMoveWithDuration> correctedPreviousMoveList;
 
 	int simulationTicks = 0;
+	double startScore = INT_MIN;
 	double bestScore = INT_MIN;
 	std::vector<CMoveWithDuration> bestMoveList;
 	std::vector<CState> stateCache;
 
 	static const std::vector<std::pair<std::vector<CMyMove>, std::vector<int>>> allMovesWithLengths;
-	static const int maxTick = 150;
+	static const int maxTick = 200;
 
 	void processPreviousMoveList();
 	void processMoveIndex(size_t moveIndex, const std::vector<CMoveWithDuration>& prevMoveList);
