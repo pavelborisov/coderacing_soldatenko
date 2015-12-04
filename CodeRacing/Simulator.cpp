@@ -432,7 +432,7 @@ bool CSimulator::findLineWithRotatedRectCollision(
 			if (line.GetSignedDistanceFrom(point1A) > 0) {
 				isPoint1AInside = false;
 			}
-			if (line.GetSignedDistanceFrom(point1A) > 0) {
+			if (line.GetSignedDistanceFrom(point2A) > 0) {
 				isPoint2AInside = false;
 			}
 		}
