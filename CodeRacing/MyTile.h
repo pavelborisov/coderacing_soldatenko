@@ -10,6 +10,7 @@ struct CMyTile {
 	// Статические поля надо выставить перед любой работой с CMyTile
 	static std::vector<std::vector<model::TileType>> TileTypesXY;
 	static double TileSize;
+	static std::vector<std::vector<std::vector<std::pair<CVec2D, CVec2D>>>> StraightWallsXY;
 
 	CMyTile();
 	CMyTile(int X, int Y);
@@ -31,7 +32,8 @@ struct CMyTile {
 	CVec2D ToVec() const; // Надо выыставить TileSize
 	std::vector<CMyTile> FindNeighbors() const;
 
-	std::vector<std::pair<CVec2D, CVec2D>> GetStraightWalls() const;
+	static void FillWalls();
+	const std::vector<std::pair<CVec2D, CVec2D>>& GetStraightWalls() const;
 
 	static int SizeX() { return TileTypesXY.size(); }
 	static int SizeY() { return TileTypesXY[0].size(); }

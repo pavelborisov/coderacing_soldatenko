@@ -7,8 +7,9 @@
 using namespace std;
 using namespace model;
 
-vector<vector<TileType>> CMyTile::TileTypesXY = vector<vector<TileType>>();
+vector<vector<TileType>> CMyTile::TileTypesXY;
 double CMyTile::TileSize = 800;
+vector<vector<vector<pair<CVec2D, CVec2D>>>> CMyTile::StraightWallsXY;
 static const double wallRadius = 80;
 
 CMyTile::CMyTile() : X(-1), Y(-1)
@@ -171,29 +172,52 @@ vector<CMyTile> CMyTile::FindNeighbors() const
 	return neighbors;
 }
 
-vector<pair<CVec2D, CVec2D>> CMyTile::GetStraightWalls() const
+void CMyTile::FillWalls()
+{
+	StraightWallsXY.clear();
+	StraightWallsXY.assign(SizeX(), vector<vector<pair<CVec2D, CVec2D>>>(SizeY()));
+	for (int x = 0; x < SizeX(); x++) {
+		for (int y = 0; y < SizeY(); y++) {
+			const CMyTile tile = CMyTile(x, y);
+			auto& straightWalls = StraightWallsXY[x][y];
+			if (!tile.IsLeftOpen()) {
+				const double startY = tile.IsTopOpen() ? y * TileSize : y * TileSize + wallRadius;
+				const double endY = tile.IsBottomOpen() ? (y + 1) * TileSize : (y + 1) * TileSize - wallRadius;
+				straightWalls.push_back(make_pair(
+					CVec2D(x * TileSize + wallRadius, startY),
+					CVec2D(x * TileSize + wallRadius, endY)
+					));
+			}
+			if (!tile.IsRightOpen()) {
+				const double startY = tile.IsTopOpen() ? y * TileSize : y * TileSize + wallRadius;
+				const double endY = tile.IsBottomOpen() ? (y + 1) * TileSize : (y + 1) * TileSize - wallRadius;
+				straightWalls.push_back(make_pair(
+					CVec2D((x + 1) * TileSize - wallRadius, startY),
+					CVec2D((x + 1) * TileSize - wallRadius, endY)
+					));
+			}
+			if (!tile.IsTopOpen()) {
+				const double startX = tile.IsLeftOpen() ? x * TileSize : x * TileSize + wallRadius;
+				const double endX = tile.IsRightOpen() ? (x + 1) * TileSize : (x + 1) * TileSize - wallRadius;
+				straightWalls.push_back(make_pair(
+					CVec2D(startX, y * TileSize + wallRadius),
+					CVec2D(endX, y * TileSize + wallRadius)
+					));
+			}
+			if (!tile.IsBottomOpen()) {
+				const double startX = tile.IsLeftOpen() ? x * TileSize : x * TileSize + wallRadius;
+				const double endX = tile.IsRightOpen() ? (x + 1) * TileSize : (x + 1) * TileSize - wallRadius;
+				straightWalls.push_back(make_pair(
+					CVec2D(startX, (y + 1) * TileSize - wallRadius),
+					CVec2D(endX, (y + 1) * TileSize - wallRadius)
+					));
+			}
+		}
+	}
+}
+
+const vector<pair<CVec2D, CVec2D>>& CMyTile::GetStraightWalls() const
 {
 	// TODO: избавиться от этой херни
-	vector<pair<CVec2D, CVec2D>> result;
-	if (!IsLeftOpen()) {
-		result.push_back(make_pair(
-			CVec2D(X * TileSize + wallRadius, (Y + 1) * TileSize - wallRadius),
-			CVec2D(X * TileSize + wallRadius, Y * TileSize + wallRadius)));
-	}
-	if (!IsRightOpen()) {
-		result.push_back(make_pair(
-			CVec2D((X + 1) * TileSize - wallRadius, Y * TileSize + wallRadius),
-			CVec2D((X + 1) * TileSize - wallRadius, (Y + 1) * TileSize - wallRadius)));
-	}
-	if (!IsTopOpen()) {
-		result.push_back(make_pair(
-			CVec2D((X + 1) * TileSize - wallRadius, Y * TileSize + wallRadius),
-			CVec2D(X * TileSize + wallRadius, Y * TileSize + wallRadius)));
-	}
-	if (!IsBottomOpen()) {
-		result.push_back(make_pair(
-			CVec2D(X * TileSize + wallRadius, (Y + 1) * TileSize - wallRadius),
-			CVec2D((X + 1) * TileSize - wallRadius, (Y + 1) * TileSize - wallRadius)));
-	}
-	return result;
+	return StraightWallsXY[X][Y];
 }

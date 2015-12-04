@@ -37,11 +37,11 @@ private:
 		bool& isOiled, bool& isBrake,
 		CVec2D& lengthwiseUnitVector, CVec2D& accelerationDt) const;
 	void updatePosition(
-		CVec2D& position, CVec2D& speed, double& angle, double& angularSpeed, double& medianAngularSpeed,
+		CVec2D& position, CVec2D& speed, double& angle, double& angularSpeed, double& medianAngularSpeed, CRotatedRect& rotatedRect,
 		CVec2D& lengthwiseUnitVector, CVec2D& crosswiseUnitVector, const CVec2D& accelerationDt,
 		double movementAirFrictionFactorDt, double lengthwiseFrictionFactorDt, double crosswiseFrictionFactorDt,
 		double rotationAirFrictionFactorDt, double rotationFrictionFactorDt,
-		bool passThroughWalls, double radius, CRotatedRect& rotatedRect ) const;
+		bool passThroughWalls, double radius) const;
 
 	void processWallsCollision(CVec2D& position, CVec2D& speed, double& angle, double& angularSpeed,
 		double radius, CRotatedRect& rotatedRect) const;
@@ -52,7 +52,7 @@ private:
 		CVec2D& collisionNormalB, CVec2D& collisionPoint, double& depth) const;
 	void resolveCollisionStatic(
 		const CVec2D& collisionNormalB2D, const CVec2D& collisionPoint, double depth,
-		CVec2D& positionA, CVec2D& speedA, double& angularSpeedA, CRotatedRect& rotatedRect,
+		CVec2D& positionA, CVec2D& speedA, double& angularSpeedA,
 		double invertedMassA, double invertedAngularMassA,
 		double momentumTransferFactorAB, double surfaceFrictionFactorAB) const;
 	void resolveImpactStatic(
@@ -67,6 +67,6 @@ private:
 		double surfaceFrictionFactorAB) const;
 	void pushBackBodiesStatic(
 		const CVec2D& collisionNormalB2D, double depth,
-		CVec2D& positionA, CRotatedRect& rotatedRect) const;
+		CVec2D& positionA) const;
 
 };

@@ -93,6 +93,7 @@ void MyStrategy::updateWaypoints()
 	}
 
 	if (flush) {
+		CMyTile::FillWalls();
 		CWaypointDistanceMap::Instance().Initialize(waypointTiles);
 	}
 
@@ -144,7 +145,7 @@ void MyStrategy::makeMove()
 		//resultMove->setBrake(true);
 		resultMove->setEnginePower(1.0);
 		if (world->getTick() < 227) {
-			resultMove->setWheelTurn(1);
+			resultMove->setWheelTurn(-1);
 		}
 		return;
 	}
@@ -414,26 +415,32 @@ void MyStrategy::doLog()
 {
 	log.LogMyCar(prediction, "Prediction         ");
 
-	logIfDiffers(car.Angle, prevPrediction.Angle, "Angle", log);
-	logIfDiffers(car.AngularSpeed, prevPrediction.AngularSpeed, "AngularSpeed", log);
-	logIfDiffers(car.EnginePower, prevPrediction.EnginePower, "EnginePower", log);
-	logIfDiffers(car.WheelTurn, prevPrediction.WheelTurn, "WheelTurn", log);
-	logIfDiffers(car.Durability, prevPrediction.Durability, "Durability", log);
-	logIfDiffers(car.NitroCooldown, prevPrediction.NitroCooldown, "NitroCooldown", log);
-	logIfDiffers(car.NitroCount, prevPrediction.NitroCount, "NitroCount", log);
-	logIfDiffers(car.NitroTicks, prevPrediction.NitroTicks, "NitroTicks", log);
-	logIfDiffers(car.OiledTicks, prevPrediction.OiledTicks, "OiledTicks", log);
-	logIfDiffers(car.Position.X, prevPrediction.Position.X, "Position.X", log);
-	logIfDiffers(car.Position.Y, prevPrediction.Position.Y, "Position.Y", log);
-	logIfDiffers(car.Speed.X, prevPrediction.Speed.X, "Speed.X", log);
-	logIfDiffers(car.Speed.Y, prevPrediction.Speed.Y, "Speed.Y", log);
-	logIfDiffers(car.Type, prevPrediction.Type, "Type", log);
+	if (currentTick > 180) {
+		logIfDiffers(car.Angle, prevPrediction.Angle, "Angle", log);
+		logIfDiffers(car.AngularSpeed, prevPrediction.AngularSpeed, "AngularSpeed", log);
+		logIfDiffers(car.EnginePower, prevPrediction.EnginePower, "EnginePower", log);
+		logIfDiffers(car.WheelTurn, prevPrediction.WheelTurn, "WheelTurn", log);
+		logIfDiffers(car.Durability, prevPrediction.Durability, "Durability", log);
+		logIfDiffers(car.NitroCooldown, prevPrediction.NitroCooldown, "NitroCooldown", log);
+		logIfDiffers(car.NitroCount, prevPrediction.NitroCount, "NitroCount", log);
+		logIfDiffers(car.NitroTicks, prevPrediction.NitroTicks, "NitroTicks", log);
+		logIfDiffers(car.OiledTicks, prevPrediction.OiledTicks, "OiledTicks", log);
+		logIfDiffers(car.Position.X, prevPrediction.Position.X, "Position.X", log);
+		logIfDiffers(car.Position.Y, prevPrediction.Position.Y, "Position.Y", log);
+		logIfDiffers(car.Speed.X, prevPrediction.Speed.X, "Speed.X", log);
+		logIfDiffers(car.Speed.Y, prevPrediction.Speed.Y, "Speed.Y", log);
+		logIfDiffers(car.Type, prevPrediction.Type, "Type", log);
+	}
 }
 
 void MyStrategy::doDraw()
 {
 	CVec2D nextWaypoint = waypointTiles[nextWaypointIndex].ToVec();
 	draw.FillCircle(nextWaypoint.X, nextWaypoint.Y, 50, 0xFF0000);
+
+	for (const auto& c : prediction.RotatedRect.Corners) {
+		draw.FillCircle(c.X, c.Y, 1, 0x005500);
+	}
 
 	//for (size_t i = 1; i < min(10U, tileRoute.size()); i++) {
 	//	CVec2D from = tileRoute[i - 1].ToVec();
