@@ -257,5 +257,8 @@
     <ClInclude Include="Line2D.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Arc2D.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

@@ -140,15 +140,15 @@ void MyStrategy::makeMove()
 	// Заполняем предсказания
 	//predictObjects();
 
-	if (world->getTick() < 1000000) {
-		//resultMove->setThrowProjectile(true);
-		//resultMove->setBrake(true);
-		resultMove->setEnginePower(1.0);
-		if (world->getTick() < 227) {
-			resultMove->setWheelTurn(-1);
-		}
-		return;
-	}
+	//if (world->getTick() < 1000000) {
+	//	//resultMove->setThrowProjectile(true);
+	//	//resultMove->setBrake(true);
+	//	resultMove->setEnginePower(1.0);
+	//	//if (world->getTick() < 220) {
+	//	//	resultMove->setWheelTurn(-1);
+	//	//}
+	//	return;
+	//}
 
 	CBestMoveFinder bestMoveFinder(car, nextWaypointIndex, *self, *world, *game, waypointTiles, simulator, previousResult);
 	CBestMoveFinder::CResult result = bestMoveFinder.Process();
@@ -349,6 +349,7 @@ void MyStrategy::processOil()
 
 	static const int predictionLength = 50;
 	static const double minEnemySpeed = 5;
+	static const double minEnemySpeed2 = 20;
 	static const double minEnemyAngularSpeed = PI / 90;
 	static const double minEnemyDrift = PI / 20;
 	double speedRelAngle = car.Speed.GetAngle() - car.Angle;
@@ -381,7 +382,11 @@ void MyStrategy::processOil()
 					(enemyDrift > minEnemyDrift || abs(enemy.AngularSpeed > minEnemyAngularSpeed)))
 				{
 					resultMove->setSpillOil(true);
-					break;
+					return;
+				}
+				if (enemy.Speed.Length() > minEnemySpeed2) {
+					resultMove->setSpillOil(true);
+					return;
 				}
 			}
 		}
@@ -389,19 +394,33 @@ void MyStrategy::processOil()
 }
 void MyStrategy::experiment()
 {
-	for (const auto& p : CGlobalPredictions::WashersPerTick) {
-		for (int i = 0; i < 3; i++) {
-			CLog::Instance().Stream() << "Washer Tick " << i << ": "
-				<< p[i].Position.X << "," << p[i].Position.Y << " "
-				<< p[i].Speed.X << "," << p[i].Speed.Y << endl;
-		}
-	}
-	for (const auto& t : CGlobalPredictions::TiresPerTick) {
-		for (int i = 0; i < 3; i++) {
-			CLog::Instance().Stream() << "Tire Tick " << i << ": "
-				<< t[i].Position.X << "," << t[i].Position.Y << " "
-				<< t[i].Speed.X << "," << t[i].Speed.Y << " "
-				<< t[i].AngularSpeed << endl;
+	//for (const auto& p : CGlobalPredictions::WashersPerTick) {
+	//	for (int i = 0; i < 3; i++) {
+	//		CLog::Instance().Stream() << "Washer Tick " << i << ": "
+	//			<< p[i].Position.X << "," << p[i].Position.Y << " "
+	//			<< p[i].Speed.X << "," << p[i].Speed.Y << endl;
+	//	}
+	//}
+	//for (const auto& t : CGlobalPredictions::TiresPerTick) {
+	//	for (int i = 0; i < 3; i++) {
+	//		CLog::Instance().Stream() << "Tire Tick " << i << ": "
+	//			<< t[i].Position.X << "," << t[i].Position.Y << " "
+	//			<< t[i].Speed.X << "," << t[i].Speed.Y << " "
+	//			<< t[i].AngularSpeed << endl;
+	//	}
+	//}
+
+	for (int x = 0; x < CMyTile::SizeX(); x++) {
+		for (int y = 0; y < CMyTile::SizeY(); y++) {
+			CMyTile tile(x, y);
+			const auto& straightWalls = tile.GetStraightWalls();
+			for (const auto& w : straightWalls) {
+				CDrawPlugin::Instance().Line(w.first.X, w.first.Y, w.second.X, w.second.Y, 0xFF0000);
+			}
+			const auto& arcWalls = tile.GetArcWalls();
+			for (const auto& w : arcWalls) {
+				CDrawPlugin::Instance().Circle(w.Center.X, w.Center.Y, w.Radius, 0xFF2000);
+			}
 		}
 	}
 }

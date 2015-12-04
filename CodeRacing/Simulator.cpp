@@ -305,8 +305,24 @@ void CSimulator::processWallsCollision(CVec2D& position, CVec2D& speed, double& 
 						position, rotatedRect, biggerRadius,
 						collisionNormalB, collisionPoint, depth))
 					{
+						// “ела A и B перепутаны
+						resolveCollisionStatic(-collisionNormalB, collisionPoint, depth,
+							position, speed, angularSpeed, rotatedRect,
+							invertedMass, invertedAngularMass, momentumTransferFactor, surfaceFrictionFactor);
+					}
+				}
+				const auto& arcWalls = tile.GetArcWalls();
+				for (const auto& w : arcWalls)
+				{
+					CVec2D collisionNormalB;
+					CVec2D collisionPoint;
+					double depth = 0;
+					if (findArcWithRotatedRectCollision(w,
+						position, rotatedRect, biggerRadius,
+						collisionNormalB, collisionPoint, depth))
+					{
 						resolveCollisionStatic(collisionNormalB, collisionPoint, depth,
-							position, speed, angularSpeed,
+							position, speed, angularSpeed, rotatedRect,
 							invertedMass, invertedAngularMass, momentumTransferFactor, surfaceFrictionFactor);
 					}
 				}
@@ -317,11 +333,12 @@ void CSimulator::processWallsCollision(CVec2D& position, CVec2D& speed, double& 
 
 bool CSimulator::findLineWithRotatedRectCollision(
 	const CVec2D& point1A, const CVec2D& point2A,
-	const CVec2D& position, const CRotatedRect& rotatedRect, double circumcircleRadius,
+	const CVec2D& positionB, const CRotatedRect& rotatedRectB, double circumcircleRadiusB,
 	CVec2D& collisionNormalB, CVec2D& collisionPoint, double& depth) const
 {
+	// Ќадо обратить внимание, что тут тело "B" это наш пр€моугольник, а "A" - лини€.
 	CLine2D lineA = CLine2D::FromPoints(point1A, point2A);
-	if (abs(lineA.GetSignedDistanceFrom(position)) > circumcircleRadius) {
+	if (abs(lineA.GetSignedDistanceFrom(positionB)) > circumcircleRadiusB) {
 		return false;
 	}
 
@@ -332,9 +349,14 @@ bool CSimulator::findLineWithRotatedRectCollision(
 
 	static const int pointBCount = 4;
 	for (int pointBIndex = 0; pointBIndex < pointBCount; pointBIndex++) {
-		const CVec2D& point1B = rotatedRect.Corners[pointBIndex];
-		const CVec2D& point2B = rotatedRect.Corners[pointBIndex == pointBCount - 1 ? 0 : pointBIndex + 1];
-		CLine2D lineB = CLine2D::FromPoints(point2B, point1B);
+		const CVec2D& point1B = rotatedRectB.Corners[pointBIndex];
+		const CVec2D& point2B = rotatedRectB.Corners[pointBIndex == pointBCount - 1 ? 0 : pointBIndex + 1];
+		CLine2D lineB = CLine2D::FromPoints(point1B, point2B);
+
+		if (lineB.GetSignedDistanceFrom(positionB) > 0) {
+			assert(false);
+		}
+
 		CVec2D intersectionPoint;
 		if (!lineA.GetIntersectionPoint(lineB, intersectionPoint)) {
 			continue;
@@ -359,22 +381,22 @@ bool CSimulator::findLineWithRotatedRectCollision(
 	if (intersectionPointsCount == 0) {
 		return false; // TODO check line inside rectangle
 	} else if (intersectionPointsCount == 1) {
-		collisionNormalB = intersectionLineB.GetProjectionOf(position) - position;
+		collisionNormalB = intersectionLineB.GetProjectionOf(positionB) - positionB;
 		collisionNormalB *= 1 / collisionNormalB.Length();
 		CLine2D parallelLine1A = intersectionLineB.GetParallelLine(point1A);
-		double distance1AFromB = parallelLine1A.GetDistanceFrom(position);
+		double distance1AFromB = parallelLine1A.GetDistanceFrom(positionB);
 		CLine2D parallelLine2A = intersectionLineB.GetParallelLine(point2A);
-		double distance2AFromB = parallelLine2A.GetDistanceFrom(position);
+		double distance2AFromB = parallelLine2A.GetDistanceFrom(positionB);
 		depth = (distance1AFromB < distance2AFromB ? parallelLine1A : parallelLine2A).GetDistanceFrom(intersectionLineB);
 		collisionPoint = intersectionPoints[0];
 		return true;
 	} else {
 		assert(intersectionPointsCount == 2);
-		CVec2D pointBWithMinDistanceFromA = rotatedRect.Corners[0];
+		CVec2D pointBWithMinDistanceFromA = rotatedRectB.Corners[0];
 		double minDistanceBFromA = lineA.GetSignedDistanceFrom(pointBWithMinDistanceFromA);
 		CVec2D pointBWithMaxDistanceFromA = pointBWithMinDistanceFromA;
 		double maxDistanceBFromA = minDistanceBFromA;
-		for (const auto& p : rotatedRect.Corners) {
+		for (const auto& p : rotatedRectB.Corners) {
 			double distanceBFromA = lineA.GetSignedDistanceFrom(p);
 			if (distanceBFromA < minDistanceBFromA) {
 				minDistanceBFromA = distanceBFromA;
@@ -390,14 +412,11 @@ bool CSimulator::findLineWithRotatedRectCollision(
 			return false;
 		}
 
-		if (lineA.GetSignedDistanceFrom(position) > 0) {
-			// пипец какой-то со знаками
-			//collisionNormalB = lineA.GetParallelLine(pointBWithMinDistanceFromA).GetUnitNormalFrom(pointBWithMaxDistanceFromA);
-			collisionNormalB = -lineA.GetParallelLine(pointBWithMinDistanceFromA).GetUnitNormalFrom(pointBWithMaxDistanceFromA);
+		if (lineA.GetSignedDistanceFrom(positionB) > 0) {
+			collisionNormalB = lineA.GetParallelLine(pointBWithMinDistanceFromA).GetUnitNormalFrom(pointBWithMaxDistanceFromA);
 			depth = abs(minDistanceBFromA);
 		} else {
-			//collisionNormalB = lineA.GetParallelLine(pointBWithMaxDistanceFromA).GetUnitNormalFrom(pointBWithMinDistanceFromA);
-			collisionNormalB = -lineA.GetParallelLine(pointBWithMaxDistanceFromA).GetUnitNormalFrom(pointBWithMinDistanceFromA);
+			collisionNormalB = lineA.GetParallelLine(pointBWithMaxDistanceFromA).GetUnitNormalFrom(pointBWithMinDistanceFromA);
 			depth = maxDistanceBFromA;
 		}
 
@@ -413,9 +432,24 @@ bool CSimulator::findLineWithRotatedRectCollision(
 	}
 }
 
+bool CSimulator::findArcWithRotatedRectCollision(
+	const CArc2D& arcB,
+	const CVec2D& position, const CRotatedRect& rotatedRect, double circumcircleRadius,
+	CVec2D& collisionNormalB, CVec2D& collisionPoint, double& depth) const
+{
+	arcB;
+	position;
+	rotatedRect;
+	circumcircleRadius;
+	collisionNormalB;
+	collisionPoint;
+	depth;
+	return false;
+}
+
 void CSimulator::resolveCollisionStatic(
-	const CVec2D& collisionNormalB2D, const CVec2D& collisionPoint, double depth,
-	CVec2D& positionA, CVec2D& speedA, double& angularSpeedA,
+	const CVec2D& collisionNormalB2D, const CVec2D& collisionPoint, double depth, 
+	CVec2D& positionA, CVec2D& speedA, double& angularSpeedA, CRotatedRect& rotatedRect,
 	double invertedMassA, double invertedAngularMassA,
 	double momentumTransferFactorAB, double surfaceFrictionFactorAB) const
 {
@@ -435,7 +469,7 @@ void CSimulator::resolveCollisionStatic(
 			speedA, angularSpeedA,
 			invertedMassA, invertedAngularMassA, surfaceFrictionFactorAB);
 	}
-	pushBackBodiesStatic(collisionNormalB2D, depth, positionA);
+	pushBackBodiesStatic(collisionNormalB2D, depth, positionA, rotatedRect);
 	// TODO: обновить прочность. dDurability = 0.003 * |relativeVelocityC|, порог 0.01
 }
 
@@ -496,12 +530,12 @@ void CSimulator::resolveSurfaceFrictionStatic(
 
 void CSimulator::pushBackBodiesStatic(
 	const CVec2D& collisionNormalB2D, double depth,
-	CVec2D& positionA) const
+	CVec2D& positionA, CRotatedRect& rotatedRect) const
 {
 	const CVec2D shift = collisionNormalB2D * (depth + epsilon);
 	positionA += shift;
-	//for (auto& c : rotatedRect.Corners) {
-	//	c += shift;
-	//}
+	for (auto& c : rotatedRect.Corners) {
+		c += shift;
+	}
 	//assert(positionA.X < 6300);
 }

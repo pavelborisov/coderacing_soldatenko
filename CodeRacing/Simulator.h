@@ -6,6 +6,7 @@
 #include "model/World.h"
 #include "model/Move.h"
 #include "GlobalPredictions.h"
+#include "Arc2D.h"
 #include "Line2D.h"
 #include "MyCar.h"
 #include "Vec3D.h"
@@ -50,9 +51,13 @@ private:
 		const CVec2D& point1A, const CVec2D& point2A,
 		const CVec2D& position, const CRotatedRect& rotatedRect, double circumcircleRadius,
 		CVec2D& collisionNormalB, CVec2D& collisionPoint, double& depth) const;
+	bool findArcWithRotatedRectCollision(
+		const CArc2D& arcA,
+		const CVec2D& position, const CRotatedRect& rotatedRect, double circumcircleRadius,
+		CVec2D& collisionNormalB, CVec2D& collisionPoint, double& depth) const;
 	void resolveCollisionStatic(
-		const CVec2D& collisionNormalB2D, const CVec2D& collisionPoint, double depth,
-		CVec2D& positionA, CVec2D& speedA, double& angularSpeedA,
+		const CVec2D& collisionNormalB2D, const CVec2D& collisionPoint, double depth, 
+		CVec2D& positionA, CVec2D& speedA, double& angularSpeedA, CRotatedRect& rotatedRect,
 		double invertedMassA, double invertedAngularMassA,
 		double momentumTransferFactorAB, double surfaceFrictionFactorAB) const;
 	void resolveImpactStatic(
@@ -67,6 +72,6 @@ private:
 		double surfaceFrictionFactorAB) const;
 	void pushBackBodiesStatic(
 		const CVec2D& collisionNormalB2D, double depth,
-		CVec2D& positionA) const;
+		CVec2D& positionA, CRotatedRect& rotatedRect) const;
 
 };

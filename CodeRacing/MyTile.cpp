@@ -3,6 +3,7 @@
 #include <vector>
 #include <cstdlib>
 #include <math.h>
+#include "Tools.h"
 
 using namespace std;
 using namespace model;
@@ -10,6 +11,7 @@ using namespace model;
 vector<vector<TileType>> CMyTile::TileTypesXY;
 double CMyTile::TileSize = 800;
 vector<vector<vector<pair<CVec2D, CVec2D>>>> CMyTile::StraightWallsXY;
+vector<vector<vector<CArc2D>>> CMyTile::ArcWallsXY;
 static const double wallRadius = 80;
 
 CMyTile::CMyTile() : X(-1), Y(-1)
@@ -176,41 +178,86 @@ void CMyTile::FillWalls()
 {
 	StraightWallsXY.clear();
 	StraightWallsXY.assign(SizeX(), vector<vector<pair<CVec2D, CVec2D>>>(SizeY()));
+	ArcWallsXY.clear();
+	ArcWallsXY.assign(SizeX(), vector<vector<CArc2D>>(SizeY()));
 	for (int x = 0; x < SizeX(); x++) {
 		for (int y = 0; y < SizeY(); y++) {
 			const CMyTile tile = CMyTile(x, y);
+			if (tile.Type() == EMPTY) continue;
 			auto& straightWalls = StraightWallsXY[x][y];
 			if (!tile.IsLeftOpen()) {
-				const double startY = tile.IsTopOpen() ? y * TileSize : y * TileSize + wallRadius;
-				const double endY = tile.IsBottomOpen() ? (y + 1) * TileSize : (y + 1) * TileSize - wallRadius;
+				const double startY = y * TileSize;
+				const double endY = (y + 1) * TileSize;
 				straightWalls.push_back(make_pair(
 					CVec2D(x * TileSize + wallRadius, startY),
 					CVec2D(x * TileSize + wallRadius, endY)
 					));
 			}
 			if (!tile.IsRightOpen()) {
-				const double startY = tile.IsTopOpen() ? y * TileSize : y * TileSize + wallRadius;
-				const double endY = tile.IsBottomOpen() ? (y + 1) * TileSize : (y + 1) * TileSize - wallRadius;
+				const double startY = (y + 1) * TileSize;
+				const double endY = (y) * TileSize;
 				straightWalls.push_back(make_pair(
 					CVec2D((x + 1) * TileSize - wallRadius, startY),
 					CVec2D((x + 1) * TileSize - wallRadius, endY)
 					));
 			}
 			if (!tile.IsTopOpen()) {
-				const double startX = tile.IsLeftOpen() ? x * TileSize : x * TileSize + wallRadius;
-				const double endX = tile.IsRightOpen() ? (x + 1) * TileSize : (x + 1) * TileSize - wallRadius;
+				const double startX = (x + 1) * TileSize;
+				const double endX = x * TileSize;
 				straightWalls.push_back(make_pair(
 					CVec2D(startX, y * TileSize + wallRadius),
 					CVec2D(endX, y * TileSize + wallRadius)
 					));
 			}
 			if (!tile.IsBottomOpen()) {
-				const double startX = tile.IsLeftOpen() ? x * TileSize : x * TileSize + wallRadius;
-				const double endX = tile.IsRightOpen() ? (x + 1) * TileSize : (x + 1) * TileSize - wallRadius;
+				const double startX = x * TileSize;
+				const double endX = (x + 1) * TileSize;
 				straightWalls.push_back(make_pair(
 					CVec2D(startX, (y + 1) * TileSize - wallRadius),
 					CVec2D(endX, (y + 1) * TileSize - wallRadius)
 					));
+			}
+			auto& arcWalls = ArcWallsXY[x][y];
+			if (!tile.IsLeftOpen() && !tile.IsTopOpen()) {
+				arcWalls.push_back(CArc2D(
+					CVec2D(x * TileSize + 2 * wallRadius, y * TileSize + 2 * wallRadius),
+					wallRadius, -PI, -PI / 2 ));
+			}
+			if (!tile.IsTopOpen() && !tile.IsRightOpen()) {
+				arcWalls.push_back(CArc2D(
+					CVec2D((x + 1) * TileSize - 2 * wallRadius, y * TileSize + 2 * wallRadius),
+					wallRadius, -PI / 2, 0));
+			}
+			if (!tile.IsRightOpen() && !tile.IsBottomOpen()) {
+				arcWalls.push_back(CArc2D(
+					CVec2D((x + 1) * TileSize - 2 * wallRadius, (y + 1) * TileSize - 2 * wallRadius),
+					wallRadius, 0, PI / 2));
+			}
+			if (!tile.IsBottomOpen() && !tile.IsLeftOpen()) {
+				arcWalls.push_back(CArc2D(
+					CVec2D(x * TileSize + 2 * wallRadius, (y + 1) * TileSize - 2 * wallRadius),
+					wallRadius, PI / 2, PI));
+			}
+
+			if (tile.IsLeftOpen() && tile.IsTopOpen()) {
+				arcWalls.push_back(CArc2D(
+					CVec2D(x * TileSize, y * TileSize),
+					wallRadius, 0, PI / 2));
+			}
+			if (tile.IsTopOpen() && tile.IsRightOpen()) {
+				arcWalls.push_back(CArc2D(
+					CVec2D((x + 1) * TileSize, y * TileSize),
+					wallRadius, PI / 2, PI));
+			}
+			if (tile.IsRightOpen() && tile.IsBottomOpen()) {
+				arcWalls.push_back(CArc2D(
+					CVec2D((x + 1) * TileSize, (y + 1) * TileSize),
+					wallRadius, -PI, -PI / 2));
+			}
+			if (tile.IsBottomOpen() && tile.IsLeftOpen()) {
+				arcWalls.push_back(CArc2D(
+					CVec2D(x * TileSize, (y + 1) * TileSize),
+					wallRadius, -PI / 2, 0));
 			}
 		}
 	}
@@ -218,6 +265,9 @@ void CMyTile::FillWalls()
 
 const vector<pair<CVec2D, CVec2D>>& CMyTile::GetStraightWalls() const
 {
-	// TODO: избавиться от этой херни
 	return StraightWallsXY[X][Y];
+}
+const vector<CArc2D>& CMyTile::GetArcWalls() const
+{
+	return ArcWallsXY[X][Y];
 }

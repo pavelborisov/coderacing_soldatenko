@@ -2,6 +2,7 @@
 
 #include <vector>
 #include "model\TileType.h"
+#include "Arc2D.h"
 #include "Vec2D.h"
 
 struct CMyTile {
@@ -11,6 +12,7 @@ struct CMyTile {
 	static std::vector<std::vector<model::TileType>> TileTypesXY;
 	static double TileSize;
 	static std::vector<std::vector<std::vector<std::pair<CVec2D, CVec2D>>>> StraightWallsXY;
+	static std::vector<std::vector<std::vector<CArc2D>>> ArcWallsXY;
 
 	CMyTile();
 	CMyTile(int X, int Y);
@@ -34,6 +36,7 @@ struct CMyTile {
 
 	static void FillWalls();
 	const std::vector<std::pair<CVec2D, CVec2D>>& GetStraightWalls() const;
+	const std::vector<CArc2D>& CMyTile::GetArcWalls() const;
 
 	static int SizeX() { return TileTypesXY.size(); }
 	static int SizeY() { return TileTypesXY[0].size(); }

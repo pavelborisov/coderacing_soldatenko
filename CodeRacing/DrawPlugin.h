@@ -59,8 +59,8 @@ private:
 
 class CDrawPluginSwitcher {
 public:
-	explicit CDrawPluginSwitcher(CDrawPlugin& _drawPlugin) : drawPlugin(_drawPlugin) { drawPlugin.BeginPre(); }
-	~CDrawPluginSwitcher() { drawPlugin.EndPre(); }
+	explicit CDrawPluginSwitcher(CDrawPlugin& _drawPlugin) : drawPlugin(_drawPlugin) { drawPlugin.BeginPost(); }
+	~CDrawPluginSwitcher() { drawPlugin.EndPost(); }
 	CDrawPlugin& Get() { return drawPlugin; }
 
 private:
