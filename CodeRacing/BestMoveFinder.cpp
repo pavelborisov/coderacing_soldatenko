@@ -9,7 +9,7 @@
 
 using namespace std;
 
-static const int maxCollisionsDetected = 40;
+static const int maxCollisionsDetected = 1;
 //static const double veryBadScoreDif = -10000;
 static const double veryBadScoreDif = -1000000;
 
@@ -158,7 +158,8 @@ void CBestMoveFinder::processPreviousMoveList()
 		processRouteScore(current, current.Tick == 0 && move.Brake == 1);
 
 		// ќтсечка по коллизи€м. TODO: не останавливатьс€, если коллизи€ была "м€гка€"
-		if (current.Car.CollisionsDetected > maxCollisionsDetected) {
+		const int maxCollisionsDetectedWithRear = move.Engine > 0 ? maxCollisionsDetected : 100;
+		if (current.Car.CollisionsDetected > maxCollisionsDetectedWithRear) {
 			correctedPreviousMoveList[mi].End = current.Tick;
 			correctedPreviousMoveList.erase(correctedPreviousMoveList.begin() + mi + 1, correctedPreviousMoveList.end());
 			break;
@@ -189,6 +190,7 @@ void CBestMoveFinder::processMoveIndex(size_t moveIndex, const std::vector<CMove
 			moveArray.push_back({ -1, 0, -1 });
 			lengthsArray.push_back(0);
 			lengthsArray.push_back(uniform(50, 70));
+			lengthsArray.push_back(uniform(70, 130));
 		} else {
 			if (chance(50)) {
 				moveArray.push_back({ 1, 0 });
@@ -215,6 +217,7 @@ void CBestMoveFinder::processMoveIndex(size_t moveIndex, const std::vector<CMove
 		}
 		lengthsArray.push_back(0);
 		lengthsArray.push_back(uniform(30, 50));
+		if (prevMoveList[0].Move.Engine < 0) lengthsArray.push_back(uniform(50, 70));
 		sort(lengthsArray.begin(), lengthsArray.end());
 	} else if (moveIndex == 2) {
 		moveArray.push_back({ 0, 0 });
@@ -255,7 +258,8 @@ void CBestMoveFinder::processMoveIndex(size_t moveIndex, const std::vector<CMove
 				processRouteScore(current, current.Tick == 0 && move.Brake == 1);
 
 				// ќтсечка по коллизи€м. TODO: не останавливатьс€, если коллизи€ была "м€гка€"
-				if (current.Car.CollisionsDetected > maxCollisionsDetected) {
+				const int maxCollisionsDetectedWithRear = move.Engine > 0 ? maxCollisionsDetected : 100;
+				if (current.Car.CollisionsDetected > maxCollisionsDetectedWithRear) {
 					break;
 				}
 				//if (lastMove) {
@@ -381,8 +385,8 @@ double CBestMoveFinder::evaluate(const CState& state) const
 	if (state.Car.Durability < 1e-7) {
 		score += -1000000;
 	} else {
-		// == -10000 при durability == 1 и == -100000 при durability == 0.01
-		score += -10000 * sqrt(1 / state.Car.Durability);
+		// == -20000 при durability == 1 и == -200000 при durability == 0.01
+		score += -20000 * sqrt(1 / state.Car.Durability);
 	}
 	//score += 20000 * state.Car.Durability;
 	//if (state.Car.Durability > 1e-7) score += 100000;

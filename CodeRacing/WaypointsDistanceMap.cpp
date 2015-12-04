@@ -122,6 +122,17 @@ static vector<CWaypointDistanceMap::CLowResTile> findNeighbors(
 			neighbors.emplace_back(CWaypointDistanceMap::CLowResTile(x + ndx, y + ndy, toDirection(ndx1, ndy1), lrTiles[x + ndx][y + ndy].GatesMask));
 			neighbors.emplace_back(CWaypointDistanceMap::CLowResTile(x + ndx, y + ndy, toDirection(ndx2, ndy2), lrTiles[x + ndx][y + ndy].GatesMask));
 		}
+		// rear
+		ndx = -1, ndx1 = -1, ndx2 = -1;
+		ndy = 0, ndy1 = 1, ndy2 = -1;
+		simpleRotate(ndx, ndy, angle);
+		simpleRotate(ndx1, ndy1, angle);
+		simpleRotate(ndx2, ndy2, angle);
+		if (checkOpen(lrTile, ndx, ndy, lrTiles)) {
+			neighbors.emplace_back(CWaypointDistanceMap::CLowResTile(x + ndx, y + ndy, toDirection(-ndx, ndy), lrTiles[x + ndx][y + ndy].GatesMask));
+			neighbors.emplace_back(CWaypointDistanceMap::CLowResTile(x + ndx, y + ndy, toDirection(-ndx1, ndy1), lrTiles[x + ndx][y + ndy].GatesMask));
+			neighbors.emplace_back(CWaypointDistanceMap::CLowResTile(x + ndx, y + ndy, toDirection(-ndx2, ndy2), lrTiles[x + ndx][y + ndy].GatesMask));
+		}
 		//// turns
 		//if (checkOpen(lrTile, ndx1, ndy1, lrTiles)) {
 		//	neighbors.emplace_back(CWaypointDistanceMap::CLowResTile(x + ndx1, y + ndy1, toDirection(ndx1, ndy1), lrTiles[x + ndx1][y + ndy1].GatesMask));
@@ -141,6 +152,17 @@ static vector<CWaypointDistanceMap::CLowResTile> findNeighbors(
 			neighbors.emplace_back(CWaypointDistanceMap::CLowResTile(x + ndx, y + ndy, toDirection(ndx1, ndy1), lrTiles[x + ndx][y + ndy].GatesMask));
 			neighbors.emplace_back(CWaypointDistanceMap::CLowResTile(x + ndx, y + ndy, toDirection(ndx2, ndy2), lrTiles[x + ndx][y + ndy].GatesMask));
 		}
+		// rear
+		ndx = -1, ndx1 = -1, ndx2 = 0;
+		ndy = -1, ndy1 = 0, ndy2 = -1;
+		simpleRotate(ndx, ndy, angle);
+		simpleRotate(ndx1, ndy1, angle);
+		simpleRotate(ndx2, ndy2, angle);
+		if (checkOpen(lrTile, ndx, ndy, lrTiles)) {
+			neighbors.emplace_back(CWaypointDistanceMap::CLowResTile(x + ndx, y + ndy, toDirection(-ndx, -ndy), lrTiles[x + ndx][y + ndy].GatesMask));
+			neighbors.emplace_back(CWaypointDistanceMap::CLowResTile(x + ndx, y + ndy, toDirection(-ndx1, -ndy1), lrTiles[x + ndx][y + ndy].GatesMask));
+			neighbors.emplace_back(CWaypointDistanceMap::CLowResTile(x + ndx, y + ndy, toDirection(-ndx2, -ndy2), lrTiles[x + ndx][y + ndy].GatesMask));
+		}
 		//// turns
 		//if (checkOpen(lrTile, ndx1, ndy1, lrTiles)) {
 		//	neighbors.emplace_back(CWaypointDistanceMap::CLowResTile(x + ndx1, y + ndy1, toDirection(ndx1, ndy1), lrTiles[x + ndx1][y + ndy1].GatesMask));
@@ -154,21 +176,61 @@ static vector<CWaypointDistanceMap::CLowResTile> findNeighbors(
 	return neighbors;
 }
 
-static double smartDistance( const CWaypointDistanceMap::CLowResTile& from,
+static void notSoSimpleRotate(int& dx, int& dy, TDirection dir)
+{
+	int temp = 0;
+	switch (dir) {
+	case D_Right:
+	case D_RightBot:
+		break;
+	case D_Bot:
+	case D_LeftBot:
+		temp = dx;
+		dx = dy;
+		dy = -temp;
+		break;
+	case D_Left:
+	case D_LeftTop:
+		dx = -dx;
+		dy = -dy;
+		break;
+	case D_Top:
+	case D_RightTop:
+		temp = dx;
+		dx = -dy;
+		dy = temp;
+		break;
+	default:
+		assert(false);
+		break;
+	}
+}
+
+static double smartDistance(
+	const CWaypointDistanceMap::CLowResTile& from,
 	const CWaypointDistanceMap::CLowResTile& to)
 {
 	static double sqrt2 = sqrt(2);
 	int dx = to.X - from.X;
 	int dy = to.Y - from.Y;
-	int angle = getRotationAngle(dx, dy);
-	simpleRotate(dx, dy, (4 - angle) % 4);
-	assert(dx == 1);
-	if (dy == 0) {
-		return 1;
+	//int angle = getRotationAngle(dx, dy);
+	//simpleRotate(dx, dy, (4 - angle) % 4);
+	notSoSimpleRotate(dx, dy, from.Direction);
+	if (dx == 1) {
+		if (dy == 0) {
+			return 1;
+		} else {
+			return sqrt2;
+		}
 	} else {
-		assert(dy == 1);
-		return sqrt2;
+		assert(dx == -1);
+		if (dy == 0) {
+			return 8;
+		} else {
+			return 8 * sqrt(2);
+		}
 	}
+	//assert(false);
 	//assert(false);
 	//return -1;
 }

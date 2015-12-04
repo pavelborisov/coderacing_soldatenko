@@ -63,6 +63,7 @@ static const double limit(double val, double lim)
 
 CMyCar CSimulator::Predict(const CMyCar& startCar, const model::Move& move, int currentTick) const
 {
+	// TODO: Идея - считать отскоки коллизий только на начальных тиках.
 	// TODO: Коллизии. Со стенами, мазутом, другими машинами, бонусами(!)
 	// TODO: Правильно считать, если мы дохлые
 	// TODO: Учитывать уже летящие в нас снаряды
@@ -84,7 +85,7 @@ CMyCar CSimulator::Predict(const CMyCar& startCar, const model::Move& move, int 
 		isOiled ? carLengthwiseFrictionFactorDt : carCrosswiseFrictionFactorDt,
 		carRotationAirFrictionFactorDt,
 		isOiled ? carRotationFrictionFactorDt / 5 : carRotationFrictionFactorDt,
-		false, -1 );
+		false, -1);
 
 	static const double durabilityFactor = 0.003;
 	static const double durabilityEps = 0.01;
