@@ -31,6 +31,8 @@ struct CMyTile {
 	CVec2D ToVec() const; // Надо выыставить TileSize
 	std::vector<CMyTile> FindNeighbors() const;
 
+	std::vector<std::pair<CVec2D, CVec2D>> GetStraightWalls() const;
+
 	static int SizeX() { return TileTypesXY.size(); }
 	static int SizeY() { return TileTypesXY[0].size(); }
 

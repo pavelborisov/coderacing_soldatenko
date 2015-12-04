@@ -28,8 +28,8 @@ CRotatedRect::CRotatedRect(const CVec2D& center, double width, double height, do
 	const double halfHeight = height / 2;
 	for (int i = 0; i < 4; i++) {
 		CVec2D& c = Corners[i];
-		c.X = i % 2 == 0 ? halfWidth : -halfWidth;
-		c.Y = i / 2 == 0 ? halfHeight : -halfHeight;
+		c.X = (i == 0 || i == 3) ? halfWidth : -halfWidth;
+		c.Y = (i == 0 || i == 1) ? halfHeight : -halfHeight;
 		c.Rotate(angle);
 		c += center;
 	}

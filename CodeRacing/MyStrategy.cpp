@@ -137,18 +137,17 @@ void MyStrategy::makeMove()
 	}
 
 	// Заполняем предсказания
-	predictObjects();
+	//predictObjects();
 
-#define TEST
-#ifdef TEST
 	if (world->getTick() < 1000000) {
 		//resultMove->setThrowProjectile(true);
 		//resultMove->setBrake(true);
 		resultMove->setEnginePower(1.0);
-		//resultMove->setWheelTurn(-1.0);
+		if (world->getTick() < 227) {
+			resultMove->setWheelTurn(1);
+		}
 		return;
 	}
-#endif
 
 	CBestMoveFinder bestMoveFinder(car, nextWaypointIndex, *self, *world, *game, waypointTiles, simulator, previousResult);
 	CBestMoveFinder::CResult result = bestMoveFinder.Process();

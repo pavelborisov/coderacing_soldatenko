@@ -9,6 +9,7 @@ using namespace model;
 
 vector<vector<TileType>> CMyTile::TileTypesXY = vector<vector<TileType>>();
 double CMyTile::TileSize = 800;
+static const double wallRadius = 80;
 
 CMyTile::CMyTile() : X(-1), Y(-1)
 {
@@ -168,4 +169,31 @@ vector<CMyTile> CMyTile::FindNeighbors() const
 		}
 	}
 	return neighbors;
+}
+
+vector<pair<CVec2D, CVec2D>> CMyTile::GetStraightWalls() const
+{
+	// TODO: избавиться от этой херни
+	vector<pair<CVec2D, CVec2D>> result;
+	if (!IsLeftOpen()) {
+		result.push_back(make_pair(
+			CVec2D(X * TileSize + wallRadius, (Y + 1) * TileSize - wallRadius),
+			CVec2D(X * TileSize + wallRadius, Y * TileSize + wallRadius)));
+	}
+	if (!IsRightOpen()) {
+		result.push_back(make_pair(
+			CVec2D((X + 1) * TileSize - wallRadius, Y * TileSize + wallRadius),
+			CVec2D((X + 1) * TileSize - wallRadius, (Y + 1) * TileSize - wallRadius)));
+	}
+	if (!IsTopOpen()) {
+		result.push_back(make_pair(
+			CVec2D((X + 1) * TileSize - wallRadius, Y * TileSize + wallRadius),
+			CVec2D(X * TileSize + wallRadius, Y * TileSize + wallRadius)));
+	}
+	if (!IsBottomOpen()) {
+		result.push_back(make_pair(
+			CVec2D(X * TileSize + wallRadius, (Y + 1) * TileSize - wallRadius),
+			CVec2D((X + 1) * TileSize - wallRadius, (Y + 1) * TileSize - wallRadius)));
+	}
+	return result;
 }

@@ -7,6 +7,7 @@ struct CVec2D {
 	CVec2D() : X(0), Y(0) {}
 	CVec2D(double _X, double _Y) : X(_X), Y(_Y) {}
 	CVec2D(const CVec2D& v) : X(v.X), Y(v.Y) {}
+	CVec2D(const CVec2D& v1, const CVec2D& v2) : X(v2.X - v1.X), Y(v2.Y - v1.Y) {}
 
 	CVec2D& operator = (const CVec2D& v);
 	bool operator == (const CVec2D& v) const;
@@ -26,7 +27,8 @@ struct CVec2D {
 	// [-pi, pi]
 	double GetAngle() const;
 	void Rotate(double angle);
-	
+
+	bool NearlyEquals(const CVec2D& v) const;
 };
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

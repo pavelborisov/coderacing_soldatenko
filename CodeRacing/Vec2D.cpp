@@ -1,8 +1,11 @@
 #include "Vec2D.h"
 
+#include <cmath>
 #include <math.h>
 #include <assert.h>
 #include "Tools.h"
+
+static const double epsilon = 1e-7;
 
 double CVec2D::Length() const
 {
@@ -26,4 +29,9 @@ void CVec2D::Rotate(double angle)
 	const double yNew = X * sinValue + Y * cosValue;
 	X = xNew;
 	Y = yNew;
+}
+
+bool CVec2D::NearlyEquals(const CVec2D& v) const
+{
+	return abs(X - v.X) < epsilon && abs(Y - v.Y) < epsilon;
 }
