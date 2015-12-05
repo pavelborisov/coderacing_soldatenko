@@ -141,8 +141,11 @@ void MyStrategy::makeMove()
 	predictObjects();
 
 	if (world->getTick() < 1000000) {
-		resultMove->setBrake(true);
-		resultMove->setThrowProjectile(true);
+		resultMove->setWheelTurn(1);
+		//resultMove->setBrake(true);
+		if (world->getTick() >= 300) {
+			resultMove->setThrowProjectile(true);
+		}
 		return;
 	}
 
@@ -259,6 +262,7 @@ void MyStrategy::predictObjects()
 		for (size_t i = 0; i < CGlobalPredictions::TiresPerTick.size(); i++) {
 			CMyTire tire = CGlobalPredictions::TiresPerTick[i][tick];
 			tire = simulator.Predict(tire, tick);
+			if (tire.Speed.Length() < 0.25 * 60) break; // если шина теряет много скорости - она убирается из мира
 			CGlobalPredictions::TiresPerTick[i][tick + 1] = tire;
 		}
 		for (size_t i = 0; i < CGlobalPredictions::EnemyCarsPerTick.size(); i++) {
@@ -426,6 +430,9 @@ void MyStrategy::experiment()
 				<< t[i].Position.X << "," << t[i].Position.Y << " "
 				<< t[i].Speed.X << "," << t[i].Speed.Y << " "
 				<< t[i].AngularSpeed << endl;
+		}
+		for (int i = 0; i < 30; i++) {
+			CDrawPlugin::Instance().Circle(t[i].Position.X, t[i].Position.Y, CMyTire::Radius, 0xFF0000);
 		}
 	}
 }

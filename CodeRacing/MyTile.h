@@ -13,6 +13,7 @@ struct CMyTile {
 	static double TileSize;
 	static std::vector<std::vector<std::vector<std::pair<CVec2D, CVec2D>>>> StraightWallsXY;
 	static std::vector<std::vector<std::vector<CArc2D>>> ArcWallsXY;
+	static std::vector<std::vector<std::vector<std::pair<CVec2D, double>>>> CircleWallsXY;
 
 	CMyTile();
 	CMyTile(int X, int Y);
@@ -37,6 +38,7 @@ struct CMyTile {
 	static void FillWalls();
 	const std::vector<std::pair<CVec2D, CVec2D>>& GetStraightWalls() const;
 	const std::vector<CArc2D>& CMyTile::GetArcWalls() const;
+	const std::vector<std::pair<CVec2D, double>>& CMyTile::GetCircleWalls() const;
 
 	static int SizeX() { return TileTypesXY.size(); }
 	static int SizeY() { return TileTypesXY[0].size(); }

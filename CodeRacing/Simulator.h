@@ -70,8 +70,12 @@ private:
 		const CVec2D& point1B, const CVec2D& point2B,
 		const CVec2D& positionA, double radiusA,
 		CCollisionInfo& collisionInfo) const;
-	bool findArcWithCircleCollision(
-		const CArc2D& arcB,
+	//bool findArcWithCircleCollision(
+	//	const CArc2D& arcB,
+	//	const CVec2D& positionA, double radiusA,
+	//	CCollisionInfo& collisionInfo) const;
+	bool findCircleWithCircleCollision(
+		const CVec2D& positionB, double radiusB,
 		const CVec2D& positionA, double radiusA,
 		CCollisionInfo& collisionInfo) const;
 

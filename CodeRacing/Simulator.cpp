@@ -492,10 +492,19 @@ void CSimulator::processCircleWithWallsCollision(CVec2D& position, CVec2D& speed
 						tireInvertedMass, tireInvertedAngularMass, tireToWallMomentumTransferFactor, tireToWallSurfaceFrictionFactor);
 				}
 			}
-			const auto& arcWalls = tile.GetArcWalls();
-			for (const auto& w : arcWalls)
+			//const auto& arcWalls = tile.GetArcWalls();
+			//for (const auto& w : arcWalls)
+			//{
+			//	if (findArcWithCircleCollision(w, position, radius, collisionInfo)) {
+			//		resolveCollisionStatic(collisionInfo,
+			//			position, speed, angularSpeed, noRotatedRect, collisionDeltaSpeed,
+			//			tireInvertedMass, tireInvertedAngularMass, tireToWallMomentumTransferFactor, tireToWallSurfaceFrictionFactor);
+			//	}
+			//}
+			const auto& circleWalls = tile.GetCircleWalls();
+			for (const auto& w : circleWalls)
 			{
-				if (findArcWithCircleCollision(w, position, radius, collisionInfo)) {
+				if (findCircleWithCircleCollision(w.first, w.second, position, radius, collisionInfo)) {
 					resolveCollisionStatic(collisionInfo,
 						position, speed, angularSpeed, noRotatedRect, collisionDeltaSpeed,
 						tireInvertedMass, tireInvertedAngularMass, tireToWallMomentumTransferFactor, tireToWallSurfaceFrictionFactor);
@@ -899,16 +908,21 @@ bool CSimulator::findLineWithCircleCollision(
 	return true;
 }
 
-bool CSimulator::findArcWithCircleCollision(
-	const CArc2D& arcB,
+bool CSimulator::findCircleWithCircleCollision(
+	const CVec2D& positionB, double radiusB,
 	const CVec2D& positionA, double radiusA,
 	CCollisionInfo& collisionInfo) const
 {
-	arcB;
-	positionA;
-	radiusA;
-	collisionInfo;
-	return false;
+	double distance = (positionB - positionA).Length();
+	if (distance > radiusA + radiusB) {
+		return false;
+	}
+
+	CVec2D vectorBA = CVec2D(positionB, positionA);
+	collisionInfo.Normal = vectorBA * (1.0 / vectorBA.Length());
+	collisionInfo.Point = positionB + vectorBA * (radiusB / (radiusA + radiusB));
+	collisionInfo.Depth = radiusA + radiusB - distance;
+	return true;
 }
 
 void CSimulator::resolveCollisionStatic(

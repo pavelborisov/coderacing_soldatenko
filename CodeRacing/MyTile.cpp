@@ -12,6 +12,7 @@ vector<vector<TileType>> CMyTile::TileTypesXY;
 double CMyTile::TileSize = 800;
 vector<vector<vector<pair<CVec2D, CVec2D>>>> CMyTile::StraightWallsXY;
 vector<vector<vector<CArc2D>>> CMyTile::ArcWallsXY;
+vector<vector<vector<pair<CVec2D, double>>>> CMyTile::CircleWallsXY;
 static const double wallRadius = 80;
 
 CMyTile::CMyTile() : X(-1), Y(-1)
@@ -180,6 +181,8 @@ void CMyTile::FillWalls()
 	StraightWallsXY.assign(SizeX(), vector<vector<pair<CVec2D, CVec2D>>>(SizeY()));
 	ArcWallsXY.clear();
 	ArcWallsXY.assign(SizeX(), vector<vector<CArc2D>>(SizeY()));
+	CircleWallsXY.clear();
+	CircleWallsXY.assign(SizeX(), vector<vector<pair<CVec2D, double>>>(SizeY()));
 	for (int x = 0; x < SizeX(); x++) {
 		for (int y = 0; y < SizeY(); y++) {
 			const CMyTile tile = CMyTile(x, y);
@@ -239,25 +242,30 @@ void CMyTile::FillWalls()
 					wallRadius, PI / 2, PI));
 			}
 
+			auto& circleWalls = CircleWallsXY[x][y];
 			if (tile.IsLeftOpen() && tile.IsTopOpen()) {
-				arcWalls.push_back(CArc2D(
-					CVec2D(x * TileSize, y * TileSize),
-					wallRadius, 0, PI / 2));
+				//arcWalls.push_back(CArc2D(
+				//	CVec2D(x * TileSize, y * TileSize),
+				//	wallRadius, 0, PI / 2));
+				circleWalls.push_back(make_pair(CVec2D(x * TileSize, y * TileSize), wallRadius));
 			}
 			if (tile.IsTopOpen() && tile.IsRightOpen()) {
-				arcWalls.push_back(CArc2D(
-					CVec2D((x + 1) * TileSize, y * TileSize),
-					wallRadius, PI / 2, PI));
+				//arcWalls.push_back(CArc2D(
+				//	CVec2D((x + 1) * TileSize, y * TileSize),
+				//	wallRadius, PI / 2, PI));
+				circleWalls.push_back(make_pair(CVec2D((x + 1) * TileSize, y * TileSize), wallRadius));
 			}
 			if (tile.IsRightOpen() && tile.IsBottomOpen()) {
-				arcWalls.push_back(CArc2D(
-					CVec2D((x + 1) * TileSize, (y + 1) * TileSize),
-					wallRadius, -PI, -PI / 2));
+				//arcWalls.push_back(CArc2D(
+				//	CVec2D((x + 1) * TileSize, (y + 1) * TileSize),
+				//	wallRadius, -PI, -PI / 2));
+				circleWalls.push_back(make_pair(CVec2D((x + 1) * TileSize, (y + 1) * TileSize), wallRadius));
 			}
 			if (tile.IsBottomOpen() && tile.IsLeftOpen()) {
-				arcWalls.push_back(CArc2D(
-					CVec2D(x * TileSize, (y + 1) * TileSize),
-					wallRadius, -PI / 2, 0));
+				//arcWalls.push_back(CArc2D(
+				//	CVec2D(x * TileSize, (y + 1) * TileSize),
+				//	wallRadius, -PI / 2, 0));
+				circleWalls.push_back(make_pair(CVec2D(x * TileSize, (y + 1) * TileSize), wallRadius));
 			}
 		}
 	}
@@ -270,4 +278,8 @@ const vector<pair<CVec2D, CVec2D>>& CMyTile::GetStraightWalls() const
 const vector<CArc2D>& CMyTile::GetArcWalls() const
 {
 	return ArcWallsXY[X][Y];
+}
+const vector<pair<CVec2D, double>>& CMyTile::GetCircleWalls() const
+{
+	return CircleWallsXY[X][Y];
 }
