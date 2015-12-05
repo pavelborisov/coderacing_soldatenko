@@ -158,17 +158,17 @@ void CBestMoveFinder::processPreviousMoveList()
 		processRouteScore(current, current.Tick == 0 && move.Brake == 1);
 
 		// ќтсечка по коллизи€м. TODO: не останавливатьс€, если коллизи€ была "м€гка€"
-		const int maxCollisionsDetectedWithRear = move.Engine > 0 ? maxCollisionsDetected : 100;
-		if (current.Car.CollisionsDetected > maxCollisionsDetectedWithRear) {
+		if (current.Car.CollisionsDetected > maxCollisionsDetected) {
 			correctedPreviousMoveList[mi].End = current.Tick;
 			correctedPreviousMoveList.erase(correctedPreviousMoveList.begin() + mi + 1, correctedPreviousMoveList.end());
 			break;
 		}
-	}
-	double score = evaluate(current);
-	if (score > bestScore) {
-		bestScore = score;
-		bestMoveList = correctedPreviousMoveList;
+
+		double score = evaluate(current);
+		if (score > bestScore) {
+			bestScore = score;
+			bestMoveList = correctedPreviousMoveList;
+		}
 	}
 }
 
@@ -183,41 +183,30 @@ void CBestMoveFinder::processMoveIndex(size_t moveIndex, const std::vector<CMove
 
 	if (moveIndex == 0) {
 		moveArray.push_back({ 0, 0 });
-		bool shouldTryRear = car.Speed.DotProduct(CVec2D(cos(car.Angle), sin(car.Angle))) < 2;
-		if (shouldTryRear) {
-			moveArray.push_back({ 0, 0, -1 });
-			moveArray.push_back({ 1, 0, -1 });
-			moveArray.push_back({ -1, 0, -1 });
-			lengthsArray.push_back(0);
-			lengthsArray.push_back(uniform(50, 70));
-			lengthsArray.push_back(uniform(70, 130));
+		if (chance(50)) {
+			moveArray.push_back({ 1, 0 });
+			moveArray.push_back({ 1, 1 });
 		} else {
-			if (chance(50)) {
-				moveArray.push_back({ 1, 0 });
-				moveArray.push_back({ 1, 1 });
-			} else {
-				moveArray.push_back({ -1, 0 });
-				moveArray.push_back({ -1, 1 });
-			}
-			lengthsArray.push_back(0);
-			lengthsArray.push_back(uniform(2, 7));
-			lengthsArray.push_back(uniform(7, 15));
-			lengthsArray.push_back(uniform(15, 30));
-			lengthsArray.push_back(uniform(30, 50));
+			moveArray.push_back({ -1, 0 });
+			moveArray.push_back({ -1, 1 });
 		}
+		lengthsArray.push_back(0);
+		lengthsArray.push_back(uniform(2, 7));
+		lengthsArray.push_back(uniform(7, 15));
+		lengthsArray.push_back(uniform(15, 30));
+		lengthsArray.push_back(uniform(30, 50));
 		sort(lengthsArray.begin(), lengthsArray.end());
 	} else if (moveIndex == 1) {
 		moveArray.push_back({ 0, 0 });
 		if (chance(50)) {
 			moveArray.push_back({ 1, 0 });
-			//moveArray.push_back({ 1, 1 });
+			moveArray.push_back({ 1, 1 });
 		} else {
 			moveArray.push_back({ -1, 0 });
-			//moveArray.push_back({ -1, 1 });
+			moveArray.push_back({ -1, 1 });
 		}
 		lengthsArray.push_back(0);
 		lengthsArray.push_back(uniform(30, 50));
-		if (prevMoveList[0].Move.Engine < 0) lengthsArray.push_back(uniform(50, 70));
 		sort(lengthsArray.begin(), lengthsArray.end());
 	} else if (moveIndex == 2) {
 		moveArray.push_back({ 0, 0 });
@@ -258,8 +247,7 @@ void CBestMoveFinder::processMoveIndex(size_t moveIndex, const std::vector<CMove
 				processRouteScore(current, current.Tick == 0 && move.Brake == 1);
 
 				// ќтсечка по коллизи€м. TODO: не останавливатьс€, если коллизи€ была "м€гка€"
-				const int maxCollisionsDetectedWithRear = move.Engine > 0 ? maxCollisionsDetected : 100;
-				if (current.Car.CollisionsDetected > maxCollisionsDetectedWithRear) {
+				if (current.Car.CollisionsDetected > maxCollisionsDetected) {
 					break;
 				}
 				//if (lastMove) {
