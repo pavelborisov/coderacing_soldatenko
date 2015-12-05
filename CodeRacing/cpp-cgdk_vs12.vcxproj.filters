@@ -129,6 +129,12 @@
     <ClCompile Include="Arc2D.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="MyWorld.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="MyObjects.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="MyStrategy.h">
@@ -261,6 +267,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Arc2D.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MyWorld.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MyObjects.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

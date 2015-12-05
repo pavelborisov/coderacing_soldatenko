@@ -224,12 +224,12 @@ void MyStrategy::predictObjects()
 
 	auto bonuses = world->getBonuses();
 	for (const auto& b : bonuses) {
-		CGlobalPredictions::Bonuses.push_back({ CVec2D(b.getX(), b.getY()), b.getType(), INT_MAX });
+		CGlobalPredictions::Bonuses.push_back(CMyBonus(b));
 	}
 
 	auto oils = world->getOilSlicks();
 	for (const auto& o : oils) {
-		CGlobalPredictions::Oils.push_back({ CVec2D(o.getX(), o.getY()), o.getRemainingLifetime() });
+		CGlobalPredictions::Oils.push_back(CMyOil(o));
 	}
 
 	auto projectiles = world->getProjectiles();
@@ -244,13 +244,11 @@ void MyStrategy::predictObjects()
 	}
 	for (const auto& p : projectiles) {
 		if (p.getType() == WASHER) {
-			CMyWasher washer = { CVec2D(p.getX(), p.getY()), CVec2D(p.getSpeedX(), p.getSpeedY()) };
 			CGlobalPredictions::WashersPerTick.push_back(vector<CMyWasher>(depth + 1));
-			CGlobalPredictions::WashersPerTick.back()[0] = washer;
+			CGlobalPredictions::WashersPerTick.back()[0] = CMyWasher(p, -1);
 		} else {
-			CMyTire tire = { CVec2D(p.getX(), p.getY()), CVec2D(p.getSpeedX(), p.getSpeedY()), p.getAngularSpeed() };
 			CGlobalPredictions::TiresPerTick.push_back(vector<CMyTire>(depth + 1));
-			CGlobalPredictions::TiresPerTick.back()[0] = tire;
+			CGlobalPredictions::TiresPerTick.back()[0] = CMyTire(p, -1);
 		}
 	}
 	for (int tick = 0; tick < depth; tick++) {

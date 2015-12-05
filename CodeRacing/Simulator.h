@@ -51,12 +51,14 @@ private:
 		CVec2D& lengthwiseUnitVector, CVec2D& crosswiseUnitVector, const CVec2D& accelerationDt,
 		double movementAirFrictionFactorDt, double lengthwiseFrictionFactorDt, double crosswiseFrictionFactorDt,
 		double rotationAirFrictionFactorDt, double rotationFrictionFactorDt,
-		bool passThroughWalls, double radius) const;
+		bool passThroughWalls, double radius, double mass, int currentTick) const;
 
 	void processCarWithWallsCollision(CVec2D& position, CVec2D& speed, double& angularSpeed,
 		CRotatedRect& rotatedRect, double& collisionDeltaSpeed) const;
 	void processCircleWithWallsCollision(CVec2D& position, CVec2D& speed, double& angularSpeed,
 		double radius, double& collisionDeltaSpeed) const;
+	void processCarWithTiresCollision(CVec2D& position, CVec2D& speed, double& angularSpeed,
+		CRotatedRect& rotatedRect, double& collisionDeltaSpeed, double mass, int currentTick) const;
 
 	bool findLineWithRotatedRectCollision(
 		const CVec2D& point1B, const CVec2D& point2B,
@@ -78,6 +80,10 @@ private:
 		const CVec2D& positionB, double radiusB,
 		const CVec2D& positionA, double radiusA,
 		CCollisionInfo& collisionInfo) const;
+	bool findCircleWithRotatedRectCollision(
+		const CVec2D& positionB, double radiusB,
+		const CVec2D& positionA, const CRotatedRect& rotatedRectA, double circumcircleRadiusA,
+		CCollisionInfo& collisionInfo) const;
 
 	void resolveCollisionStatic(
 		const CCollisionInfo& collisionInfo,
@@ -97,5 +103,28 @@ private:
 	void pushBackBodiesStatic(
 		const CVec2D& collisionNormalB2D, double depth,
 		CVec2D& positionA, CRotatedRect& rotatedRect) const;
+
+	void resolveCollision(
+		const CCollisionInfo& collisionInfo,
+		CVec2D& positionA, CVec2D& speedA, double& angularSpeedA, CRotatedRect& rotatedRectA,
+		CVec2D& positionB, CVec2D& speedB, double& angularSpeedB, CRotatedRect& rotatedRectB, double& collisionDeltaSpeed,
+		double invertedMassA, double invertedAngularMassA, double invertedMassB, double invertedAngularMassB,
+		double momentumTransferFactorAB, double surfaceFrictionFactorAB) const;
+	void resolveImpact(
+		const CVec3D& vectorAC, const CVec3D& vectorBC, const CVec3D& collisionNormalB, const CVec3D& relativeVelocityC,
+		CVec2D& speedA, double& angularSpeedA,
+		CVec2D& speedB, double& angularSpeedB,
+		double invertedMassA, double invertedAngularMassA, double invertedMassB, double invertedAngularMassB,
+		double momentumTransferFactorAB) const;
+	void resolveSurfaceFriction(
+		const CVec3D& vectorAC, const CVec3D& vectorBC, const CVec3D& collisionNormalB, const CVec3D& relativeVelocityC,
+		CVec2D& speedA, double& angularSpeedA,
+		CVec2D& speedB, double& angularSpeedB,
+		double invertedMassA, double invertedAngularMassA, double invertedMassB, double invertedAngularMassB,
+		double surfaceFrictionFactorAB) const;
+	void pushBackBodies(
+		const CVec2D& collisionNormalB2D, double depth,
+		CVec2D& positionA, CRotatedRect& rotatedRectA,
+		CVec2D& positionB, CRotatedRect& rotatedRectB) const;
 
 };

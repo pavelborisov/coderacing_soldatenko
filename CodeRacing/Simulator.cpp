@@ -8,6 +8,7 @@
 #include "math.h"
 #include "assert.h"
 #include "DrawPlugin.h"
+#include "GlobalPredictions.h"
 #include "Log.h"
 #include "MyTile.h"
 #include "Tools.h"
@@ -96,6 +97,7 @@ CMyCar CSimulator::Predict(const CMyCar& startCar, const model::Move& move, int 
 	updateCar(move, currentTick, car, isOiled, isBrake, lengthwiseUnitVector, accelerationDt);
 
 	CVec2D crosswiseUnitVector(lengthwiseUnitVector.Y, -lengthwiseUnitVector.X);
+	double mass = car.Type == 0 ? 1250 : 1500;
 	updatePosition(car.Position, car.Speed, car.Angle, car.AngularSpeed, car.MedianAngularSpeed, car.RotatedRect, car.CollisionDeltaSpeed,
 		lengthwiseUnitVector, crosswiseUnitVector,
 		isBrake ? CVec2D(0, 0) : accelerationDt,
@@ -104,7 +106,7 @@ CMyCar CSimulator::Predict(const CMyCar& startCar, const model::Move& move, int 
 		isOiled ? carLengthwiseFrictionFactorDt : carCrosswiseFrictionFactorDt,
 		carRotationAirFrictionFactorDt,
 		isOiled ? carRotationFrictionFactorDt / 5 : carRotationFrictionFactorDt,
-		false, -1);
+		false, -1, mass, currentTick);
 
 	static const double durabilityFactor = 0.003;
 	static const double durabilityEps = 0.01;
@@ -139,7 +141,7 @@ CMyCar CSimulator::Predict(const CMyCar& startCar, const model::Move& move, int 
 }
 
 
-CMyWasher CSimulator::Predict(const CMyWasher& startWasher, int /*currentTick*/) const
+CMyWasher CSimulator::Predict(const CMyWasher& startWasher, int currentTick) const
 {
 	CMyWasher washer(startWasher);
 	double medianAngularSpeed = 0;
@@ -154,13 +156,13 @@ CMyWasher CSimulator::Predict(const CMyWasher& startWasher, int /*currentTick*/)
 	updatePosition(washer.Position, washer.Speed, angle, angularSpeed, medianAngularSpeed, noCorners, collisionDeltaSpeed,
 		unit1, unit2, noAcc,
 		0, 0, 0, 0, 0,
-		true, CMyWasher::Radius);
+		true, CMyWasher::Radius, CMyWasher::Mass, currentTick);
 
 	return washer;
 }
 
 
-CMyTire CSimulator::Predict(const CMyTire& startTire, int /*currentTick*/) const
+CMyTire CSimulator::Predict(const CMyTire& startTire, int currentTick) const
 {
 	CMyTire tire(startTire);
 	double medianAngularSpeed = 0;
@@ -174,7 +176,7 @@ CMyTire CSimulator::Predict(const CMyTire& startTire, int /*currentTick*/) const
 	updatePosition(tire.Position, tire.Speed, angle, tire.AngularSpeed, medianAngularSpeed, noCorners, collisionDeltaSpeed,
 		unit1, unit2, noAcc,
 		1, 0, 0, 1, 0,
-		false, CMyTire::Radius);
+		false, CMyTire::Radius, CMyTire::Mass, currentTick);
 
 	return tire;
 }
@@ -261,7 +263,7 @@ void CSimulator::updatePosition(
 	CVec2D& lengthwiseUnitVector, CVec2D& crosswiseUnitVector, const CVec2D& accelerationDt,
 	double movementAirFrictionFactorDt, double lengthwiseFrictionFactorDt, double crosswiseFrictionFactorDt,
 	double rotationAirFrictionFactorDt, double rotationFrictionFactorDt,
-	bool passThroughWalls, double radius) const
+	bool passThroughWalls, double radius, double /*mass*/, int /*currentTick*/) const
 {
 	// Физика считается в несколько итераций.
 	for (int i = 0; i < subtickCount; i++) {
@@ -298,6 +300,10 @@ void CSimulator::updatePosition(
 		if (!passThroughWalls) {
 			if (radius < 0) {
 				processCarWithWallsCollision(position, speed, angularSpeed, rotatedRect, collisionDeltaSpeed);
+				// Как учитывать столкновения с движущимися объектами - вообще хз :(
+				//if (true) {
+				//	processCarWithTiresCollision(position, speed, angularSpeed, rotatedRect, collisionDeltaSpeed, mass, currentTick);
+				//}
 			} else {
 				processCircleWithWallsCollision(position, speed, angularSpeed, radius, collisionDeltaSpeed);
 			}
@@ -457,9 +463,9 @@ void CSimulator::processCircleWithWallsCollision(CVec2D& position, CVec2D& speed
 	static const double tireToWallSurfaceFrictionFactor = 0.25;
 
 	static const double tireMass = 1;
-	static const double tireInvertedMass = 1 / tireMass;
-	const double tireAngularMass = 1.0 / 2 * tireMass * radius * radius; // Момент инерции диска
-	const double tireInvertedAngularMass = 1 / tireAngularMass;
+	static const double tireInvertedMass = 1.0 / tireMass;
+	static const double tireAngularMass = 1.0 / 2 * tireMass * radius * radius;
+	static const double tireInvertedAngularMass = 1.0 / tireAngularMass;
 
 	const int currentTileX = static_cast<int>(position.X / tileSize);
 	const int currentTileY = static_cast<int>(position.Y / tileSize);
@@ -510,6 +516,29 @@ void CSimulator::processCircleWithWallsCollision(CVec2D& position, CVec2D& speed
 						tireInvertedMass, tireInvertedAngularMass, tireToWallMomentumTransferFactor, tireToWallSurfaceFrictionFactor);
 				}
 			}
+		}
+	}
+}
+
+void CSimulator::processCarWithTiresCollision(CVec2D& position, CVec2D& speed, double& angularSpeed,
+	CRotatedRect& rotatedRect, double& collisionDeltaSpeed, double mass, int currentTick) const
+{
+	CCollisionInfo collisionInfo;
+	CRotatedRect noRotatedRect;
+	const double carInvertedMass = 1.0 / mass;
+	const double carAngularMass = 1.0 / 12 * mass * (carWidth * carWidth + carHeight * carHeight); // Момент инерции прямоугольника
+	const double carInvertedAngularMass = 1 / carAngularMass;
+	const double carToTireMomentumTransferFactor = 0.5;
+	const double carToTireSurfaceFrictionFactor = 0.5 * 0.25;
+	for (const auto& t : CGlobalPredictions::TiresPerTick) {
+		//const CMyTire& tire = t[currentTick];
+		CMyTire tire = t[currentTick];
+		if (findCircleWithRotatedRectCollision(tire.Position, tire.Radius, position, rotatedRect, carCircumCircleRadius, collisionInfo)) {
+			resolveCollision(collisionInfo,
+				position, speed, angularSpeed, rotatedRect,
+				tire.Position, tire.Speed, tire.AngularSpeed, noRotatedRect, collisionDeltaSpeed,
+				carInvertedMass, carInvertedAngularMass, CMyTire::InvertedMass, CMyTire::InvertedAngularMass,
+				carToTireMomentumTransferFactor, carToTireSurfaceFrictionFactor);
 		}
 	}
 }
@@ -925,6 +954,29 @@ bool CSimulator::findCircleWithCircleCollision(
 	return true;
 }
 
+bool CSimulator::findCircleWithRotatedRectCollision(
+	const CVec2D& positionB, double radiusB,
+	const CVec2D& positionA, const CRotatedRect& rotatedRectA, double circumcircleRadiusA,
+	CCollisionInfo& collisionInfo) const
+{
+	const double distance = (positionB - positionA).Length();
+	if (distance > radiusB + circumcircleRadiusA) {
+		return false;
+	}
+
+	for (int pointAIndex = 0; pointAIndex < 4; ++pointAIndex) {
+		const CVec2D& point1A = rotatedRectA.Corners[pointAIndex];
+		const CVec2D& point2A = rotatedRectA.Corners[pointAIndex == 4 - 1 ? 0 : pointAIndex + 1];
+
+		if (findLineWithCircleCollision(point1A, point2A, positionB, radiusB, collisionInfo)) {
+			collisionInfo.Normal = -collisionInfo.Normal;
+			return true;
+		}
+	}
+
+	return false;
+}
+
 void CSimulator::resolveCollisionStatic(
 	const CCollisionInfo& collisionInfo,
 	CVec2D& positionA, CVec2D& speedA, double& angularSpeedA, CRotatedRect& rotatedRect, double& collisionDeltaSpeed,
@@ -1015,5 +1067,123 @@ void CSimulator::pushBackBodiesStatic(
 	positionA += shift;
 	for (auto& c : rotatedRect.Corners) {
 		c += shift;
+	}
+}
+
+void CSimulator::resolveCollision(
+	const CCollisionInfo& collisionInfo,
+	CVec2D& positionA, CVec2D& speedA, double& angularSpeedA, CRotatedRect& rotatedRectA,
+	CVec2D& positionB, CVec2D& speedB, double& angularSpeedB, CRotatedRect& rotatedRectB, double& collisionDeltaSpeed,
+	double invertedMassA, double invertedAngularMassA, double invertedMassB, double invertedAngularMassB,
+	double momentumTransferFactorAB, double surfaceFrictionFactorAB) const
+{
+	CVec3D collisionNormalB(collisionInfo.Normal);
+	CVec3D vectorAC(collisionInfo.Point - positionA);
+	CVec3D vectorBC(collisionInfo.Point - positionB);
+	CVec3D angularVelocityPartAC = CVec3D(angularSpeedA).Cross(vectorAC);
+	CVec3D angularVelocityPartBC = CVec3D(angularSpeedB).Cross(vectorBC);
+	CVec3D velocityAC = angularVelocityPartAC + CVec3D(speedA);
+	CVec3D velocityBC = angularVelocityPartBC + CVec3D(speedB);
+	CVec3D relativeVelocityC = velocityAC - velocityBC;
+
+	const double normalRelativeVelocityLengthC = -relativeVelocityC.DotProduct(collisionNormalB);
+	if (normalRelativeVelocityLengthC > -epsilon) {
+		resolveImpact(vectorAC, vectorBC, collisionNormalB, relativeVelocityC,
+			speedA, angularSpeedA, speedB, angularSpeedB,
+			invertedMassA, invertedAngularMassA, invertedMassB, invertedAngularMassB, momentumTransferFactorAB);
+		resolveSurfaceFriction(vectorAC, vectorBC, collisionNormalB, relativeVelocityC,
+			speedA, angularSpeedA, speedB, angularSpeedB,
+			invertedMassA, invertedAngularMassA, invertedMassB, invertedAngularMassB, surfaceFrictionFactorAB);
+		collisionDeltaSpeed += normalRelativeVelocityLengthC;
+	}
+	pushBackBodies(collisionInfo.Normal, collisionInfo.Depth, positionA, rotatedRectA, positionB, rotatedRectB);
+}
+
+void CSimulator::resolveImpact(
+	const CVec3D& vectorAC, const CVec3D& vectorBC, const CVec3D& collisionNormalB, const CVec3D& relativeVelocityC,
+	CVec2D& speedA, double& angularSpeedA,
+	CVec2D& speedB, double& angularSpeedB,
+	double invertedMassA, double invertedAngularMassA, double invertedMassB, double invertedAngularMassB,
+	double momentumTransferFactorAB) const
+{
+	CVec3D denominatorPartA = vectorAC.Cross(collisionNormalB);
+	denominatorPartA *= invertedAngularMassA;
+	denominatorPartA = denominatorPartA.Cross(vectorAC);
+	CVec3D denominatorPartB = vectorBC.Cross(collisionNormalB);
+	denominatorPartB *= invertedAngularMassB;
+	denominatorPartB = denominatorPartB.Cross(vectorBC);
+	const double denominator = invertedMassA + invertedMassB + collisionNormalB.DotProduct(denominatorPartA + denominatorPartB);
+	const double impulseChange = -(1 + momentumTransferFactorAB) * relativeVelocityC.DotProduct(collisionNormalB) / denominator;
+	if (impulseChange < epsilon) {
+		return;
+	}
+
+	CVec3D velocityChangeA = collisionNormalB * (impulseChange * invertedMassA);
+	speedA = { speedA.X + velocityChangeA.X, speedA.Y + velocityChangeA.Y };
+	CVec3D angularVelocityChangeA = vectorAC.Cross(collisionNormalB * impulseChange) * invertedAngularMassA;
+	angularSpeedA = angularSpeedA + angularVelocityChangeA.Z;
+
+	CVec3D velocityChangeB = collisionNormalB * (impulseChange * invertedMassB);
+	speedB = { speedB.X - velocityChangeB.X, speedB.Y - velocityChangeB.Y };
+	CVec3D angularVelocityChangeB = vectorBC.Cross(collisionNormalB * impulseChange) * invertedAngularMassB;
+	angularSpeedB = angularSpeedB - angularVelocityChangeB.Z;
+}
+
+void CSimulator::resolveSurfaceFriction(
+	const CVec3D& vectorAC, const CVec3D& vectorBC, const CVec3D& collisionNormalB, const CVec3D& relativeVelocityC,
+	CVec2D& speedA, double& angularSpeedA,
+	CVec2D& speedB, double& angularSpeedB,
+	double invertedMassA, double invertedAngularMassA, double invertedMassB, double invertedAngularMassB,
+	double surfaceFrictionFactorAB) const
+{
+	CVec3D tangent = relativeVelocityC - (collisionNormalB * (relativeVelocityC.DotProduct(collisionNormalB)));
+	if (tangent.LengthSquared() < epsilon * epsilon) {
+		return;
+	}
+
+	tangent *= 1.0 / tangent.Length();
+	static const double sqrt2 = sqrt(2);
+	const double surfaceFrictionFactorABSqrt = sqrt2 * sqrt(surfaceFrictionFactorAB);
+	const double surfaceFriction = surfaceFrictionFactorABSqrt * abs(relativeVelocityC.DotProduct(collisionNormalB)) / relativeVelocityC.Length();
+	if (surfaceFriction < epsilon) {
+		return;
+	}
+
+	CVec3D denominatorPartA = vectorAC.Cross(tangent);
+	denominatorPartA *= invertedAngularMassA;
+	denominatorPartA = denominatorPartA.Cross(vectorAC);
+	CVec3D denominatorPartB = vectorBC.Cross(tangent);
+	denominatorPartB *= invertedAngularMassB;
+	denominatorPartB = denominatorPartB.Cross(vectorBC);
+	const double denominator = invertedMassA + invertedMassB + tangent.DotProduct(denominatorPartA + denominatorPartB);
+	const double impulseChange = -surfaceFriction * relativeVelocityC.DotProduct(tangent) / denominator;
+	if (abs(impulseChange) < epsilon) {
+		return;
+	}
+
+	CVec3D velocityChangeA = tangent * (impulseChange * invertedMassA);
+	speedA = { speedA.X + velocityChangeA.X, speedA.Y + velocityChangeA.Y };
+	CVec3D angularVelocityChangeA = vectorAC.Cross(tangent * impulseChange) * invertedAngularMassA;
+	angularSpeedA = angularSpeedA + angularVelocityChangeA.Z;
+
+	CVec3D velocityChangeB = tangent * (impulseChange * invertedMassB);
+	speedB = { speedB.X - velocityChangeB.X, speedB.Y - velocityChangeB.Y };
+	CVec3D angularVelocityChangeB = vectorBC.Cross(tangent * impulseChange) * invertedAngularMassB;
+	angularSpeedB = angularSpeedB - angularVelocityChangeB.Z;
+}
+
+void CSimulator::pushBackBodies(
+	const CVec2D& collisionNormalB2D, double depth,
+	CVec2D& positionA, CRotatedRect& rotatedRectA,
+	CVec2D& positionB, CRotatedRect& rotatedRectB) const
+{
+	CVec2D normalOffset = collisionNormalB2D * (0.5 * depth + epsilon);
+	positionA += normalOffset;
+	for (auto& c : rotatedRectA.Corners) {
+		c += normalOffset;
+	}
+	positionB -= normalOffset;
+	for (auto& c : rotatedRectB.Corners) {
+		c -= normalOffset;
 	}
 }

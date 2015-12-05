@@ -3,33 +3,8 @@
 #include <vector>
 #include "model\Bonus.h"
 #include "MyCar.h"
+#include "MyObjects.h"
 #include "Vec2D.h"
-
-struct CMyOil {
-	CVec2D Position;
-	int LastTick;
-};
-
-struct CMyBonus {
-	CVec2D Position;
-	model::BonusType Type;
-	int LastTick;
-};
-
-struct CMyWasher {
-	CVec2D Position;
-	CVec2D Speed;
-
-	static const double Radius;
-};
-
-struct CMyTire {
-	CVec2D Position;
-	CVec2D Speed;
-	double AngularSpeed;
-
-	static const double Radius;
-};
 
 struct CGlobalPredictions {
 	static std::vector<CMyOil> Oils;
