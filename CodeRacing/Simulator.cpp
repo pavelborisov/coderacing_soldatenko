@@ -287,8 +287,11 @@ void CSimulator::updatePosition(
 			rotatedRect = CRotatedRect(position, carWidth, carHeight, angle);
 		}
 		if (!passThroughWalls) {
-			//processWallsCollision(position, speed, angle, angularSpeed, radius, rotatedRect, collisionDeltaSpeed);
-			processCarWithWallsCollision(position, speed, angularSpeed, rotatedRect, collisionDeltaSpeed);
+			if (radius < 0) {
+				processCarWithWallsCollision(position, speed, angularSpeed, rotatedRect, collisionDeltaSpeed);
+			} else {
+				processCircleWithWallsCollision(position, speed, angularSpeed, radius, collisionDeltaSpeed);
+			}
 		}
 	}
 
@@ -430,6 +433,63 @@ void CSimulator::processCarWithWallsCollision(CVec2D& position, CVec2D& speed, d
 				if (findArcWithRotatedRectCollision(arc, position, rotatedRect, carCircumCircleRadius, collisionInfo)) {
 					resolveCollisionStatic(collisionInfo, position, speed, angularSpeed, rotatedRect, collisionDeltaSpeed,
 						carInvertedMass, carInvertedAngularMass, carToWallMomentumTransferFactor, carToWallSurfaceFrictionFactor);
+				}
+			}
+		}
+	}
+}
+
+void CSimulator::processCircleWithWallsCollision(CVec2D& position, CVec2D& speed, double& angularSpeed,
+	double radius, double& collisionDeltaSpeed) const
+{
+	// Пока этот метод вызывается нечасто, напишем его попроще.
+	// Также этот метод вызывается только для шин, поэтому забьём их параметры в коде.
+	static const double tireToWallMomentumTransferFactor = 0.5;
+	static const double tireToWallSurfaceFrictionFactor = 0.25;
+
+	static const double tireMass = 1;
+	static const double tireInvertedMass = 1 / tireMass;
+	const double tireAngularMass = 1.0 / 2 * tireMass * radius * radius; // Момент инерции диска
+	const double tireInvertedAngularMass = 1 / tireAngularMass;
+
+	const int currentTileX = static_cast<int>(position.X / tileSize);
+	const int currentTileY = static_cast<int>(position.Y / tileSize);
+	const double currentCenterOffsetX = position.X - currentTileX * tileSize;
+	const double currentCenterOffsetY = position.Y - currentTileY * tileSize;
+
+	if((radius + wallRadius < currentCenterOffsetX && currentCenterOffsetX < tileSize - radius - wallRadius)
+		&& (radius + wallRadius < currentCenterOffsetY && currentCenterOffsetY < tileSize - radius - wallRadius))
+	{
+		// Столкновения точно нет.
+		return;
+	}
+
+	const int minTileX = max(0, min(CMyTile::SizeX() - 1, static_cast<int>((position.X - radius) / tileSize)));
+	const int maxTileX = max(0, min(CMyTile::SizeX() - 1, static_cast<int>((position.X + radius) / tileSize)));
+	const int minTileY = max(0, min(CMyTile::SizeY() - 1, static_cast<int>((position.Y - radius) / tileSize)));
+	const int maxTileY = max(0, min(CMyTile::SizeY() - 1, static_cast<int>((position.Y + radius) / tileSize)));
+
+	CCollisionInfo collisionInfo;
+	CRotatedRect noRotatedRect;
+	for (int tileX = minTileX; tileX <= maxTileX; tileX++) {
+		for (int tileY = minTileY; tileY <= maxTileY; tileY++) {
+			CMyTile tile(tileX, tileY);
+			const auto& straightWalls = tile.GetStraightWalls();
+			for (const auto& w : straightWalls)
+			{
+				if (findLineWithCircleCollision(w.first, w.second, position, radius, collisionInfo)) {
+					resolveCollisionStatic(collisionInfo,
+						position, speed, angularSpeed, noRotatedRect, collisionDeltaSpeed,
+						tireInvertedMass, tireInvertedAngularMass, tireToWallMomentumTransferFactor, tireToWallSurfaceFrictionFactor);
+				}
+			}
+			const auto& arcWalls = tile.GetArcWalls();
+			for (const auto& w : arcWalls)
+			{
+				if (findArcWithCircleCollision(w, position, radius, collisionInfo)) {
+					resolveCollisionStatic(collisionInfo,
+						position, speed, angularSpeed, noRotatedRect, collisionDeltaSpeed,
+						tireInvertedMass, tireInvertedAngularMass, tireToWallMomentumTransferFactor, tireToWallSurfaceFrictionFactor);
 				}
 			}
 		}
@@ -752,6 +812,31 @@ bool CSimulator::findArcWithRotatedRectCollision(
 		}
 	}
 
+	return false;
+}
+
+bool CSimulator::findLineWithCircleCollision(
+	const CVec2D& point1B, const CVec2D& point2B,
+	const CVec2D& positionA, double radiusA,
+	CCollisionInfo& collisionInfo) const
+{
+	point1B;
+	point2B;
+	positionA;
+	radiusA;
+	collisionInfo;
+	return false;
+}
+
+bool CSimulator::findArcWithCircleCollision(
+	const CArc2D& arcB,
+	const CVec2D& positionA, double radiusA,
+	CCollisionInfo& collisionInfo) const
+{
+	arcB;
+	positionA;
+	radiusA;
+	collisionInfo;
 	return false;
 }
 

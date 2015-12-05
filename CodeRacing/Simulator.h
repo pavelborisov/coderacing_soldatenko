@@ -52,6 +52,8 @@ private:
 
 	void processCarWithWallsCollision(CVec2D& position, CVec2D& speed, double& angularSpeed,
 		CRotatedRect& rotatedRect, double& collisionDeltaSpeed) const;
+	void processCircleWithWallsCollision(CVec2D& position, CVec2D& speed, double& angularSpeed,
+		double radius, double& collisionDeltaSpeed) const;
 
 	bool findLineWithRotatedRectCollision(
 		const CVec2D& point1A, const CVec2D& point2A,
@@ -60,6 +62,14 @@ private:
 	bool findArcWithRotatedRectCollision(
 		const CArc2D& arcB,
 		const CVec2D& positionA, const CRotatedRect& rotatedRectA, double circumcircleRadiusA,
+		CCollisionInfo& collisionInfo) const;
+	bool findLineWithCircleCollision(
+		const CVec2D& point1B, const CVec2D& point2B,
+		const CVec2D& positionA, double radiusA,
+		CCollisionInfo& collisionInfo) const;
+	bool findArcWithCircleCollision(
+		const CArc2D& arcB,
+		const CVec2D& positionA, double radiusA,
 		CCollisionInfo& collisionInfo) const;
 	void resolveCollisionStatic(
 		const CCollisionInfo& collisionInfo,
