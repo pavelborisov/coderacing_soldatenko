@@ -140,6 +140,12 @@ void MyStrategy::makeMove()
 	// Заполняем предсказания
 	predictObjects();
 
+	if (world->getTick() < 1000000) {
+		resultMove->setBrake(true);
+		resultMove->setThrowProjectile(true);
+		return;
+	}
+
 	CBestMoveFinder bestMoveFinder(car, nextWaypointIndex, *self, *world, *game, waypointTiles, simulator, previousResult);
 	CBestMoveFinder::CResult result = bestMoveFinder.Process();
 	previousResult = result;
@@ -210,6 +216,8 @@ void MyStrategy::makeMove()
 void MyStrategy::predictObjects()
 {
 	CGlobalPredictions::Clear();
+	static const int predictObjectsSubtickCount = 10;
+	simulator.SetPrecision(predictObjectsSubtickCount);
 
 	auto bonuses = world->getBonuses();
 	for (const auto& b : bonuses) {
@@ -412,14 +420,14 @@ void MyStrategy::experiment()
 	//		}
 	//	}
 	//}
-	//for (const auto& t : CGlobalPredictions::TiresPerTick) {
-	//	for (int i = 0; i < 3; i++) {
-	//		CLog::Instance().Stream() << "Tire Tick " << i << ": "
-	//			<< t[i].Position.X << "," << t[i].Position.Y << " "
-	//			<< t[i].Speed.X << "," << t[i].Speed.Y << " "
-	//			<< t[i].AngularSpeed << endl;
-	//	}
-	//}
+	for (const auto& t : CGlobalPredictions::TiresPerTick) {
+		for (int i = 0; i < 3; i++) {
+			CLog::Instance().Stream() << "Tire Tick " << i << ": "
+				<< t[i].Position.X << "," << t[i].Position.Y << " "
+				<< t[i].Speed.X << "," << t[i].Speed.Y << " "
+				<< t[i].AngularSpeed << endl;
+		}
+	}
 }
 
 void MyStrategy::predict()

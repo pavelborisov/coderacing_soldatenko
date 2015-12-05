@@ -18,6 +18,7 @@ struct CLine2D {
 	double GetDistanceFrom(const CLine2D& line) const;
 	bool GetIntersectionPoint(const CLine2D& line, CVec2D& result) const;
 	CLine2D GetParallelLine(const CVec2D& point) const;
+	CVec2D GetUnitNormal() const;
 	CVec2D GetUnitNormalFrom(const CVec2D& point) const;
 	CVec2D GetProjectionOf(const CVec2D& point) const;
 };

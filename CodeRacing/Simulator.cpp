@@ -15,8 +15,8 @@
 
 using namespace std;
 
-static const int subtickCount = 2;
-static const double dTime = 1.0 / subtickCount;
+static const int defaultSubtickCount = 10;
+static const double defaultDTime = 1.0 / defaultSubtickCount;
 static const double epsilon = 1e-7;
 
 static const double tileSize = 800;
@@ -31,6 +31,8 @@ static const double carCircumCircleRadius = sqrt(carWidth * carWidth + carHeight
 
 CSimulator::CSimulator() :
 	isInitialized(false),
+	subtickCount(defaultSubtickCount),
+	dTime(defaultDTime),
 	forwardAccelByType(2, 0),
 	rearAccelByType(2, 0),
 	carLengthwiseFrictionFactorDt(0),
@@ -51,12 +53,7 @@ void CSimulator::Initialize(const model::Game& _game)
 	rearAccelByType[model::CarType::BUGGY] = game.getBuggyEngineRearPower() / game.getBuggyMass();
 	rearAccelByType[model::CarType::JEEP] = game.getJeepEngineRearPower() / game.getJeepMass();
 
-	carLengthwiseFrictionFactorDt = game.getCarLengthwiseMovementFrictionFactor() * dTime;
-	carCrosswiseFrictionFactorDt = game.getCarCrosswiseMovementFrictionFactor() * dTime;
-	carRotationFrictionFactorDt = game.getCarRotationFrictionFactor() * dTime;
-
-	carMovementAirFrictionFactorDt = pow(1 - game.getCarMovementAirFrictionFactor(), dTime);
-	carRotationAirFrictionFactorDt = pow(1 - game.getCarRotationAirFrictionFactor(), dTime);
+	SetPrecision(subtickCount);
 
 	isInitialized = true;
 }
@@ -64,6 +61,18 @@ void CSimulator::Initialize(const model::Game& _game)
 bool CSimulator::IsInitialized() const
 {
 	return isInitialized;
+}
+
+void CSimulator::SetPrecision(int _subtickCount)
+{
+	subtickCount = _subtickCount;
+	dTime = 1.0 / subtickCount;
+	carLengthwiseFrictionFactorDt = game.getCarLengthwiseMovementFrictionFactor() * dTime;
+	carCrosswiseFrictionFactorDt = game.getCarCrosswiseMovementFrictionFactor() * dTime;
+	carRotationFrictionFactorDt = game.getCarRotationFrictionFactor() * dTime;
+
+	carMovementAirFrictionFactorDt = pow(1 - game.getCarMovementAirFrictionFactor(), dTime);
+	carRotationAirFrictionFactorDt = pow(1 - game.getCarRotationAirFrictionFactor(), dTime);
 }
 
 static const double limit(double val, double lim)
@@ -164,8 +173,8 @@ CMyTire CSimulator::Predict(const CMyTire& startTire, int /*currentTick*/) const
 
 	updatePosition(tire.Position, tire.Speed, angle, tire.AngularSpeed, medianAngularSpeed, noCorners, collisionDeltaSpeed,
 		unit1, unit2, noAcc,
-		0, 0, 0, 0, 0,
-		true, CMyWasher::Radius);
+		1, 0, 0, 1, 0,
+		false, CMyTire::Radius);
 
 	return tire;
 }
@@ -497,39 +506,38 @@ void CSimulator::processCircleWithWallsCollision(CVec2D& position, CVec2D& speed
 }
 
 bool CSimulator::findLineWithRotatedRectCollision(
-	const CVec2D& point1A, const CVec2D& point2A,
-	const CVec2D& positionB, const CRotatedRect& rotatedRectB, double circumcircleRadiusB,
+	const CVec2D& point1B, const CVec2D& point2B,
+	const CVec2D& positionA, const CRotatedRect& rotatedRectA, double circumcircleRadiusA,
 	CCollisionInfo& collisionInfo) const
 {
-	// Ќадо обратить внимание, что тут тело "B" это наш пр€моугольник, а "A" - лини€.
-	CLine2D lineA = CLine2D::FromPoints(point1A, point2A);
-	if (abs(lineA.GetSignedDistanceFrom(positionB)) > circumcircleRadiusB) {
+	CLine2D lineB = CLine2D::FromPoints(point1B, point2B);
+	if (abs(lineB.GetSignedDistanceFrom(positionA)) > circumcircleRadiusA) {
 		return false;
 	}
 
-	CLine2D intersectionLineB;
+	CLine2D intersectionLineA;
 	static const int maxIntersectionPoints = 3;
 	CVec2D intersectionPoints[maxIntersectionPoints];
 	int intersectionPointsCount = 0;
 
-	static const int pointBCount = 4;
-	for (int pointBIndex = 0; pointBIndex < pointBCount; pointBIndex++) {
-		const CVec2D& point1B = rotatedRectB.Corners[pointBIndex];
-		const CVec2D& point2B = rotatedRectB.Corners[pointBIndex == pointBCount - 1 ? 0 : pointBIndex + 1];
-		CLine2D lineB = CLine2D::FromPoints(point1B, point2B);
+	static const int pointACount = 4;
+	for (int pointAIndex = 0; pointAIndex < pointACount; pointAIndex++) {
+		const CVec2D& point1A = rotatedRectA.Corners[pointAIndex];
+		const CVec2D& point2A = rotatedRectA.Corners[pointAIndex == pointACount - 1 ? 0 : pointAIndex + 1];
+		CLine2D lineA = CLine2D::FromPoints(point1A, point2A);
 
-		if (lineB.GetSignedDistanceFrom(positionB) > 0) {
+		if (lineA.GetSignedDistanceFrom(positionA) > 0) {
 			assert(false);
 		}
 
 		CVec2D intersectionPoint;
-		if (!lineA.GetIntersectionPoint(lineB, intersectionPoint)) {
+		if (!lineB.GetIntersectionPoint(lineA, intersectionPoint)) {
 			continue;
 		}
-		const double left = max(min(point1A.X, point2A.X), min(point1B.X, point2B.X));
-		const double top = max(min(point1A.Y, point2A.Y), min(point1B.Y, point2B.Y));
-		const double right = min(max(point1A.X, point2A.X), max(point1B.X, point2B.X));
-		const double bottom = min(max(point1A.Y, point2A.Y), max(point1B.Y, point2B.Y));
+		const double left = max(min(point1B.X, point2B.X), min(point1A.X, point2A.X));
+		const double top = max(min(point1B.Y, point2B.Y), min(point1A.Y, point2A.Y));
+		const double right = min(max(point1B.X, point2B.X), max(point1A.X, point2A.X));
+		const double bottom = min(max(point1B.Y, point2B.Y), max(point1A.Y, point2A.Y));
 		if (intersectionPoint.X <= left - epsilon
 			|| intersectionPoint.X >= right + epsilon
 			|| intersectionPoint.Y <= top - epsilon
@@ -537,7 +545,7 @@ bool CSimulator::findLineWithRotatedRectCollision(
 		{
 			continue;
 		}
-		intersectionLineB = lineB;
+		intersectionLineA = lineA;
 		assert(intersectionPointsCount < maxIntersectionPoints);
 		intersectionPoints[intersectionPointsCount] = intersectionPoint;
 		intersectionPointsCount++;
@@ -552,63 +560,63 @@ bool CSimulator::findLineWithRotatedRectCollision(
 		// пересечени€ по€вл€етс€ одна. » этот код нас выносит за пределы стены далеко-далеко.
 		//return false;
 		// ѕроверка на то, что хот€ бы один край стены находитс€ внутри пр€моугольника
-		bool isPoint1AInside = true;
-		bool isPoint2AInside = true;
-		for (int pointBIndex = 0; pointBIndex < pointBCount; pointBIndex++) {
-			const CVec2D& point1B = rotatedRectB.Corners[pointBIndex];
-			const CVec2D& point2B = rotatedRectB.Corners[pointBIndex == pointBCount - 1 ? 0 : pointBIndex + 1];
-			CLine2D line = CLine2D::FromPoints(point1B, point2B);
-			if (line.GetSignedDistanceFrom(point1A) > 0) {
-				isPoint1AInside = false;
+		bool isPoint1BInside = true;
+		bool isPoint2BInside = true;
+		for (int pointAIndex = 0; pointAIndex < pointACount; pointAIndex++) {
+			const CVec2D& point1A = rotatedRectA.Corners[pointAIndex];
+			const CVec2D& point2A = rotatedRectA.Corners[pointAIndex == pointACount - 1 ? 0 : pointAIndex + 1];
+			CLine2D line = CLine2D::FromPoints(point1A, point2A);
+			if (line.GetSignedDistanceFrom(point1B) > 0) {
+				isPoint1BInside = false;
 			}
-			if (line.GetSignedDistanceFrom(point2A) > 0) {
-				isPoint2AInside = false;
+			if (line.GetSignedDistanceFrom(point2B) > 0) {
+				isPoint2BInside = false;
 			}
 		}
-		if (!isPoint1AInside && !isPoint2AInside) {
+		if (!isPoint1BInside && !isPoint2BInside) {
 			return false;
 		}
 		
-		collisionInfo.Normal = intersectionLineB.GetProjectionOf(positionB) - positionB;
+		collisionInfo.Normal = intersectionLineA.GetProjectionOf(positionA) - positionA;
 		collisionInfo.Normal *= 1 / collisionInfo.Normal.Length();
 		collisionInfo.Normal = -collisionInfo.Normal;
-		CLine2D parallelLine1A = intersectionLineB.GetParallelLine(point1A);
-		double distance1AFromB = parallelLine1A.GetDistanceFrom(positionB);
-		CLine2D parallelLine2A = intersectionLineB.GetParallelLine(point2A);
-		double distance2AFromB = parallelLine2A.GetDistanceFrom(positionB);
-		collisionInfo.Depth = (distance1AFromB < distance2AFromB ? parallelLine1A : parallelLine2A).GetDistanceFrom(intersectionLineB);
+		CLine2D parallelLine1B = intersectionLineA.GetParallelLine(point1B);
+		double distance1BFromA = parallelLine1B.GetDistanceFrom(positionA);
+		CLine2D parallelLine2B = intersectionLineA.GetParallelLine(point2B);
+		double distance2BFromA = parallelLine2B.GetDistanceFrom(positionA);
+		collisionInfo.Depth = (distance1BFromA < distance2BFromA ? parallelLine1B : parallelLine2B).GetDistanceFrom(intersectionLineA);
 		collisionInfo.Point = intersectionPoints[0];
 		return true;
 	} else {
 		//assert(intersectionPointsCount == 2);
-		CVec2D pointBWithMinDistanceFromA = rotatedRectB.Corners[0];
-		double minDistanceBFromA = lineA.GetSignedDistanceFrom(pointBWithMinDistanceFromA);
-		CVec2D pointBWithMaxDistanceFromA = pointBWithMinDistanceFromA;
-		double maxDistanceBFromA = minDistanceBFromA;
-		for (const auto& p : rotatedRectB.Corners) {
-			double distanceBFromA = lineA.GetSignedDistanceFrom(p);
-			if (distanceBFromA < minDistanceBFromA) {
-				minDistanceBFromA = distanceBFromA;
-				pointBWithMinDistanceFromA = p;
+		CVec2D pointAWithMinDistanceFromB = rotatedRectA.Corners[0];
+		double minDistanceAFromB = lineB.GetSignedDistanceFrom(pointAWithMinDistanceFromB);
+		CVec2D pointAWithMaxDistanceFromB = pointAWithMinDistanceFromB;
+		double maxDistanceAFromB = minDistanceAFromB;
+		for (const auto& p : rotatedRectA.Corners) {
+			double distanceAFromB = lineB.GetSignedDistanceFrom(p);
+			if (distanceAFromB < minDistanceAFromB) {
+				minDistanceAFromB = distanceAFromB;
+				pointAWithMinDistanceFromB = p;
 			}
-			if (distanceBFromA > maxDistanceBFromA) {
-				maxDistanceBFromA = distanceBFromA;
-				pointBWithMaxDistanceFromA = p;
+			if (distanceAFromB > maxDistanceAFromB) {
+				maxDistanceAFromB = distanceAFromB;
+				pointAWithMaxDistanceFromB = p;
 			}
 		}
 
-		if (minDistanceBFromA < 0 && maxDistanceBFromA < 0 || minDistanceBFromA > 0 && maxDistanceBFromA > 0) {
+		if (minDistanceAFromB < 0 && maxDistanceAFromB < 0 || minDistanceAFromB > 0 && maxDistanceAFromB > 0) {
 			return false;
 		}
 
-		if (lineA.GetSignedDistanceFrom(positionB) > 0) {
-			//collisionInfo.Normal = lineA.GetParallelLine(pointBWithMinDistanceFromA).GetUnitNormalFrom(pointBWithMaxDistanceFromA);
-			collisionInfo.Normal = -lineA.GetParallelLine(pointBWithMinDistanceFromA).GetUnitNormalFrom(pointBWithMaxDistanceFromA);
-			collisionInfo.Depth = abs(minDistanceBFromA);
+		if (lineB.GetSignedDistanceFrom(positionA) > 0) {
+			//collisionInfo.Normal = lineB.GetParallelLine(pointAWithMinDistanceFromB).GetUnitNormalFrom(pointAWithMaxDistanceFromB);
+			collisionInfo.Normal = -lineB.GetParallelLine(pointAWithMinDistanceFromB).GetUnitNormalFrom(pointAWithMaxDistanceFromB);
+			collisionInfo.Depth = abs(minDistanceAFromB);
 		} else {
-			//collisionInfo.Normal = lineA.GetParallelLine(pointBWithMaxDistanceFromA).GetUnitNormalFrom(pointBWithMinDistanceFromA);
-			collisionInfo.Normal = -lineA.GetParallelLine(pointBWithMaxDistanceFromA).GetUnitNormalFrom(pointBWithMinDistanceFromA);
-			collisionInfo.Depth = maxDistanceBFromA;
+			//collisionInfo.Normal = lineB.GetParallelLine(pointAWithMaxDistanceFromB).GetUnitNormalFrom(pointAWithMinDistanceFromB);
+			collisionInfo.Normal = -lineB.GetParallelLine(pointAWithMaxDistanceFromB).GetUnitNormalFrom(pointAWithMinDistanceFromB);
+			collisionInfo.Depth = maxDistanceAFromB;
 		}
 
 		double averageIntersectionX = 0;
@@ -820,12 +828,75 @@ bool CSimulator::findLineWithCircleCollision(
 	const CVec2D& positionA, double radiusA,
 	CCollisionInfo& collisionInfo) const
 {
-	point1B;
-	point2B;
-	positionA;
-	radiusA;
-	collisionInfo;
-	return false;
+	CLine2D lineB = CLine2D::FromPoints(point1B, point2B);
+
+	const double distanceFromA = lineB.GetDistanceFrom(positionA);
+	if (distanceFromA > radiusA) {
+		return false;
+	}
+
+	const double leftB = min(point1B.X, point2B.X);
+	const double topB = min(point1B.Y, point2B.Y);
+	const double rightB = max(point1B.X, point2B.X);
+	const double bottomB = max(point1B.Y, point2B.Y);
+
+	CVec2D projectionOfA = lineB.GetProjectionOf(positionA);
+
+	bool projectionOfABelongsToB = (projectionOfA.X > leftB - epsilon)
+		&& (projectionOfA.X < rightB + epsilon)
+		&& (projectionOfA.Y > topB - epsilon)
+		&& (projectionOfA.Y < bottomB + epsilon);
+
+	if (projectionOfABelongsToB) {
+		CVec2D collisionNormalA;
+
+		if (distanceFromA >= epsilon) {
+			collisionNormalA = CVec2D(positionA, projectionOfA);
+			collisionNormalA *= 1 / collisionNormalA.Length();
+		} else {
+			assert(false);
+			return false;
+			//CVec2D unitNormalB = lineB.GetUnitNormal();
+			//CVec2D relativeVelocityA = bodyA.getVelocity().copy().subtract(bodyB.getVelocity());
+			//if (relativeVelocityA.getLength() >= epsilon) {
+			//	collisionNormalA = relativeVelocityA.dotProduct(unitNormalB) >= epsilon
+			//		? unitNormalB : unitNormalB.negate();
+			//} else if (bodyA.getVelocity().getLength() >= epsilon) {
+			//	collisionNormalA = bodyA.getVelocity().dotProduct(unitNormalB) >= epsilon
+			//		? unitNormalB : unitNormalB.negate();
+			//} else {
+			//	collisionNormalA = unitNormalB;
+			//}
+		}
+		//return new CollisionInfo(bodyB, bodyA, projectionOfA, collisionNormalA, radiusA - distanceFromA, epsilon);
+		collisionInfo.Normal = -collisionNormalA;
+		collisionInfo.Point = projectionOfA;
+		collisionInfo.Depth = radiusA - distanceFromA;
+		return true;
+	}
+
+	double distanceToPoint1B = (positionA - point1B).Length();
+	double distanceToPoint2B = (positionA - point2B).Length();
+
+	CVec2D nearestPointB;
+	double distanceToNearestPointB = INT_MAX;
+	if (distanceToPoint1B < distanceToPoint2B) {
+		nearestPointB = point1B;
+		distanceToNearestPointB = distanceToPoint1B;
+	} else {
+		nearestPointB = point2B;
+		distanceToNearestPointB = distanceToPoint2B;
+	}
+
+	if (distanceToNearestPointB > radiusA) {
+		return false;
+	}
+
+	collisionInfo.Point = nearestPointB;
+	collisionInfo.Normal = -CVec2D(positionA, nearestPointB);
+	collisionInfo.Normal *= 1 / collisionInfo.Normal.Length();
+	collisionInfo.Depth = radiusA - distanceToNearestPointB;
+	return true;
 }
 
 bool CSimulator::findArcWithCircleCollision(

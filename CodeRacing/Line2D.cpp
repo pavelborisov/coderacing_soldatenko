@@ -53,6 +53,11 @@ CLine2D CLine2D::GetParallelLine(const CVec2D& point) const
 	return CLine2D(A, B, C - shift);
 }
 
+CVec2D CLine2D::GetUnitNormal() const
+{
+	return CVec2D(A / PseudoLength, B / PseudoLength);
+}
+
 CVec2D CLine2D::GetUnitNormalFrom(const CVec2D& point) const
 {
 	double signedDistance = GetSignedDistanceFrom(point);

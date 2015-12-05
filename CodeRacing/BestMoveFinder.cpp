@@ -12,6 +12,7 @@ using namespace std;
 static const int maxCollisionsDetected = 1;
 //static const double veryBadScoreDif = -10000;
 static const double veryBadScoreDif = -1000000;
+static const int carSimulationSubticksCount = 2;
 
 const vector<pair<vector<CMyMove>, vector<int>>> CBestMoveFinder::allMovesWithLengths = {
 	// Первое множество действий
@@ -43,7 +44,7 @@ CBestMoveFinder::CBestMoveFinder(
 	const model::World& world,
 	const model::Game& game,
 	const std::vector<CMyTile>& waypointTiles,
-	const CSimulator& simulator,
+	CSimulator& simulator,
 	const CBestMoveFinder::CResult& previousResult) :
 	car(car),
 	nextWaypointIndex(nextWaypointIndex),
@@ -68,6 +69,7 @@ CBestMoveFinder::CBestMoveFinder(
 
 CBestMoveFinder::CResult CBestMoveFinder::Process()
 {
+	simulator.SetPrecision(carSimulationSubticksCount);
 	simulationTicks = 0;
 	bestScore = INT_MIN;
 	bestMoveList.clear();

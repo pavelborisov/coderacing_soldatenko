@@ -16,6 +16,7 @@ public:
 	CSimulator();
 	void Initialize(const model::Game& game);
 	bool IsInitialized() const;
+	void SetPrecision(int subtickCount);
 
 	CMyCar Predict(const CMyCar& startCar, const model::Move& move, int currentTick) const;
 	CMyWasher Predict(const CMyWasher& startWasher, int currentTick) const;
@@ -23,6 +24,8 @@ public:
 
 private:
 	bool isInitialized;
+	int subtickCount;
+	double dTime;
 	model::Game game;
 	// Ускорения автомобилей (сила/масса).
 	std::vector<double> forwardAccelByType;
@@ -56,8 +59,8 @@ private:
 		double radius, double& collisionDeltaSpeed) const;
 
 	bool findLineWithRotatedRectCollision(
-		const CVec2D& point1A, const CVec2D& point2A,
-		const CVec2D& position, const CRotatedRect& rotatedRect, double circumcircleRadius,
+		const CVec2D& point1B, const CVec2D& point2B,
+		const CVec2D& positionA, const CRotatedRect& rotatedRectA, double circumcircleRadiusA,
 		CCollisionInfo& collisionInfo) const;
 	bool findArcWithRotatedRectCollision(
 		const CArc2D& arcB,
@@ -71,6 +74,7 @@ private:
 		const CArc2D& arcB,
 		const CVec2D& positionA, double radiusA,
 		CCollisionInfo& collisionInfo) const;
+
 	void resolveCollisionStatic(
 		const CCollisionInfo& collisionInfo,
 		CVec2D& positionA, CVec2D& speedA, double& angularSpeedA, CRotatedRect& rotatedRect, double& collisionDeltaSpeed,

@@ -36,7 +36,7 @@ public:
 		const model::World& world,
 		const model::Game& game,
 		const std::vector<CMyTile>& waypointTiles,
-		const CSimulator& simulator,
+		CSimulator& simulator,
 		const CBestMoveFinder::CResult& previousResult);
 	
 	CResult Process();
@@ -61,7 +61,7 @@ private:
 	const model::World& world;
 	const model::Game& game;
 	const std::vector<CMyTile>& waypointTiles;
-	const CSimulator& simulator;
+	CSimulator& simulator;
 	std::vector<CMoveWithDuration> correctedPreviousMoveList;
 
 	int simulationTicks = 0;
