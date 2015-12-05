@@ -34,6 +34,12 @@ private:
 	double carMovementAirFrictionFactorDt;
 	double carRotationAirFrictionFactorDt;
 
+	struct CCollisionInfo {
+		CVec2D Normal;
+		CVec2D Point;
+		double Depth;
+	};
+
 	void updateCar(const model::Move& move, int currentTick, CMyCar& car,
 		bool& isOiled, bool& isBrake,
 		CVec2D& lengthwiseUnitVector, CVec2D& accelerationDt) const;
@@ -44,19 +50,19 @@ private:
 		double rotationAirFrictionFactorDt, double rotationFrictionFactorDt,
 		bool passThroughWalls, double radius) const;
 
-	void processWallsCollision(CVec2D& position, CVec2D& speed, double& angle, double& angularSpeed,
-		double radius, CRotatedRect& rotatedRect, double& collisionDeltaSpeed) const;
+	void processCarWithWallsCollision(CVec2D& position, CVec2D& speed, double& angularSpeed,
+		CRotatedRect& rotatedRect, double& collisionDeltaSpeed) const;
 
 	bool findLineWithRotatedRectCollision(
 		const CVec2D& point1A, const CVec2D& point2A,
 		const CVec2D& position, const CRotatedRect& rotatedRect, double circumcircleRadius,
-		CVec2D& collisionNormalB, CVec2D& collisionPoint, double& depth) const;
+		CCollisionInfo& collisionInfo) const;
 	bool findArcWithRotatedRectCollision(
 		const CArc2D& arcB,
 		const CVec2D& positionA, const CRotatedRect& rotatedRectA, double circumcircleRadiusA,
-		CVec2D& collisionNormalB, CVec2D& collisionPoint, double& depth) const;
+		CCollisionInfo& collisionInfo) const;
 	void resolveCollisionStatic(
-		const CVec2D& collisionNormalB2D, const CVec2D& collisionPoint, double depth, 
+		const CCollisionInfo& collisionInfo,
 		CVec2D& positionA, CVec2D& speedA, double& angularSpeedA, CRotatedRect& rotatedRect, double& collisionDeltaSpeed,
 		double invertedMassA, double invertedAngularMassA,
 		double momentumTransferFactorAB, double surfaceFrictionFactorAB) const;

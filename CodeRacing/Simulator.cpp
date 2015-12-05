@@ -19,6 +19,16 @@ static const int subtickCount = 2;
 static const double dTime = 1.0 / subtickCount;
 static const double epsilon = 1e-7;
 
+static const double tileSize = 800;
+static const double wallRadius = 80;
+static const double wallOffsetMin = wallRadius;
+static const double wallOffsetMin2 = wallRadius * 2;
+static const double wallOffsetMax = tileSize - wallRadius;
+static const double wallOffsetMax2 = tileSize - 2 * wallRadius;
+static const double carWidth = 210;
+static const double carHeight = 140;
+static const double carCircumCircleRadius = sqrt(carWidth * carWidth + carHeight * carHeight) / 2;
+
 CSimulator::CSimulator() :
 	isInitialized(false),
 	forwardAccelByType(2, 0),
@@ -108,7 +118,7 @@ CMyCar CSimulator::Predict(const CMyCar& startCar, const model::Move& move, int 
 		if (c.X < 80) {
 			assert(false);
 		}
-		if (c.Y > CMyTile::SizeX() * 800 - 80) {
+		if (c.Y > CMyTile::SizeY() * 800 - 80) {
 			assert(false);
 		}
 		if (c.Y < 80) {
@@ -274,93 +284,152 @@ void CSimulator::updatePosition(
 
 		// ќбработка коллизий.
 		if (radius < 0) {
-			rotatedRect = CRotatedRect(position, 210, 140, angle);
+			rotatedRect = CRotatedRect(position, carWidth, carHeight, angle);
 		}
 		if (!passThroughWalls) {
-			processWallsCollision(position, speed, angle, angularSpeed, radius, rotatedRect, collisionDeltaSpeed);
+			//processWallsCollision(position, speed, angle, angularSpeed, radius, rotatedRect, collisionDeltaSpeed);
+			processCarWithWallsCollision(position, speed, angularSpeed, rotatedRect, collisionDeltaSpeed);
 		}
 	}
 
 	normalizeAngle(angle);
 }
 
-void CSimulator::processWallsCollision(CVec2D& position, CVec2D& speed, double& angle, double& angularSpeed,
-	double radius, CRotatedRect& rotatedRect, double& collisionDeltaSpeed) const
+void CSimulator::processCarWithWallsCollision(CVec2D& position, CVec2D& speed, double& angularSpeed,
+	CRotatedRect& rotatedRect, double& collisionDeltaSpeed) const
 {
-	static const double tileSize = 800;
-	static const double wallRadius = 80;
-	if (radius > 0) {
-		assert(false);
-		position;
-		speed;
-		angle;
-		angularSpeed;
-		radius;
-		rotatedRect;
+	// TODO: —делать все массы зависимые от машины.
+	static const double carMass = 1;
+	static const double carInvertedMass = 1 / carMass;
+	static const double carAngularMass = 1.0 / 12 * carMass * (carWidth * carWidth + carHeight * carHeight); // ћомент инерции пр€моугольника
+	static const double carInvertedAngularMass = 1 / carAngularMass;
+	static const double carToWallMomentumTransferFactor = 0.25;
+	static const double carToWallSurfaceFrictionFactor = 0.25 * 0.25; // 0.0625
 
-	} else {
-		static const double momentumTransferFactor = 0.25;
-		static const double surfaceFrictionFactor = 0.0625;
+	// Ёта операци€ вызываетс€ очень много раз. “ак что отсечка по тому, было ли столкновение должно работать очень быстро.
+	// ќпределим столкновение по восьми точкам, раскиданным по машине - в углах и в центрах сторон.
+	CCollisionInfo collisionInfo;
+	for (int i = 0; i < 4; i++ ) {
+		for (int j = 0; j < 2; j++) {
+			CVec2D p = j == 0 ? rotatedRect.Corners[i] : (rotatedRect.Corners[i] + rotatedRect.Corners[(i + 1) % 4]) * 0.5;
+			const CMyTile tile(static_cast<int>(p.X / tileSize), static_cast<int>(p.Y / tileSize));
+			const double tileX = tile.X * tileSize;
+			const double tileY = tile.Y * tileSize;
+			const double offsetX = p.X - tileX;
+			const double offsetY = p.Y - tileY;
+			const bool leftOpen = tile.IsLeftOpen();
+			const bool rightOpen = tile.IsRightOpen();
+			const bool topOpen = tile.IsTopOpen();
+			const bool bottomOpen = tile.IsBottomOpen();
+			// ƒл€ каждой стены будем смотреть еЄ пр€мую стену и один из углов.
 
-		// TODO откуда-то надо брать ширину и высоту, как и радиусы. а пока предполагаем, что
-		// все пр€моугольники, которые мы хотим обработать - это есть автомобиль.
-		static const double width = 210;
-		static const double height = 140;
-
-		const double mass = 1; // todo: масса в зависимости от машины.
-		const double invertedMass = 1 / mass;
-		const double angularMass = 1.0 / 12 * mass * (width * width + height * height); // ћомент инерции пр€моугольника
-		const double invertedAngularMass = 1 / angularMass;
-
-		static const double biggerRadius = sqrt(pow(width / 2, 2) + pow(height / 2, 2));
-		const int currentTileX = static_cast<int>(position.X / tileSize);
-		const int currentTileY = static_cast<int>(position.Y / tileSize);
-		const double currentCenterOffsetX = position.X - currentTileX * tileSize;
-		const double currentCenterOffsetY = position.Y - currentTileY * tileSize;
-		if (tileSize + biggerRadius < currentCenterOffsetX && currentCenterOffsetX < tileSize - wallRadius - biggerRadius &&
-			tileSize + biggerRadius < currentCenterOffsetY && currentCenterOffsetY < tileSize - wallRadius - biggerRadius)
-		{
-			return; //nocollision
-		}
-		const int minTileX = max(0, min(CMyTile::SizeX() - 1, static_cast<int>((position.X - biggerRadius) / tileSize)));
-		const int maxTileX = max(0, min(CMyTile::SizeX() - 1, static_cast<int>((position.X + biggerRadius) / tileSize)));
-		const int minTileY = max(0, min(CMyTile::SizeY() - 1, static_cast<int>((position.Y - biggerRadius) / tileSize)));
-		const int maxTileY = max(0, min(CMyTile::SizeY() - 1, static_cast<int>((position.Y + biggerRadius) / tileSize)));
-
-		for (int tileX = minTileX; tileX <= maxTileX; tileX++) {
-			for (int tileY = minTileY; tileY <= maxTileY; tileY++) {
-				// TODO: ¬нутренние углы пока считать не умеем :(
-				CMyTile tile(tileX, tileY);
-				const auto& straightWalls = tile.GetStraightWalls();
-				for (const auto& w : straightWalls) 
-				{
-					CVec2D collisionNormalB;
-					CVec2D collisionPoint;
-					double depth = 0;
-					if (findLineWithRotatedRectCollision(w.first, w.second,
-						position, rotatedRect, biggerRadius,
-						collisionNormalB, collisionPoint, depth))
-					{
-						// “ела A и B перепутаны
-						resolveCollisionStatic(-collisionNormalB, collisionPoint, depth,
-							position, speed, angularSpeed, rotatedRect, collisionDeltaSpeed,
-							invertedMass, invertedAngularMass, momentumTransferFactor, surfaceFrictionFactor);
+			// Ћева€ стена и левый верхний угол.
+			if (!leftOpen) {
+				if (!topOpen && offsetX < wallOffsetMin2 && offsetY < wallOffsetMin2) {
+					// ¬огнута€ арка.
+					CArc2D arc(CVec2D(tileX + wallOffsetMin2, tileY + wallOffsetMin2), wallRadius, -PI, -PI / 2);
+					if (findArcWithRotatedRectCollision(arc, position, rotatedRect, carCircumCircleRadius, collisionInfo)) {
+						resolveCollisionStatic(collisionInfo, position, speed, angularSpeed, rotatedRect, collisionDeltaSpeed,
+							carInvertedMass, carInvertedAngularMass, carToWallMomentumTransferFactor, carToWallSurfaceFrictionFactor);
 					}
 				}
-				const auto& arcWalls = tile.GetArcWalls();
-				for (const auto& w : arcWalls)
-				{
-					CVec2D collisionNormalB;
-					CVec2D collisionPoint;
-					double depth = 0;
-					if (findArcWithRotatedRectCollision(w,
-						position, rotatedRect, biggerRadius,
-						collisionNormalB, collisionPoint, depth))
-					{
-						resolveCollisionStatic(collisionNormalB, collisionPoint, depth,
-							position, speed, angularSpeed, rotatedRect, collisionDeltaSpeed,
-							invertedMass, invertedAngularMass, momentumTransferFactor, surfaceFrictionFactor);
+				if (offsetX < wallOffsetMin) {
+					// ѕр€ма€ стена.
+					//CVec2D start = { tileX + wallOffsetMin, tileY }, end = { tileX + wallOffsetMin, tileY + tileSize };
+					CVec2D start = { tileX + wallOffsetMin, tileY - tileSize }, end = { tileX + wallOffsetMin, tileY + 2 * tileSize };
+					if (findLineWithRotatedRectCollision(start, end, position, rotatedRect, carCircumCircleRadius, collisionInfo)) {
+						resolveCollisionStatic(collisionInfo, position, speed, angularSpeed, rotatedRect, collisionDeltaSpeed,
+							carInvertedMass, carInvertedAngularMass, carToWallMomentumTransferFactor, carToWallSurfaceFrictionFactor);
 					}
+				}
+			} else if (topOpen && offsetX < wallOffsetMin && offsetY < wallOffsetMin) {
+				// ¬ыпукла€ арка
+				//CArc2D arc(CVec2D(tileX, tileY), wallRadius, 0, PI / 2);
+				CArc2D arc(CVec2D(tileX, tileY), wallRadius, -PI, PI);
+				if (findArcWithRotatedRectCollision(arc, position, rotatedRect, carCircumCircleRadius, collisionInfo)) {
+					resolveCollisionStatic(collisionInfo, position, speed, angularSpeed, rotatedRect, collisionDeltaSpeed,
+						carInvertedMass, carInvertedAngularMass, carToWallMomentumTransferFactor, carToWallSurfaceFrictionFactor);
+				}
+			}
+
+			// ¬ерхн€€ стена и верхний правый угол.
+			if (!topOpen) {
+				if (!rightOpen && offsetX > wallOffsetMax2 && offsetY < wallOffsetMin2) {
+					// ¬огнута€ арка.
+					CArc2D arc(CVec2D(tileX + wallOffsetMax2, tileY + wallOffsetMin2), wallRadius, -PI / 2, 0);
+					if (findArcWithRotatedRectCollision(arc, position, rotatedRect, carCircumCircleRadius, collisionInfo)) {
+						resolveCollisionStatic(collisionInfo, position, speed, angularSpeed, rotatedRect, collisionDeltaSpeed,
+							carInvertedMass, carInvertedAngularMass, carToWallMomentumTransferFactor, carToWallSurfaceFrictionFactor);
+					}
+				}
+				if (offsetY < wallOffsetMin) {
+					// ѕр€ма€ стена.
+					//CVec2D start = { tileX + tileSize, tileY + wallOffsetMin }, end = { tileX, tileY + wallOffsetMin };
+					CVec2D start = { tileX + 2 * tileSize, tileY + wallOffsetMin }, end = { tileX - tileSize, tileY + wallOffsetMin };
+					if (findLineWithRotatedRectCollision(start, end, position, rotatedRect, carCircumCircleRadius, collisionInfo)) {
+						resolveCollisionStatic(collisionInfo, position, speed, angularSpeed, rotatedRect, collisionDeltaSpeed,
+							carInvertedMass, carInvertedAngularMass, carToWallMomentumTransferFactor, carToWallSurfaceFrictionFactor);
+					}
+				}
+			} else if (rightOpen && offsetX > wallOffsetMax && offsetY < wallOffsetMin) {
+				// ¬ыпукла€ арка.
+				//CArc2D arc(CVec2D(tileX + tileSize, tileY), wallRadius, PI / 2, PI);
+				CArc2D arc(CVec2D(tileX + tileSize, tileY), wallRadius, -PI, PI);
+				if (findArcWithRotatedRectCollision(arc, position, rotatedRect, carCircumCircleRadius, collisionInfo)) {
+					resolveCollisionStatic(collisionInfo, position, speed, angularSpeed, rotatedRect, collisionDeltaSpeed,
+						carInvertedMass, carInvertedAngularMass, carToWallMomentumTransferFactor, carToWallSurfaceFrictionFactor);
+				}
+			}
+
+			// ѕрава€ стена и правый нижний угол.
+			if (!rightOpen) {
+				if (!bottomOpen && offsetX > wallOffsetMax2 && offsetY > wallOffsetMax2) {
+					CArc2D arc(CVec2D(tileX + wallOffsetMax2, tileY + wallOffsetMax2), wallRadius, 0, PI / 2);
+					if (findArcWithRotatedRectCollision(arc, position, rotatedRect, carCircumCircleRadius, collisionInfo)) {
+						resolveCollisionStatic(collisionInfo, position, speed, angularSpeed, rotatedRect, collisionDeltaSpeed,
+							carInvertedMass, carInvertedAngularMass, carToWallMomentumTransferFactor, carToWallSurfaceFrictionFactor);
+					}
+				}
+				if (offsetX > wallOffsetMax) {
+					//CVec2D start = { tileX + wallOffsetMax, tileY + tileSize }, end = { tileX + wallOffsetMax, tileY };
+					CVec2D start = { tileX + wallOffsetMax, tileY + 2 * tileSize }, end = { tileX + wallOffsetMax, tileY - tileSize };
+					if (findLineWithRotatedRectCollision(start, end, position, rotatedRect, carCircumCircleRadius, collisionInfo)) {
+						resolveCollisionStatic(collisionInfo, position, speed, angularSpeed, rotatedRect, collisionDeltaSpeed,
+							carInvertedMass, carInvertedAngularMass, carToWallMomentumTransferFactor, carToWallSurfaceFrictionFactor);
+					}
+				}
+			} else if (bottomOpen && offsetX > wallOffsetMax && offsetY > wallOffsetMax) {
+				//CArc2D arc(CVec2D(tileX + tileSize, tileY + tileSize), wallRadius, -PI, -PI / 2);
+				CArc2D arc(CVec2D(tileX + tileSize, tileY + tileSize), wallRadius, -PI, PI);
+				if (findArcWithRotatedRectCollision(arc, position, rotatedRect, carCircumCircleRadius, collisionInfo)) {
+					resolveCollisionStatic(collisionInfo, position, speed, angularSpeed, rotatedRect, collisionDeltaSpeed,
+						carInvertedMass, carInvertedAngularMass, carToWallMomentumTransferFactor, carToWallSurfaceFrictionFactor);
+				}
+			}
+
+			// Ќижн€€ стена и нижний левый угол.
+			if (!bottomOpen) {
+				if (!leftOpen && offsetX < wallOffsetMin2 && offsetY > wallOffsetMax2) {
+					CArc2D arc(CVec2D(tileX + wallOffsetMin2, tileY + wallOffsetMax2), wallRadius, PI / 2, PI);
+					if (findArcWithRotatedRectCollision(arc, position, rotatedRect, carCircumCircleRadius, collisionInfo)) {
+						resolveCollisionStatic(collisionInfo, position, speed, angularSpeed, rotatedRect, collisionDeltaSpeed,
+							carInvertedMass, carInvertedAngularMass, carToWallMomentumTransferFactor, carToWallSurfaceFrictionFactor);
+					}
+				}
+				if (offsetY > wallOffsetMax) {
+					//CVec2D start = { tileX, tileY + wallOffsetMax }, end = { tileX + tileSize, tileY + wallOffsetMax };
+					CVec2D start = { tileX - tileSize, tileY + wallOffsetMax }, end = { tileX + 2 * tileSize, tileY + wallOffsetMax };
+					if (findLineWithRotatedRectCollision(start, end, position, rotatedRect, carCircumCircleRadius, collisionInfo)) {
+						resolveCollisionStatic(collisionInfo, position, speed, angularSpeed, rotatedRect, collisionDeltaSpeed,
+							carInvertedMass, carInvertedAngularMass, carToWallMomentumTransferFactor, carToWallSurfaceFrictionFactor);
+					}
+				}
+			} else if (leftOpen && offsetX < wallOffsetMin && offsetY > wallOffsetMax) {
+				//CArc2D arc(CVec2D(tileX, tileY + tileSize), wallRadius, -PI / 2, PI);
+				CArc2D arc(CVec2D(tileX, tileY + tileSize), wallRadius, -PI, PI);
+				if (findArcWithRotatedRectCollision(arc, position, rotatedRect, carCircumCircleRadius, collisionInfo)) {
+					resolveCollisionStatic(collisionInfo, position, speed, angularSpeed, rotatedRect, collisionDeltaSpeed,
+						carInvertedMass, carInvertedAngularMass, carToWallMomentumTransferFactor, carToWallSurfaceFrictionFactor);
 				}
 			}
 		}
@@ -370,7 +439,7 @@ void CSimulator::processWallsCollision(CVec2D& position, CVec2D& speed, double& 
 bool CSimulator::findLineWithRotatedRectCollision(
 	const CVec2D& point1A, const CVec2D& point2A,
 	const CVec2D& positionB, const CRotatedRect& rotatedRectB, double circumcircleRadiusB,
-	CVec2D& collisionNormalB, CVec2D& collisionPoint, double& depth) const
+	CCollisionInfo& collisionInfo) const
 {
 	// Ќадо обратить внимание, что тут тело "B" это наш пр€моугольник, а "A" - лини€.
 	CLine2D lineA = CLine2D::FromPoints(point1A, point2A);
@@ -440,14 +509,15 @@ bool CSimulator::findLineWithRotatedRectCollision(
 			return false;
 		}
 		
-		collisionNormalB = intersectionLineB.GetProjectionOf(positionB) - positionB;
-		collisionNormalB *= 1 / collisionNormalB.Length();
+		collisionInfo.Normal = intersectionLineB.GetProjectionOf(positionB) - positionB;
+		collisionInfo.Normal *= 1 / collisionInfo.Normal.Length();
+		collisionInfo.Normal = -collisionInfo.Normal;
 		CLine2D parallelLine1A = intersectionLineB.GetParallelLine(point1A);
 		double distance1AFromB = parallelLine1A.GetDistanceFrom(positionB);
 		CLine2D parallelLine2A = intersectionLineB.GetParallelLine(point2A);
 		double distance2AFromB = parallelLine2A.GetDistanceFrom(positionB);
-		depth = (distance1AFromB < distance2AFromB ? parallelLine1A : parallelLine2A).GetDistanceFrom(intersectionLineB);
-		collisionPoint = intersectionPoints[0];
+		collisionInfo.Depth = (distance1AFromB < distance2AFromB ? parallelLine1A : parallelLine2A).GetDistanceFrom(intersectionLineB);
+		collisionInfo.Point = intersectionPoints[0];
 		return true;
 	} else {
 		//assert(intersectionPointsCount == 2);
@@ -472,11 +542,13 @@ bool CSimulator::findLineWithRotatedRectCollision(
 		}
 
 		if (lineA.GetSignedDistanceFrom(positionB) > 0) {
-			collisionNormalB = lineA.GetParallelLine(pointBWithMinDistanceFromA).GetUnitNormalFrom(pointBWithMaxDistanceFromA);
-			depth = abs(minDistanceBFromA);
+			//collisionInfo.Normal = lineA.GetParallelLine(pointBWithMinDistanceFromA).GetUnitNormalFrom(pointBWithMaxDistanceFromA);
+			collisionInfo.Normal = -lineA.GetParallelLine(pointBWithMinDistanceFromA).GetUnitNormalFrom(pointBWithMaxDistanceFromA);
+			collisionInfo.Depth = abs(minDistanceBFromA);
 		} else {
-			collisionNormalB = lineA.GetParallelLine(pointBWithMaxDistanceFromA).GetUnitNormalFrom(pointBWithMinDistanceFromA);
-			depth = maxDistanceBFromA;
+			//collisionInfo.Normal = lineA.GetParallelLine(pointBWithMaxDistanceFromA).GetUnitNormalFrom(pointBWithMinDistanceFromA);
+			collisionInfo.Normal = -lineA.GetParallelLine(pointBWithMaxDistanceFromA).GetUnitNormalFrom(pointBWithMinDistanceFromA);
+			collisionInfo.Depth = maxDistanceBFromA;
 		}
 
 		double averageIntersectionX = 0;
@@ -486,7 +558,7 @@ bool CSimulator::findLineWithRotatedRectCollision(
 			averageIntersectionY += intersectionPoints[i].Y / intersectionPointsCount;
 		}
 
-		collisionPoint = CVec2D(averageIntersectionX, averageIntersectionY);
+		collisionInfo.Point = CVec2D(averageIntersectionX, averageIntersectionY);
 		return true;
 	}
 }
@@ -572,11 +644,8 @@ static void addIntersectionInfo(
 bool CSimulator::findArcWithRotatedRectCollision(
 	const CArc2D& arcB,
 	const CVec2D& positionA, const CRotatedRect& rotatedRectA, double circumcircleRadiusA,
-	CVec2D& collisionNormalB, CVec2D& collisionPoint, double& depth) const
+	CCollisionInfo& collisionInfo) const
 {
-	collisionNormalB;
-	collisionPoint;
-	depth;
 	// ”прощЄнный случай - мы знаем, что у нас есть только два случа€: 
 	// 1) когда мы углом машины попали в "вогнутую" арку - тогда центр окружности находитс€ внутри автомобил€ и есть 2 точки пересечени€.
 	// 2) когда мы углом или стороной машины попали в "выпуклую" арку - тогда центр окружности находитс€ снаружи автомобил€ и есть 2 точки пересечени€.
@@ -657,10 +726,10 @@ bool CSimulator::findArcWithRotatedRectCollision(
 			if (distanceToNearestPoint == INT_MAX) {
 				return false;
 			}
-			collisionPoint = nearestPoint;
-			collisionNormalB = nearestPoint - arcB.Center;
-			collisionNormalB *= 1 / collisionNormalB.Length();
-			depth = radiusB - distanceToNearestPoint;
+			collisionInfo.Normal = nearestPoint - arcB.Center;
+			collisionInfo.Normal *= 1 / collisionInfo.Normal.Length();
+			collisionInfo.Point = nearestPoint;
+			collisionInfo.Depth = radiusB - distanceToNearestPoint;
 			return true;
 		} else {
 			CVec2D farthestPoint;
@@ -675,10 +744,10 @@ bool CSimulator::findArcWithRotatedRectCollision(
 			if (distanceToFarthestPoint == INT_MIN) {
 				return false;
 			}
-			collisionPoint = farthestPoint;
-			collisionNormalB = arcB.Center - farthestPoint;
-			collisionNormalB *= 1 / collisionNormalB.Length();
-			depth = distanceToFarthestPoint - radiusB;
+			collisionInfo.Normal = arcB.Center - farthestPoint;
+			collisionInfo.Normal *= 1 / collisionInfo.Normal.Length();
+			collisionInfo.Point = farthestPoint;
+			collisionInfo.Depth = distanceToFarthestPoint - radiusB;
 			return true;
 		}
 	}
@@ -687,13 +756,13 @@ bool CSimulator::findArcWithRotatedRectCollision(
 }
 
 void CSimulator::resolveCollisionStatic(
-	const CVec2D& collisionNormalB2D, const CVec2D& collisionPoint, double depth, 
+	const CCollisionInfo& collisionInfo,
 	CVec2D& positionA, CVec2D& speedA, double& angularSpeedA, CRotatedRect& rotatedRect, double& collisionDeltaSpeed,
 	double invertedMassA, double invertedAngularMassA,
 	double momentumTransferFactorAB, double surfaceFrictionFactorAB) const
 {
-	CVec3D collisionNormalB(collisionNormalB2D);
-	CVec3D vectorAC(collisionPoint - positionA);
+	CVec3D collisionNormalB(collisionInfo.Normal);
+	CVec3D vectorAC(collisionInfo.Point - positionA);
 	CVec3D angularVelocityPartAC = CVec3D(angularSpeedA).Cross(vectorAC);
 	CVec3D velocityAC = angularVelocityPartAC + CVec3D(speedA);
 	CVec3D relativeVelocityC = velocityAC;
@@ -709,7 +778,7 @@ void CSimulator::resolveCollisionStatic(
 			invertedMassA, invertedAngularMassA, surfaceFrictionFactorAB);
 		collisionDeltaSpeed += normalRelativeVelocityLengthC;
 	}
-	pushBackBodiesStatic(collisionNormalB2D, depth, positionA, rotatedRect);
+	pushBackBodiesStatic(collisionInfo.Normal, collisionInfo.Depth, positionA, rotatedRect);
 
 }
 
@@ -777,5 +846,4 @@ void CSimulator::pushBackBodiesStatic(
 	for (auto& c : rotatedRect.Corners) {
 		c += shift;
 	}
-	//assert(positionA.X < 6300);
 }
