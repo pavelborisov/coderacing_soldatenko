@@ -247,12 +247,6 @@ void CWorldSimulator::collideCarWithWalls(CMyCar& car) const
 {
 	double collisionDeltaSpeed = 0;
 	CCollisionInfo collisionInfo;
-	CMyTile carTile(car.Position);
-	static const double halfTileSize = CMyTile::TileSize;
-	const double tileLeftX = carTile.X * CMyTile::TileSize;
-	const double tileTopY = carTile.Y * CMyTile::TileSize;
-	const double tileRightX = (carTile.X + 1) * CMyTile::TileSize;
-	const double tileBottomY = (carTile.Y + 1) * CMyTile::TileSize;
 
 	// Точки расположены по порядку. Начнём с самого левого угла и левой стенки.
 	double minLeft = INT_MAX;
@@ -264,7 +258,12 @@ void CWorldSimulator::collideCarWithWalls(CMyCar& car) const
 			minLeft = corners[i].X;
 		}
 	}
-	if (!carTile.IsLeftOpen()) {
+	CMyTile cornerTile(corners[cornerIndex]);
+	double tileLeftX = cornerTile.X * CMyTile::TileSize;
+	double tileTopY = cornerTile.Y * CMyTile::TileSize;
+	double tileRightX = (cornerTile.X + 1) * CMyTile::TileSize;
+	double tileBottomY = (cornerTile.Y + 1) * CMyTile::TileSize;
+	if (!cornerTile.IsLeftOpen()) {
 		const double xWall = tileLeftX + CMyTile::WallRadius;
 		const CVec2D& corner = corners[cornerIndex];
 		if (corner.X < xWall) {
@@ -299,7 +298,12 @@ void CWorldSimulator::collideCarWithWalls(CMyCar& car) const
 
 	// Верхняя стенка.
 	cornerIndex = (cornerIndex + 1) % 4;
-	if (!carTile.IsTopOpen()) {
+	cornerTile = CMyTile(corners[cornerIndex]);
+	tileLeftX = cornerTile.X * CMyTile::TileSize;
+	tileTopY = cornerTile.Y * CMyTile::TileSize;
+	tileRightX = (cornerTile.X + 1) * CMyTile::TileSize;
+	tileBottomY = (cornerTile.Y + 1) * CMyTile::TileSize;
+	if (!cornerTile.IsTopOpen()) {
 		const double yWall = tileTopY + CMyTile::WallRadius;
 		const CVec2D& corner = corners[cornerIndex];
 		if (corner.Y < yWall) {
@@ -334,7 +338,12 @@ void CWorldSimulator::collideCarWithWalls(CMyCar& car) const
 
 	// Правая стенка.
 	cornerIndex = (cornerIndex + 1) % 4;
-	if (!carTile.IsRightOpen()) {
+	cornerTile = CMyTile(corners[cornerIndex]);
+	tileLeftX = cornerTile.X * CMyTile::TileSize;
+	tileTopY = cornerTile.Y * CMyTile::TileSize;
+	tileRightX = (cornerTile.X + 1) * CMyTile::TileSize;
+	tileBottomY = (cornerTile.Y + 1) * CMyTile::TileSize;
+	if (!cornerTile.IsRightOpen()) {
 		const double xWall = tileRightX - CMyTile::WallRadius;
 		const CVec2D& corner = corners[cornerIndex];
 		if (corner.X > xWall) {
@@ -369,7 +378,12 @@ void CWorldSimulator::collideCarWithWalls(CMyCar& car) const
 
 	// Нижняя стенка.
 	cornerIndex = (cornerIndex + 1) % 4;
-	if (!carTile.IsBottomOpen()) {
+	cornerTile = CMyTile(corners[cornerIndex]);
+	tileLeftX = cornerTile.X * CMyTile::TileSize;
+	tileTopY = cornerTile.Y * CMyTile::TileSize;
+	tileRightX = (cornerTile.X + 1) * CMyTile::TileSize;
+	tileBottomY = (cornerTile.Y + 1) * CMyTile::TileSize;
+	if (!cornerTile.IsBottomOpen()) {
 		const double yWall = tileBottomY - CMyTile::WallRadius;
 		const CVec2D& corner = corners[cornerIndex];
 		if (corner.Y > yWall) {
@@ -403,6 +417,7 @@ void CWorldSimulator::collideCarWithWalls(CMyCar& car) const
 	}
 
 	// Ближайший угол.
+	static const double halfTileSize = CMyTile::TileSize;
 	const double nearestTileCornerX = (car.Position.X - tileLeftX < halfTileSize) ? tileLeftX : tileRightX;
 	const double nearestTileCornerY = (car.Position.Y - tileTopY < halfTileSize) ? tileTopY : tileBottomY;
 	const CVec2D nearestTileCorner(nearestTileCornerX, nearestTileCornerY);
