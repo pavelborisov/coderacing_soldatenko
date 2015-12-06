@@ -40,10 +40,9 @@ private:
 		CMyWorld World;
 		int Tick = 0;
 		double RouteScore = 0;
+		CState() {}
 		CState(const CMyWorld& World, int Tick, double RouteScore) :
-			World(World), Tick(Tick), RouteScore(RouteScore)
-		{
-		}
+			World(World), Tick(Tick), RouteScore(RouteScore) {}
 	};
 
 	const CMyWorld& startWorld;
@@ -54,6 +53,7 @@ private:
 	double startScore = INT_MIN;
 	double bestScore = INT_MIN;
 	std::vector<CMoveWithDuration> bestMoveList;
+	CState bestState;
 	std::vector<CState> stateCache;
 
 	static const std::vector<std::pair<std::vector<CMyMove>, std::vector<int>>> allMovesWithLengths;
@@ -64,5 +64,7 @@ private:
 	void processRouteScore(CState& state, bool firstTickBrake);
 	void processBonus(CState& state);
 	double evaluate(const CState& state) const;
+	void processShooting(CResult& result);
+	void processOil(CResult& result);
 
 };

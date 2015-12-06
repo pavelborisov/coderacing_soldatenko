@@ -13,11 +13,12 @@ static const int maxCollisionsDetected = 1;
 //static const double veryBadScoreDif = -10000;
 static const double veryBadScoreDif = -1000000;
 //static const int carSimulationSubticksCount = 2;
+static const int preciseSimulationMaxTick = 60;
 
 static void setSimulatorMode(int tick)
 {
-	CWorldSimulator::Instance().SetPrecision(tick > 60 ? 1 : 2);
-	if (tick > 60) {
+	CWorldSimulator::Instance().SetPrecision(tick > preciseSimulationMaxTick ? 1 : 2);
+	if (tick > preciseSimulationMaxTick) {
 		CWorldSimulator::Instance().SetOptions(true, true, true);
 	} else {
 		//CWorldSimulator::Instance().SetOptions(false, false, false);
@@ -94,6 +95,8 @@ CBestMoveFinder::CResult CBestMoveFinder::Process()
 		}
 	}
 	result.Score = bestScore;
+	processShooting(result);
+	processOil(result);
 
 #ifdef LOGGING
 	/////////////////////////////// log
@@ -171,6 +174,7 @@ void CBestMoveFinder::processPreviousMoveList()
 		double score = evaluate(current);
 		if (score > bestScore) {
 			bestScore = score;
+			bestState = current;
 			bestMoveList = correctedPreviousMoveList;
 		}
 	}
@@ -261,6 +265,7 @@ void CBestMoveFinder::processMoveIndex(size_t moveIndex, const std::vector<CMove
 					double score = evaluate(current);
 					if (score > bestScore) {
 						bestScore = score;
+						bestState = current;
 						bestMoveList = prevMoveList;
 						bestMoveList.push_back({ move, start, current.Tick });
 					} else if (score - startScore < veryBadScoreDif) {
@@ -373,4 +378,120 @@ double CBestMoveFinder::evaluate(const CState& state) const
 	//score += scoreDif * 15;
 
 	return score;
+}
+
+void CBestMoveFinder::processShooting(CResult& result)
+{
+	const auto& car = startWorld.Cars[0];
+	if (car.ProjectilesCount == 0 || car.ProjectileCooldown > 0) {
+		return;
+	}
+
+	double myPlayerScoreBefore = 0;
+	double enemyPlayerScoreBefore = 0;
+	// TODO
+	//double allyDurabilitySum = 0;
+	//int allyDead = 0;
+	//double enemyDurabilitySum = 0;
+	//int enemyDead = 0;
+	for (int i = 0; i < CMyWorld::PlayersCount; i++) {
+		if (i == 0) {
+			myPlayerScoreBefore += bestState.World.Players[i].Score;
+		} else {
+			enemyPlayerScoreBefore += bestState.World.Players[i].Score;
+		}
+	}
+
+	CState current(startWorld, 0, 0);
+	const int simulationEnd = min(preciseSimulationMaxTick, bestState.Tick);
+	for (current.Tick = 0; current.Tick < simulationEnd; current.Tick++) {
+		CMyMove moves[4];
+		size_t mi = 0;
+		for (; mi < correctedPreviousMoveList.size(); mi++) {
+			const CMoveWithDuration& m = correctedPreviousMoveList[mi];
+			if (current.Tick >= m.Start && current.Tick < m.End) {
+				moves[0] = m.Move;
+				break;
+			}
+		}
+		if (current.Tick == 0) {
+			moves[0].Shoot = true;
+		}
+		setSimulatorMode(current.Tick);
+		current.World = CWorldSimulator::Instance().Simulate(current.World, moves);
+		simulationTicks++;
+	}
+
+	double myPlayerScoreAfter = 0;
+	double enemyPlayerScoreAfter = 0;
+	for (int i = 0; i < CMyWorld::PlayersCount; i++) {
+		if (i == 0) {
+			myPlayerScoreAfter += current.World.Players[i].Score;
+		} else {
+			enemyPlayerScoreAfter += current.World.Players[i].Score;
+		}
+	}
+
+	double totalScoreDif = myPlayerScoreAfter - myPlayerScoreBefore +
+		enemyPlayerScoreBefore - enemyPlayerScoreAfter;
+
+	if (car.Type == 0) {
+		if (car.ProjectilesCount > 1) {
+			if (totalScoreDif > 40) {
+				result.CurrentMove.Shoot = true;
+			}
+		} else {
+			if (totalScoreDif > 50) {
+				result.CurrentMove.Shoot = true;
+			}
+		}
+	} else {
+		if (totalScoreDif > 30) {
+			result.CurrentMove.Shoot = true;
+		}
+	}
+}
+
+void CBestMoveFinder::processOil(CResult& result)
+{
+	const auto& car = startWorld.Cars[0];
+	if (car.OilCount == 0 || car.OilCooldown > 0) {
+		return;
+	}
+
+	double enemyDurabilitySumBefore = 0;
+	for (int i = 1; i < CMyWorld::MaxCars; i++) {
+		if (CMyWorld::PlayersCount == 2 && i == 1) continue;
+		enemyDurabilitySumBefore += bestState.World.Cars[i].Durability;
+	}
+
+	CState current(startWorld, 0, 0);
+	const int simulationEnd = min(preciseSimulationMaxTick, bestState.Tick);
+	for (current.Tick = 0; current.Tick < simulationEnd; current.Tick++) {
+		CMyMove moves[4];
+		size_t mi = 0;
+		for (; mi < correctedPreviousMoveList.size(); mi++) {
+			const CMoveWithDuration& m = correctedPreviousMoveList[mi];
+			if (current.Tick >= m.Start && current.Tick < m.End) {
+				moves[0] = m.Move;
+				break;
+			}
+		}
+		if (current.Tick == 0) {
+			moves[0].Oil = true;
+		}
+		setSimulatorMode(current.Tick);
+		current.World = CWorldSimulator::Instance().Simulate(current.World, moves);
+		simulationTicks++;
+	}
+
+	double enemyDurabilitySumAfter = 0;
+	for (int i = 1; i < CMyWorld::MaxCars; i++) {
+		if (CMyWorld::PlayersCount == 2 && i == 1) continue;
+		enemyDurabilitySumAfter += current.World.Cars[i].Durability;
+	}
+
+	if (enemyDurabilitySumBefore - enemyDurabilitySumAfter > 0.1) {
+		result.CurrentMove.Oil = true;
+	}
 }
