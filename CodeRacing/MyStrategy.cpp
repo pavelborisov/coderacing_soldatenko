@@ -178,7 +178,7 @@ void MyStrategy::makeMove()
 
 	if (world->getTick() < 1000000) {
 		*resultMove = moves[0].Convert();
-		resultMove->setThrowProjectile(true);
+		//resultMove->setThrowProjectile(true);
 		//resultMove->setWheelTurn(1);
 		//resultMove->setEnginePower(1);
 		//resultMove->setBrake(true);
@@ -484,7 +484,7 @@ void MyStrategy::doLog()
 	log.LogMyCar(prediction, "Prediction         ");
 
 	if (currentTick > 180) {
-		prevPrediction.LogDifference(car);
+		//prevPrediction.LogDifference(car);
 	}
 }
 
