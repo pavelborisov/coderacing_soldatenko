@@ -26,6 +26,12 @@ private:
 		CVec2D AccelerationDt;
 	};
 
+	struct CCollisionInfo {
+		CVec2D NormalB;
+		CVec2D Point;
+		double Depth;
+	};
+
 	model::Game game;
 	int subtickCount = 10;
 	double dTime = 0.1;
@@ -44,4 +50,13 @@ private:
 	void moveWasher(CMyWasher& washer) const;
 	void moveTire(CMyTire& tire) const;
 
+	void collideTireWithWalls(CMyTire& tire) const;
+	void collideTireWithWashers(CMyTire& tire, CMyWorld& world) const;
+	void collideCarWithWalls(CMyCar& car) const;
+	void collideCarWithWashers(CMyCar& car, CMyWorld& world) const;
+	void collideCarWithTires(CMyCar& car, CMyWorld& world) const;
+	void collideCarWithBonuses(CMyCar& car, CMyWorld& world) const;
+	void collideCarWithCar(CMyCar& carA, CMyCar& carB) const;
+
+	bool findCarWithLeftWallCollision(const CMyCar& car, double xWall, CCollisionInfo& collisionInfo) const;
 };

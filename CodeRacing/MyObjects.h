@@ -34,6 +34,7 @@ struct CMyWasher {
 	CMyWasher();
 	explicit CMyWasher(const model::Projectile& projectile, int carId);
 	bool IsValid() const { return CarId >= 0; }
+	void Invalidate() { CarId = -1; }
 };
 
 struct CMyTire {
@@ -51,4 +52,5 @@ struct CMyTire {
 	CMyTire();
 	explicit CMyTire(const model::Projectile& projectile, int carId);
 	bool IsValid() const { return CarId >= 0; }
+	void Invalidate() { CarId = -1; }
 };

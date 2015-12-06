@@ -32,9 +32,23 @@ struct CMyCar {
 	int CollisionsDetected;
 	double CollisionDeltaSpeed;
 
+	static const double Width;
+	static const double Height;
+	static const double HalfWidth;
+	static const double HalfHeight;
+	static const double CircumcircleRadius;
+	static const double CarToWallMomentumTransferFactor;
+	static const double CarToWallSurfaceFrictionFactor;
+	static const double BaseAngularMass;
+
 	CMyCar();
 	CMyCar(const CMyCar& car);
 	explicit CMyCar(const model::Car& car);
+
+	double GetMass() const;
+	double GetInvertedMass() const;
+	double GetAngularMass() const;
+	double GetInvertedAngularMass() const;
 
 	void SaveHistory();
 };

@@ -1,10 +1,22 @@
 #include "WorldSimulator.h"
 
+#ifdef LOGGING
+#undef NDEBUG
+#endif
+
 #include <algorithm>
 #include "assert.h"
+#include "Arc2D.h"
+#include "Line2D.h"
+#include "MyTile.h"
 #include "Tools.h"
 
 using namespace std;
+
+static const double wallOffsetMin = CMyTile::WallRadius;
+static const double wallOffsetMin2 = CMyTile::WallRadius * 2;
+static const double wallOffsetMax = CMyTile::TileSize - CMyTile::WallRadius;
+static const double wallOffsetMax2 = CMyTile::TileSize - 2 * CMyTile::WallRadius;
 
 static const double limit(double val, double lim)
 {
@@ -61,22 +73,22 @@ CMyWorld CWorldSimulator::Simulate(const CMyWorld& startWorld, const CMyMove mov
 			}
 		}
 
-		//// Теперь разбираемся с коллизиями. Какой правильный порядок - хз.
-		//for (int i = 0; i < CMyWorld::MaxTires; i++) {
-		//	if (world.Tires[i].IsValid()) {
-		//		collideTireWithWalls(world.Tires[i]);
-		//		collideTireWithWashers(world.Washers[i]);
-		//	}
-		//}
-		//for (int i = 0; i < CMyWorld::MaxCars; i++) {
-		//	collideCarWithWalls(world.Cars[i]);
-		//	collideCarWithWashers(world.Cars[i], world);
-		//	collideCarWithTires(world.Cars[i], world);
-		//	collideCarWithBonuses(world.Cars[i], world);
-		//	for (int j = 1; j < CMyWorld::MaxCars; j++) {
-		//		collideCarWithCar(world.Cars[i], world.Cars[j]);
-		//	}
-		//}
+		// Теперь разбираемся с коллизиями. Какой правильный порядок - хз.
+		for (int i = 0; i < CMyWorld::MaxTires; i++) {
+			if (world.Tires[i].IsValid()) {
+				collideTireWithWalls(world.Tires[i]);
+				collideTireWithWashers(world.Tires[i], world);
+			}
+		}
+		for (int i = 0; i < CMyWorld::MaxCars; i++) {
+			collideCarWithWalls(world.Cars[i]);
+			collideCarWithWashers(world.Cars[i], world);
+			collideCarWithTires(world.Cars[i], world);
+			collideCarWithBonuses(world.Cars[i], world);
+			for (int j = 1; j < CMyWorld::MaxCars; j++) {
+				collideCarWithCar(world.Cars[i], world.Cars[j]);
+			}
+		}
 	}
 }
 
@@ -166,12 +178,8 @@ void CWorldSimulator::moveCar(CCarInfo& carInfo, CMyCar& car) const
 	car.Position += car.Speed * dTime;
 
 	// Обновление скорости.
-	// 1. Ускорение.
 	car.Speed += carInfo.AccelerationDt;
-	// 2. Трение об воздух - пропорционально скорости и равномерно по всем направлениям.
 	car.Speed *= carMovementAirFrictionFactorDt;
-	// 3. Трение колёс - постоянно и различно по направлениям. Если тормозим, то к продольному направлению надо
-	//    применить такое же трение, что и к поперечному.
 	const double frictionLengthwise = limit(car.Speed.DotProduct(carInfo.LengthwiseUnitVector), carLengthwiseFrictionFactorDt);
 	const double frictionCrosswise = limit(car.Speed.DotProduct(carInfo.CrosswiseUnitVector), carCrosswiseFrictionFactorDt);
 	car.Speed -= carInfo.LengthwiseUnitVector * frictionLengthwise + carInfo.CrosswiseUnitVector * frictionCrosswise;
@@ -199,4 +207,173 @@ void CWorldSimulator::moveWasher(CMyWasher& washer) const
 void CWorldSimulator::moveTire(CMyTire& tire) const
 {
 	tire.Position += tire.Speed * dTime;
+}
+
+void CWorldSimulator::collideTireWithWalls(CMyTire& /*tire*/) const
+{
+
+}
+
+void CWorldSimulator::collideTireWithWashers(CMyTire& tire, CMyWorld& world) const
+{
+	static const double collisionDistanceSqr = pow(CMyWasher::Radius + CMyTire::Radius, 2);
+	for (auto& w : world.Washers) {
+		if (w.IsValid() && (tire.Position - w.Position).LengthSquared() < collisionDistanceSqr) {
+			w.Invalidate();
+		}
+	}
+}
+
+void CWorldSimulator::collideCarWithWalls(CMyCar& car) const
+{
+	CCollisionInfo collisionInfo;
+	CMyTile carTile(car.Position);
+	static const double halfTileSize = CMyTile::TileSize;
+	const double tileLeftX = carTile.X * CMyTile::TileSize;
+	const double tileTopY = carTile.Y * CMyTile::TileSize;
+	const double tileRightX = (carTile.X + 1) * CMyTile::TileSize;
+	const double tileBottomY = (carTile.Y + 1) * CMyTile::TileSize;
+
+	// Точки расположены по порядку. Начнём с самого левого угла и левой стенки.
+	double minLeft = INT_MAX;
+	int cornerIndex = 0;
+	const CVec2D* corners = car.RotatedRect.Corners;
+	for (int i = 0; i < 4; i++) {
+		if (corners[cornerIndex].X < minLeft) {
+			cornerIndex = 0;
+			minLeft = corners[cornerIndex].X;
+		}
+	}
+	int cornerIndexNext = (cornerIndex + 1) % 4;
+	int cornerIndexPrev = (cornerIndex + 4 - 1) % 4;
+	if (!carTile.IsLeftOpen()) {
+		const double xWall = tileLeftX + CMyTile::WallRadius;
+		const CVec2D& corner = corners[cornerIndex];
+		if (corner.X < xWall) {
+			collisionInfo.NormalB = { 1, 0 };
+			collisionInfo.Depth = xWall - corner.X;
+			const CLine2D wall = { 1, 0, -xWall };
+			const CLine2D side1 = CLine2D::FromPoints(corner, corners[cornerIndexNext]);
+			CVec2D intersection1;
+			bool hasIntersection1 = wall.GetIntersectionPoint(side1, intersection1);
+			assert(hasIntersection1);
+			const CLine2D side2 = CLine2D::FromPoints(corner, corners[cornerIndexPrev]);
+			CVec2D intersection2;
+			bool hasIntersection2 = wall.GetIntersectionPoint(side2, intersection2);
+			assert(hasIntersection2);
+			collisionInfo.Point = (intersection2 + intersection1) * 0.5;
+			//resolveCollision();
+		}
+	}
+
+	// Верхняя стенка.
+	cornerIndex++;
+	cornerIndexNext = (cornerIndex + 1) % 4;
+	cornerIndexPrev = (cornerIndex + 4 - 1) % 4;
+	if (!carTile.IsTopOpen()) {
+		const double yWall = tileTopY + CMyTile::WallRadius;
+		const CVec2D& corner = corners[cornerIndex];
+		if (corner.Y < yWall) {
+			collisionInfo.NormalB = { 0, 1 };
+			collisionInfo.Depth = yWall - corner.Y;
+			const CLine2D wall = { 0, 1, -yWall };
+			const CLine2D side1 = CLine2D::FromPoints(corner, corners[cornerIndexNext]);
+			CVec2D intersection1;
+			bool hasIntersection1 = wall.GetIntersectionPoint(side1, intersection1);
+			assert(hasIntersection1);
+			const CLine2D side2 = CLine2D::FromPoints(corner, corners[cornerIndexPrev]);
+			CVec2D intersection2;
+			bool hasIntersection2 = wall.GetIntersectionPoint(side2, intersection2);
+			assert(hasIntersection2);
+			collisionInfo.Point = (intersection2 + intersection1) * 0.5;
+			//resolveCollision();
+		}
+	}
+
+	// Правая стенка.
+	cornerIndex++;
+	cornerIndexNext = (cornerIndex + 1) % 4;
+	cornerIndexPrev = (cornerIndex + 4 - 1) % 4;
+	if (!carTile.IsRightOpen()) {
+		const double xWall = tileRightX - CMyTile::WallRadius;
+		const CVec2D& corner = corners[cornerIndex];
+		if (corner.X > xWall) {
+			collisionInfo.NormalB = { -1, 0 };
+			collisionInfo.Depth = corner.X - xWall;
+			const CLine2D wall = { 1, 0, -xWall };
+			const CLine2D side1 = CLine2D::FromPoints(corner, corners[cornerIndexNext]);
+			CVec2D intersection1;
+			bool hasIntersection1 = wall.GetIntersectionPoint(side1, intersection1);
+			assert(hasIntersection1);
+			const CLine2D side2 = CLine2D::FromPoints(corner, corners[cornerIndexPrev]);
+			CVec2D intersection2;
+			bool hasIntersection2 = wall.GetIntersectionPoint(side2, intersection2);
+			assert(hasIntersection2);
+			collisionInfo.Point = (intersection2 + intersection1) * 0.5;
+			//resolveCollision();
+		}
+	}
+
+	// Нижняя стенка.
+	cornerIndex++;
+	cornerIndexNext = (cornerIndex + 1) % 4;
+	cornerIndexPrev = (cornerIndex + 4 - 1) % 4;
+	if (!carTile.IsBottomOpen()) {
+		const double yWall = tileBottomY - CMyTile::WallRadius;
+		const CVec2D& corner = corners[cornerIndex];
+		if (corner.Y > yWall) {
+			collisionInfo.NormalB = { 0, -1 };
+			collisionInfo.Depth = corner.Y - yWall;
+			const CLine2D wall = { 0, 1, -yWall };
+			const CLine2D side1 = CLine2D::FromPoints(corner, corners[cornerIndexNext]);
+			CVec2D intersection1;
+			bool hasIntersection1 = wall.GetIntersectionPoint(side1, intersection1);
+			assert(hasIntersection1);
+			const CLine2D side2 = CLine2D::FromPoints(corner, corners[cornerIndexPrev]);
+			CVec2D intersection2;
+			bool hasIntersection2 = wall.GetIntersectionPoint(side2, intersection2);
+			assert(hasIntersection2);
+			collisionInfo.Point = (intersection2 + intersection1) * 0.5;
+			//resolveCollision();
+		}
+	}
+
+	// Ближайший угол.
+	const double nearestTileCornerX = (car.Position.X - tileLeftX < halfTileSize) ? tileLeftX : tileRightX;
+	const double nearestTileCornerY = (car.Position.Y - tileTopY < halfTileSize) ? tileTopY : tileBottomY;
+	const CVec2D nearestTileCorner(nearestTileCornerX, nearestTileCornerY);
+	const double distanceSqr = (car.Position - nearestTileCorner).LengthSquared();
+	static const double maxDistanceSqr = pow(CMyTile::WallRadius + CMyCar::CircumcircleRadius, 2);
+	if (distanceSqr < maxDistanceSqr) {
+		//findLineWithCircleCollision
+		//// Надо найти ближайшую сторону прямоугольника к углу.
+		//double minDistance = INT_MAX;
+		//for (int i = 0; i < 4; i++) {
+		//	const CVec2D& p1 = corners[i];
+		//	const CVec2D& p2 = corners[(i + 1) % 4];
+		//	CLine2D side = CLine2D::FromPoints(p1, p2);
+		//	assert(side.GetSignedDistanceFrom(car.Position) < 0);
+		//	const double distance = side.GetDistanceFrom(nearestTileCorner);
+		//}
+	}
+}
+
+void CWorldSimulator::collideCarWithWashers(CMyCar& /*car*/, CMyWorld& /*world*/) const
+{
+
+}
+
+void CWorldSimulator::collideCarWithTires(CMyCar& /*car*/, CMyWorld& /*world*/) const
+{
+
+}
+
+void CWorldSimulator::collideCarWithBonuses(CMyCar& /*car*/, CMyWorld& /*world*/) const
+{
+
+}
+
+void CWorldSimulator::collideCarWithCar(CMyCar& /*carA*/, CMyCar& /*carB*/) const
+{
+
 }

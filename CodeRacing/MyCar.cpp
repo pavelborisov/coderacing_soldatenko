@@ -22,6 +22,15 @@ static int HistoryId(int PlayerId, int Type)
 	return id;
 }
 
+const double CMyCar::Width = 210;
+const double CMyCar::Height = 140;
+const double CMyCar::HalfWidth = Width / 2;
+const double CMyCar::HalfHeight = Height / 2;
+const double CMyCar::CircumcircleRadius = sqrt(pow(HalfWidth, 2) + pow(HalfHeight, 2));
+const double CMyCar::CarToWallMomentumTransferFactor = 0.25;
+const double CMyCar::CarToWallSurfaceFrictionFactor = 0.25 * 0.25;
+const double CMyCar::BaseAngularMass = 1.0 / 12 * (Width * Width + Height * Height);
+
 CRotatedRect::CRotatedRect(const CVec2D& center, double width, double height, double angle)
 {
 	const double halfWidth = width / 2;
@@ -98,6 +107,26 @@ CMyCar::CMyCar(const model::Car& car) :
 	MedianAngularSpeed = MedianAngularSpeedHistory[HistoryId(PlayerId, Type)];
 	DeadTicks = Durability > 1e-5 ? 0 : DeadTicksHistory[HistoryId(PlayerId, Type)];
 	RotatedRect = CRotatedRect(Position, 210, 140, Angle);
+}
+
+double CMyCar::GetMass() const
+{
+	return Type == 0 ? 1250 : 1500;
+}
+
+double CMyCar::GetInvertedMass() const
+{
+	return Type == 0 ? 1.0 / 1250 : 1.0 / 1500;
+}
+
+double CMyCar::GetAngularMass() const
+{
+	return (Type == 0 ? 1250 : 1500) * BaseAngularMass;
+}
+
+double CMyCar::GetInvertedAngularMass() const
+{
+	return 1.0 / ((Type == 0 ? 1250 : 1500) * BaseAngularMass);
 }
 
 void CMyCar::SaveHistory()
