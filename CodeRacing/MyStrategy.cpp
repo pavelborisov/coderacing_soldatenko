@@ -8,6 +8,7 @@
 #include <string>
 #include <assert.h>
 #include "GlobalPredictions.h"
+#include "MyWorld.h"
 #include "Tools.h"
 #include "WaypointsDistanceMap.h"
 
@@ -139,6 +140,8 @@ void MyStrategy::makeMove()
 
 	// Заполняем предсказания
 	predictObjects();
+
+	CMyWorld myWorld(*world, *self);
 
 	if (world->getTick() < 1000000) {
 		resultMove->setWheelTurn(1);

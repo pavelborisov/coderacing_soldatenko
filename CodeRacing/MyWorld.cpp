@@ -66,6 +66,7 @@ CMyWorld::CMyWorld(const World& world, const Car& self)
 	}
 	for (const auto& b : bonuses) {
 		if (nextBonusId < MaxBonuses) {
+			BonusExist[nextBonusId] = true;
 			Bonuses[nextBonusId++] = CMyBonus(b);
 		} else {
 			CLog::Instance().Stream() << "Too many bonuses" << endl;
@@ -79,6 +80,7 @@ CMyWorld::CMyWorld(const World& world, const Car& self)
 	}
 	for (const auto& o : oils) {
 		if (nextOilId < MaxOils) {
+			OilTicks[nextOilId] = o.getRemainingLifetime();
 			Oils[nextOilId++] = CMyOil(o);
 		}
 	}

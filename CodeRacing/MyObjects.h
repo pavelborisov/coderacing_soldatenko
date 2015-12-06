@@ -7,7 +7,7 @@
 
 struct CMyOil {
 	CVec2D Position;
-	int LastTick = 0;
+	int LastTick = 0; // TODO: Убрать
 
 	static const double Radius;
 
@@ -17,7 +17,7 @@ struct CMyOil {
 
 struct CMyBonus {
 	CVec2D Position;
-	model::BonusType Type;
+	model::BonusType Type = model::BonusType::_UNKNOWN_BONUS_TYPE_;
 
 	CMyBonus();
 	explicit CMyBonus(const model::Bonus& bonus);
@@ -33,6 +33,7 @@ struct CMyWasher {
 	
 	CMyWasher();
 	explicit CMyWasher(const model::Projectile& projectile, int carId);
+	bool IsValid() const { return CarId >= 0; }
 };
 
 struct CMyTire {
@@ -49,4 +50,5 @@ struct CMyTire {
 
 	CMyTire();
 	explicit CMyTire(const model::Projectile& projectile, int carId);
+	bool IsValid() const { return CarId >= 0; }
 };
