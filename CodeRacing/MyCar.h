@@ -27,7 +27,9 @@ struct CMyCar {
 	int NitroTicks;
 	int NitroCooldown;
 	int ProjectilesCount;
+	int ProjectileCooldown;
 	int OilCount;
+	int OilCooldown;
 	int OiledTicks;
 	int MoneyCount;
 	int DeadTicks;

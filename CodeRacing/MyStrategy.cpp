@@ -16,14 +16,6 @@
 using namespace model;
 using namespace std;
 
-template<typename T>
-static const void logIfDiffers(const T& a, const T&b, const char* name, CLog& log)
-{
-	if (abs(a - b) >= 1e-5) {
-		log.Log(a - b, (std::string("Prediction error: ") + name).c_str());
-	}
-}
-
 MyStrategy::MyStrategy() :
 	log(CLog::Instance()),
 	draw(CDrawPlugin::Instance()),
@@ -136,9 +128,6 @@ void MyStrategy::makeMove()
 		return;
 	}
 
-	// «аполн€ем предсказани€
-	predictObjects();
-
 	CBestMoveFinder bestMoveFinder(currentWorld, waypointTiles, previousResult);
 	CBestMoveFinder::CResult result = bestMoveFinder.Process();
 	previousResult = result;
@@ -208,135 +197,62 @@ void MyStrategy::makeMove()
 
 void MyStrategy::predictObjects()
 {
-	//CGlobalPredictions::Clear();
-	//static const int predictObjectsSubtickCount = 10;
-	//simulator.SetPrecision(predictObjectsSubtickCount);
-
-	//auto bonuses = world->getBonuses();
-	//for (const auto& b : bonuses) {
-	//	CGlobalPredictions::Bonuses.push_back(CMyBonus(b));
-	//}
-
-	//auto oils = world->getOilSlicks();
-	//for (const auto& o : oils) {
-	//	CGlobalPredictions::Oils.push_back(CMyOil(o));
-	//}
-
-	//auto projectiles = world->getProjectiles();
-	//auto cars = world->getCars();
-	//const int depth = CGlobalPredictions::PredictionDepth;
-	//model::Move defaultEnemyMove;
-	//defaultEnemyMove.setEnginePower(1.0);
-	//for (const auto& c : cars) {
-	//	if (c.getPlayerId() == self->getPlayerId() || c.isFinishedTrack()) continue;
-	//	CGlobalPredictions::EnemyCarsPerTick.push_back(vector<CMyCar>(depth + 1));
-	//	CGlobalPredictions::EnemyCarsPerTick.back()[0] = CMyCar(c);
-	//}
-	//for (const auto& p : projectiles) {
-	//	if (p.getType() == WASHER) {
-	//		CGlobalPredictions::WashersPerTick.push_back(vector<CMyWasher>(depth + 1));
-	//		CGlobalPredictions::WashersPerTick.back()[0] = CMyWasher(p, -1);
-	//	} else {
-	//		CGlobalPredictions::TiresPerTick.push_back(vector<CMyTire>(depth + 1));
-	//		CGlobalPredictions::TiresPerTick.back()[0] = CMyTire(p, -1);
+	//predictions[0] = currentWorld;
+	//CWorldSimulator::Instance().SetPrecision(2);
+	//CWorldSimulator::Instance().SetOptions(false, false, false);
+	//CMyMove moves[4];
+	//for (int tick = 1; tick < predictionsSize; tick++) {
+	//	for (const auto& m : previousResult.MoveList) {
+	//		if (tick >= m.Start && tick < m.End) {
+	//			moves[0] = m.Move;
+	//		}
 	//	}
-	//}
-	//for (int tick = 0; tick < depth; tick++) {
-	//	for (size_t i = 0; i < CGlobalPredictions::WashersPerTick.size(); i++) {
-	//		CMyWasher washer = CGlobalPredictions::WashersPerTick[i][tick];
-	//		washer = simulator.Predict(washer, tick);
-	//		CGlobalPredictions::WashersPerTick[i][tick + 1] = washer;
-	//	}
-	//	for (size_t i = 0; i < CGlobalPredictions::TiresPerTick.size(); i++) {
-	//		CMyTire tire = CGlobalPredictions::TiresPerTick[i][tick];
-	//		tire = simulator.Predict(tire, tick);
-	//		if (tire.Speed.Length() < 0.25 * 60) break; // если шина тер€ет много скорости - она убираетс€ из мира
-	//		CGlobalPredictions::TiresPerTick[i][tick + 1] = tire;
-	//	}
-	//	for (size_t i = 0; i < CGlobalPredictions::EnemyCarsPerTick.size(); i++) {
-	//		CMyCar enemyCar = CGlobalPredictions::EnemyCarsPerTick[i][tick];
-	//		enemyCar = simulator.Predict(enemyCar, defaultEnemyMove, tick);
-	//		CGlobalPredictions::EnemyCarsPerTick[i][tick + 1] = enemyCar;
-	//	}
+	//	predictions[tick] = CWorldSimulator::Instance().Simulate(predictions[tick - 1], moves);
 	//}
 }
 
 void MyStrategy::processShooting()
 {
-	//if (self->getProjectileCount() == 0) {
-	//	return;
-	//}
-
-	//static const int predictionLength = 40;
-	//double dmgScore = 0;
-	////CDrawPlugin::Instance().SetColor(255, 0, 0);
-
-	//vector<double> enemyDurabilities(CGlobalPredictions::EnemyCarsPerTick.size(), 0);
-	//for (size_t enemyIndex = 0; enemyIndex < CGlobalPredictions::EnemyCarsPerTick.size(); enemyIndex++) {
-	//	enemyDurabilities[enemyIndex] = CGlobalPredictions::EnemyCarsPerTick[enemyIndex][0].Durability;
-	//}
-
-	//int bulletsHit = 0;
-	//for (int offsetIndex = -1; offsetIndex <= 1; offsetIndex++) {
-	//	double projectileAngle = car.Angle + offsetIndex * game->getSideWasherAngle();
-	//	normalizeAngle(projectileAngle);
-	//	CVec2D projectilePos = car.Position;
-	//	CVec2D projectileSpeed(game->getWasherInitialSpeed(), 0);
-	//	projectileSpeed.Rotate(projectileAngle);
-	//	double projectileRadiusSqr = pow(game->getWasherRadius(), 2);
-	//	//double projectileRadiusSqr = 0; // дл€ повышенной точности
-	//	double projectileDmg = game->getWasherDamage();
-
-	//	const double carEffectiveRadiusSqr = pow((game->getCarHeight()) / 2, 2);
-	//	
-	//	bool hit = false;
-	//	for (int tick = 1; tick <= predictionLength; tick++) {
-	//		projectilePos += projectileSpeed;
-	//		// TODO: Ќормальна€ проверка коллизий.
-	//		for (size_t enemyIndex = 0; enemyIndex < CGlobalPredictions::EnemyCarsPerTick.size(); enemyIndex++) {
-	//			double& enemyDurability = enemyDurabilities[enemyIndex];
-	//			if (enemyDurability <= 1e-5) {
-	//				continue;
-	//			}
-	//			const CVec2D& enemyPos = CGlobalPredictions::EnemyCarsPerTick[enemyIndex][tick].Position;
-	//			const double distSqr = (enemyPos - projectilePos).LengthSquared();
-	//			if (distSqr < projectileRadiusSqr + carEffectiveRadiusSqr) {
-	//				if (enemyDurability > 1e-5) {
-	//					if (enemyDurability < projectileDmg) {
-	//						dmgScore += enemyDurability * game->getCarDamageScoreFactor();
-	//						dmgScore += game->getCarEliminationScore();
-	//						enemyDurability = 0;
-	//					} else {
-	//						dmgScore += projectileDmg * game->getCarDamageScoreFactor();
-	//						enemyDurability -= projectileDmg;
-	//					}
-	//				}
-	//				//CDrawPlugin::Instance().FillCircle(enemyPos, game->getWasherRadius());
-	//				hit = true;
-	//				bulletsHit++;
-	//				break;
-	//			}
+	//CMyWorld shootingPredictions[predictionsSize];
+	//shootingPredictions[0] = currentWorld;
+	//if (currentCar.Type == 0) {
+	//	auto& washers = shootingPredictions[0].Washers;
+	//	int i = 0;
+	//	while (i < CMyWorld::MaxWashers && washers[i].IsValid()) i++;
+	//	for (int j = -1; j <= 1; j++) {
+	//		if (i < CMyWorld::MaxWashers) {
+	//			washers[i].CarId = 0;
+	//			washers[i].Position = currentCar.Position;
+	//			const double angle = currentCar.Angle + j * game->getSideWasherAngle();
+	//			washers[i].Speed = CVec2D(cos(angle), sin(angle)) * game->getWasherInitialSpeed();
+	//			i++;
 	//		}
-	//		if (hit) break;
-	//		//CDrawPlugin::Instance().FillCircle(projectilePos, game->getWasherRadius());
+	//	}
+	//} else {
+	//	auto& tires = shootingPredictions[0].Tires;
+	//	int i = 0;
+	//	while (i < CMyWorld::MaxTires && tires[i].IsValid()) i++;
+	//	if (i < CMyWorld::MaxTires) {
+	//		tires[i].CarId = 0;
+	//		tires[i].Position = currentCar.Position;
+	//		tires[i].Speed = CVec2D(cos(currentCar.Angle), sin(currentCar.Angle)) * game->getTireInitialSpeed();
+	//		tires[i].AngularSpeed = 0;
+	//		i++;
 	//	}
 	//}
 
-	//if (dmgScore > 0) {
-	//	log.Stream() << "ApproxDmg: " << dmgScore << "; Bullets hit: " << bulletsHit << endl;
-	//	log.Stream() << enemyDurabilities[0] << " " << enemyDurabilities[1] << " " << enemyDurabilities[2] << endl;
+	//CWorldSimulator::Instance().SetPrecision(2);
+	//CWorldSimulator::Instance().SetOptions(false, false, false);
+	//CMyMove moves[4];
+	//for (int tick = 1; tick < predictionsSize; tick++) {
+	//	for (const auto& m : previousResult.MoveList) {
+	//		if (tick >= m.Start && tick < m.End) {
+	//			moves[0] = m.Move;
+	//		}
+	//	}
+	//	shootingPredictions[tick] = CWorldSimulator::Instance().Simulate(shootingPredictions[tick - 1], moves);
 	//}
 
-	//// —трел€ем, если предполагаем, что наберЄм какой-то минимум очков.
-	//if (self->getProjectileCount() == 1) {
-	//	if (dmgScore >= 100) {
-	//		resultMove->setThrowProjectile(true);
-	//	}
-	//} else if (self->getProjectileCount() > 1) {
-	//	if (dmgScore >= 40) {
-	//		resultMove->setThrowProjectile(true);
-	//	}
-	//}
 }
 
 void MyStrategy::processOil()

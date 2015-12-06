@@ -8,6 +8,7 @@
 #include "assert.h"
 #include "Arc2D.h"
 #include "Line2D.h"
+#include "Log.h"
 #include "MyTile.h"
 #include "Tools.h"
 
@@ -149,6 +150,57 @@ void CWorldSimulator::updateCar(const CMyMove& move, CMyCar& car, CCarInfo& carI
 {
 	carInfo.LengthwiseUnitVector = { cos(car.Angle), sin(car.Angle) };
 	carInfo.CrosswiseUnitVector = { -carInfo.LengthwiseUnitVector.Y, carInfo.LengthwiseUnitVector.X };
+
+	// Стрельба.
+	if (move.Shoot && car.ProjectilesCount > 0 && car.ProjectileCooldown == 0) {
+		if (car.Type == 0) {
+			int i = 0;
+			while (i < CMyWorld::MaxWashers && world.Washers[i].IsValid()) i++;
+			for (int j = -1; j <= 1; j++) {
+				if (i < CMyWorld::MaxWashers) {
+					world.Washers[i].CarId = 0;
+					world.Washers[i].Position = car.Position;
+					const double angle = car.Angle + j * game.getSideWasherAngle();
+					world.Washers[i].Speed = CVec2D(cos(angle), sin(angle)) * game.getWasherInitialSpeed();
+					i++;
+				} else {
+					CLog::Instance().Stream() << "Warning! Too many washers" << endl;
+				}
+			}
+		} else {
+			int i = 0;
+			while (i < CMyWorld::MaxTires && world.Tires[i].IsValid()) i++;
+			if (i < CMyWorld::MaxTires) {
+				world.Tires[i].CarId = 0;
+				world.Tires[i].Position = car.Position;
+				world.Tires[i].Speed = CVec2D(cos(car.Angle), sin(car.Angle)) * game.getTireInitialSpeed();
+				world.Tires[i].AngularSpeed = 0;
+				i++;
+			} else {
+				CLog::Instance().Stream() << "Warning! Too many tires" << endl;
+			}
+		}
+		car.ProjectilesCount -= 1;
+		car.ProjectileCooldown = game.getThrowProjectileCooldownTicks();
+	}
+	car.ProjectileCooldown = max(0, car.ProjectileCooldown - 1);
+
+	// Выбросить лужу.
+	if (move.Oil && car.OilCount > 0 && car.OilCooldown == 0) {
+		int i = 0;
+		while (i < CMyWorld::MaxOils && world.OilTicks[i] > 0) i++;
+		if (i < CMyWorld::MaxOils) {
+			CVec2D oilOffset(CMyCar::HalfWidth + game.getOilSlickInitialRange() + CMyOil::Radius, 0);
+			oilOffset.Rotate(car.Angle);
+			world.Oils[i].Position = car.Position - oilOffset;
+			world.Oils[i].LastTick = game.getOilSlickLifetime();
+		} else {
+			CLog::Instance().Stream() << "Warning! Too many oils" << endl;
+		}
+		car.OilCount -= 1;
+		car.OilCooldown = game.getSpillOilCooldownTicks();
+	}
+	car.OilCooldown = max(0, car.OilCooldown - 1);
 
 	// Проверка дохлости.
 	if (car.Durability < 1e-7) {
