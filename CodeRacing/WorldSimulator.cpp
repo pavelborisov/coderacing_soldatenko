@@ -61,14 +61,20 @@ void CWorldSimulator::SetOptions(bool _stopCollisions, bool _ignoreProjectiles, 
 
 CMyWorld CWorldSimulator::Simulate(const CMyWorld& startWorld, const CMyMove moves[CMyWorld::MaxCars]) const
 {
-	// TODO: NextWaypointIndex
 	CMyWorld world = startWorld;
+
+	// TODO: NextWaypointIndex
 	CCarInfo carInfos[CMyWorld::MaxCars];
 	for (int i = 0; i < CMyWorld::MaxCars; i++) {
 		if (world.Cars[i].IsFinished) {
 			continue;
 		}
 		updateCar(moves[i], world.Cars[i], carInfos[i], world);
+	}
+
+	// TODO: вынести в отдельный метод.
+	for (int i = 0; i < CMyWorld::MaxOils; i++) {
+		world.OilTicks[i] = max(0, world.OilTicks[i] - 1);
 	}
 
 	for (int subtick = 0; subtick < subtickCount; subtick++) {
@@ -143,6 +149,22 @@ CMyWorld CWorldSimulator::Simulate(const CMyWorld& startWorld, const CMyMove mov
 		}
 	}
 
+	// Проверка на масло.
+	// TODO: вынести в отдельный метод
+	for(auto& car : world.Cars) {
+		if (car.OiledTicks == 0) {
+			for (int oilIndex = 0; oilIndex < CMyWorld::MaxOils; oilIndex++) {
+				int& oilTicks = world.OilTicks[oilIndex];
+				if (oilTicks <= 0) continue;
+				const CMyOil& oil = world.Oils[oilIndex];
+				if ((car.Position - oil.Position).LengthSquared() <= pow(CMyOil::Radius, 2)) {
+					car.OiledTicks = min(oilTicks, game.getMaxOiledStateDurationTicks()) - 1;
+					oilTicks -= car.OiledTicks;
+				}
+			}
+		}
+	}
+
 	return world;
 }
 
@@ -193,7 +215,7 @@ void CWorldSimulator::updateCar(const CMyMove& move, CMyCar& car, CCarInfo& carI
 			CVec2D oilOffset(CMyCar::HalfWidth + game.getOilSlickInitialRange() + CMyOil::Radius, 0);
 			oilOffset.Rotate(car.Angle);
 			world.Oils[i].Position = car.Position - oilOffset;
-			world.Oils[i].LastTick = game.getOilSlickLifetime();
+			world.OilTicks[i] = game.getOilSlickLifetime();
 		} else {
 			CLog::Instance().Stream() << "Warning! Too many oils" << endl;
 		}
@@ -226,19 +248,6 @@ void CWorldSimulator::updateCar(const CMyMove& move, CMyCar& car, CCarInfo& carI
 	car.NitroTicks = max(0, car.NitroTicks - 1);
 	car.NitroCooldown = max(0, car.NitroCooldown - 1);
 
-	// Лужа
-	// TODO: Может, лужу тоже перенести в цикл по подтикам?
-	if (car.OiledTicks == 0) {
-		for (int oilIndex = 0; oilIndex < CMyWorld::MaxOils; oilIndex++) {
-			int& oilTicks = world.OilTicks[oilIndex];
-			if (oilTicks <= 0) continue;
-			const CMyOil& oil = world.Oils[oilIndex];
-			if ((car.Position - oil.Position).LengthSquared() <= 150 * 150) {
-				car.OiledTicks = min(oilTicks, game.getMaxOiledStateDurationTicks());
-				oilTicks -= car.OiledTicks;
-			}
-		}
-	}
 	carInfo.IsOiled = car.OiledTicks > 0;
 	car.OiledTicks = max(0, car.OiledTicks - 1);
 
@@ -804,8 +813,10 @@ void CWorldSimulator::collideCarWithWashers(int carId, CMyCar& car, CMyWorld& wo
 					const int washerPlayerId = world.Cars[washer.CarId].PlayerId;
 					if (car.PlayerId != washerPlayerId) {
 						world.Players[washerPlayerId].Score += static_cast<int>(100 * durabilityChange);
+						world.Players[washerPlayerId].DamageScore += static_cast<int>(100 * durabilityChange);
 						if (car.Durability == 0.0) {
 							world.Players[washerPlayerId].Score += 100;
+							world.Players[washerPlayerId].DamageScore += 100;;
 						}
 					}
 				}
@@ -896,8 +907,10 @@ void CWorldSimulator::collideCarWithTires(int carId, CMyCar& car, CMyWorld& worl
 					const int tirePlayerId = world.Cars[tire.CarId].PlayerId;
 					if (car.PlayerId != tirePlayerId) {
 						world.Players[tirePlayerId].Score += static_cast<int>(100 * durabilityChange);
+						world.Players[tirePlayerId].DamageScore += static_cast<int>(100 * durabilityChange);
 						if (car.Durability == 0.0) {
 							world.Players[tirePlayerId].Score += 100;
+							world.Players[tirePlayerId].DamageScore += 100;
 						}
 					}
 				}

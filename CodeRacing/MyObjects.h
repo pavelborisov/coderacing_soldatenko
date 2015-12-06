@@ -8,7 +8,6 @@
 
 struct CMyOil {
 	CVec2D Position;
-	int LastTick = 0; // TODO: Убрать
 
 	static const double Radius;
 
@@ -67,6 +66,7 @@ struct CMyTire {
 
 struct CMyPlayer {
 	int Score = 0;
+	int DamageScore = 0;
 
 	CMyPlayer();
 	explicit CMyPlayer(const model::Player& player);

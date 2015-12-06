@@ -53,7 +53,6 @@ private:
 	double startScore = INT_MIN;
 	double bestScore = INT_MIN;
 	std::vector<CMoveWithDuration> bestMoveList;
-	CState bestState;
 	std::vector<CState> stateCache;
 
 	static const std::vector<std::pair<std::vector<CMyMove>, std::vector<int>>> allMovesWithLengths;
@@ -64,7 +63,8 @@ private:
 	void processRouteScore(CState& state, bool firstTickBrake);
 	void processBonus(CState& state);
 	double evaluate(const CState& state) const;
-	void processShooting(CResult& result);
-	void processOil(CResult& result);
+	void postProcess(CResult& result);
+	void postProcessShooting(const CState& before, CResult& result);
+	void postProcessOil(const CState& before, CResult& result);
 
 };

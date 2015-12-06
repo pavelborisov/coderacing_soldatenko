@@ -8,8 +8,7 @@ CMyOil::CMyOil()
 {
 }
 CMyOil::CMyOil(const model::OilSlick& oil) :
-	Position(oil.getX(), oil.getY()),
-	LastTick(oil.getRemainingLifetime())
+	Position(oil.getX(), oil.getY())
 {
 }
 
@@ -74,7 +73,8 @@ CMyPlayer::CMyPlayer()
 {
 }
 CMyPlayer::CMyPlayer(const model::Player& player) :
-	Score(player.getScore())
+	Score(player.getScore()),
+	DamageScore(0)
 {
 }
 
