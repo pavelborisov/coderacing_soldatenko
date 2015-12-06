@@ -42,6 +42,8 @@ private:
 	CMyCar currentCar;
 	CMyWorld predictedWorld;;
 	CBestMoveFinder::CResult previousResult;
+	
+	int rear = 0;
 
 	MyStrategy& operator = (const MyStrategy&) { return *this; }
 

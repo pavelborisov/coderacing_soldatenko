@@ -31,8 +31,6 @@ void MyStrategy::move(const Car& _self, const World& _world, const Game& _game, 
 	game = &_game;
 	resultMove = &_resultMove;
 
-	if (world->getPlayers().size() == 2 && self->getType() == JEEP) return;
-
 	CDrawPluginSwitcher drawSwitcher(draw); 
 	currentTick = world->getTick();
 
@@ -46,7 +44,6 @@ void MyStrategy::move(const Car& _self, const World& _world, const Game& _game, 
 	updateWaypoints();
 	findTileRoute();
 	makeMove();
-	experiment();
 	predict();
 	doLog();
 	doDraw();
@@ -132,11 +129,8 @@ void MyStrategy::makeMove()
 	CBestMoveFinder::CResult result = bestMoveFinder.Process();
 	previousResult = result;
 	*resultMove = result.CurrentMove.Convert();
-	processShooting();
-	processOil();
 
 	// Тупой задний ход
-	static int rear = 0;
 	double angleToTarget = (tileRoute[1].ToVec() - currentCar.Position).GetAngle();
 	double angle = angleToTarget - currentCar.Angle;
 	normalizeAngle(angle);
@@ -195,161 +189,6 @@ void MyStrategy::makeMove()
 	}
 }
 
-void MyStrategy::predictObjects()
-{
-	//predictions[0] = currentWorld;
-	//CWorldSimulator::Instance().SetPrecision(2);
-	//CWorldSimulator::Instance().SetOptions(false, false, false);
-	//CMyMove moves[4];
-	//for (int tick = 1; tick < predictionsSize; tick++) {
-	//	for (const auto& m : previousResult.MoveList) {
-	//		if (tick >= m.Start && tick < m.End) {
-	//			moves[0] = m.Move;
-	//		}
-	//	}
-	//	predictions[tick] = CWorldSimulator::Instance().Simulate(predictions[tick - 1], moves);
-	//}
-}
-
-void MyStrategy::processShooting()
-{
-	//CMyWorld shootingPredictions[predictionsSize];
-	//shootingPredictions[0] = currentWorld;
-	//if (currentCar.Type == 0) {
-	//	auto& washers = shootingPredictions[0].Washers;
-	//	int i = 0;
-	//	while (i < CMyWorld::MaxWashers && washers[i].IsValid()) i++;
-	//	for (int j = -1; j <= 1; j++) {
-	//		if (i < CMyWorld::MaxWashers) {
-	//			washers[i].CarId = 0;
-	//			washers[i].Position = currentCar.Position;
-	//			const double angle = currentCar.Angle + j * game->getSideWasherAngle();
-	//			washers[i].Speed = CVec2D(cos(angle), sin(angle)) * game->getWasherInitialSpeed();
-	//			i++;
-	//		}
-	//	}
-	//} else {
-	//	auto& tires = shootingPredictions[0].Tires;
-	//	int i = 0;
-	//	while (i < CMyWorld::MaxTires && tires[i].IsValid()) i++;
-	//	if (i < CMyWorld::MaxTires) {
-	//		tires[i].CarId = 0;
-	//		tires[i].Position = currentCar.Position;
-	//		tires[i].Speed = CVec2D(cos(currentCar.Angle), sin(currentCar.Angle)) * game->getTireInitialSpeed();
-	//		tires[i].AngularSpeed = 0;
-	//		i++;
-	//	}
-	//}
-
-	//CWorldSimulator::Instance().SetPrecision(2);
-	//CWorldSimulator::Instance().SetOptions(false, false, false);
-	//CMyMove moves[4];
-	//for (int tick = 1; tick < predictionsSize; tick++) {
-	//	for (const auto& m : previousResult.MoveList) {
-	//		if (tick >= m.Start && tick < m.End) {
-	//			moves[0] = m.Move;
-	//		}
-	//	}
-	//	shootingPredictions[tick] = CWorldSimulator::Instance().Simulate(shootingPredictions[tick - 1], moves);
-	//}
-
-}
-
-void MyStrategy::processOil()
-{
-	//if (self->getOilCanisterCount() == 0) {
-	//	return;
-	//}
-
-	//static const int predictionLength = 50;
-	//static const double minEnemySpeed = 5;
-	//static const double minEnemySpeed2 = 20;
-	//static const double minEnemyAngularSpeed = PI / 90;
-	//static const double minEnemyDrift = PI / 20;
-	//double speedRelAngle = car.Speed.GetAngle() - car.Angle;
-	//normalizeAngle(speedRelAngle);
-	//if (abs(speedRelAngle) > PI / 2) {
-	//	// Мы сбросим лужу себе под колёса.
-	//	return;
-	//}
-
-	//const double oilRadius = game->getOilSlickRadius();
-	//CVec2D oilOffset(game->getOilSlickInitialRange() + game->getCarWidth() / 2 + oilRadius, 0);
-	//oilOffset.Rotate(car.Angle);
-	//const CVec2D oilPos = car.Position - oilOffset;
-	////CDrawPlugin::Instance().SetColor(196, 196, 196);
-	////CDrawPlugin::Instance().FillCircle(oilPos, oilRadius);
-
-	//// Выбрасываем лужу только, когда мы уверены, что в неё попадёт какой-либо враг сзади.
-	//// Попадание в мазут считается если центр машины попал внутрь окружности мазута.
-	//const double oilRadiusSqr = pow(oilRadius, 2);
-	//for (size_t enemyIndex = 0; enemyIndex < CGlobalPredictions::EnemyCarsPerTick.size(); enemyIndex++) {
-	//	for (int tick = 1; tick <= predictionLength; tick++) {
-	//		const CMyCar& enemy = CGlobalPredictions::EnemyCarsPerTick[enemyIndex][tick];
-	//		// Проверка, что автомобиль попал.
-	//		if ((enemy.Position - oilPos).LengthSquared() < oilRadiusSqr) {
-	//			double enemySpeedRelAngle = enemy.Speed.GetAngle() - enemy.Angle;
-	//			normalizeAngle(enemySpeedRelAngle);
-	//			double enemyDrift = abs(enemySpeedRelAngle);
-	//			enemyDrift = enemyDrift > PI / 2 ? PI - enemyDrift : enemyDrift;
-	//			if (enemy.Speed.Length() > minEnemySpeed && 
-	//				(enemyDrift > minEnemyDrift || abs(enemy.AngularSpeed > minEnemyAngularSpeed)))
-	//			{
-	//				resultMove->setSpillOil(true);
-	//				return;
-	//			}
-	//			if (enemy.Speed.Length() > minEnemySpeed2) {
-	//				resultMove->setSpillOil(true);
-	//				return;
-	//			}
-	//		}
-	//	}
-	//}
-}
-void MyStrategy::experiment()
-{
-	//double dist = CWaypointDistanceMap::Instance().Query(car.Position.X, car.Position.Y, car.Angle, nextWaypointIndex);
-	//log.Stream() << dist;
-	//for (int tileX = 0; tileX < CMyTile::SizeX(); tileX++) {
-	//	const int startX = tileX * CWaypointDistanceMap::tileSize / CWaypointDistanceMap::step;
-	//	const int endX = (tileX + 1) * CWaypointDistanceMap::tileSize / CWaypointDistanceMap::step;
-	//	for (int tileY = 0; tileY < CMyTile::SizeY(); tileY++) {
-	//		const int startY = tileY * CWaypointDistanceMap::tileSize / CWaypointDistanceMap::step;
-	//		const int endY = (tileY + 1) * CWaypointDistanceMap::tileSize / CWaypointDistanceMap::step;
-	//		for (int x = startX; x < endX; x++) {
-	//			for (int y = startY; y < endY; y++) {
-	//				const double worldX = (x + 0.5) * CWaypointDistanceMap::step;
-	//				const double worldY = (y + 0.5) * CWaypointDistanceMap::step;
-	//				//dist = CWaypointDistanceMap::Instance().QueryBestDirection(worldX, worldY, nextWaypointIndex);
-	//				dist = CWaypointDistanceMap::Instance().Query(worldX, worldY, car.Angle, nextWaypointIndex);
-	//				//dist;
-	//				CDrawPlugin::Instance().Text(worldX, worldY, to_string((int)dist).c_str(), 0x000000);
-	//			}
-	//		}
-	//	}
-	//}
-	//for (const auto& t : CGlobalPredictions::TiresPerTick) {
-	//	for (int i = 0; i < 3; i++) {
-	//		CLog::Instance().Stream() << "Tire Tick " << i << ": "
-	//			<< t[i].Position.X << "," << t[i].Position.Y << " "
-	//			<< t[i].Speed.X << "," << t[i].Speed.Y << " "
-	//			<< t[i].AngularSpeed << endl;
-	//	}
-	//	for (int i = 0; i < 30; i++) {
-	//		CDrawPlugin::Instance().Circle(t[i].Position.X, t[i].Position.Y, CMyTire::Radius, 0xFF0000);
-	//	}
-	//}
-
-	//CMyWorld simWorld = myWorld;
-	//CWorldSimulator::Instance().SetPrecision(2);
-	//for (int i = 0; i < 100; i++) {
-	//	simWorld = CWorldSimulator::Instance().Simulate(simWorld, moves);
-	//	int green = 100 + i;
-	//	simWorld.Draw(0xFF00FF + 0x000100 * green);
-	//}
-	//CWorldSimulator::Instance().SetPrecision(10);
-}
-
 void MyStrategy::predict()
 {
 	CMyMove moves[4];
@@ -375,14 +214,4 @@ void MyStrategy::doDraw()
 {
 	CVec2D nextWaypoint = waypointTiles[nextWaypointIndex].ToVec();
 	draw.FillCircle(nextWaypoint.X, nextWaypoint.Y, 50, 0xFF0000);
-
-	//for (const auto& c : prediction.RotatedRect.Corners) {
-	//	draw.FillCircle(c.X, c.Y, 1, 0x005500);
-	//}
-
-	//for (size_t i = 1; i < min(10U, tileRoute.size()); i++) {
-	//	CVec2D from = tileRoute[i - 1].ToVec();
-	//	CVec2D to = tileRoute[i].ToVec();
-	//	draw.Line(from.X, from.Y, to.X, to.Y, 0x00FF00);
-	//}
 }
