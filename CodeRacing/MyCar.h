@@ -51,4 +51,6 @@ struct CMyCar {
 	double GetInvertedAngularMass() const;
 
 	void SaveHistory();
+
+	void LogDifference(const CMyCar& car) const;
 };

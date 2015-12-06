@@ -10,6 +10,7 @@
 #include "Log.h"
 #include "MyCar.h"
 #include "MyTile.h"
+#include "MyWorld.h"
 #include "Simulator.h"
 #include "TileRouteFinder.h"
 #include "Vec2D.h"
@@ -39,6 +40,7 @@ private:
 
 	CSimulator simulator;
 	CMyCar prevPrediction;
+	CMyWorld prevWorldPrediction;
 	CMyCar car;
 	CMyCar prediction;
 	CBestMoveFinder::CResult previousResult;

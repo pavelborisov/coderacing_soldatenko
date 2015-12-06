@@ -31,6 +31,11 @@ void CVec2D::Rotate(double angle)
 	Y = yNew;
 }
 
+void CVec2D::Normalize()
+{
+	*this *= 1.0 / Length();
+}
+
 bool CVec2D::NearlyEquals(const CVec2D& v) const
 {
 	return abs(X - v.X) < epsilon && abs(Y - v.Y) < epsilon;

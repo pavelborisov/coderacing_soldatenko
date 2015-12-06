@@ -27,6 +27,7 @@ struct CVec2D {
 	// [-pi, pi]
 	double GetAngle() const;
 	void Rotate(double angle);
+	void Normalize();
 
 	bool NearlyEquals(const CVec2D& v) const;
 };

@@ -1,8 +1,9 @@
 #include "MyWorld.h"
 
-#include "assert.h"
-#include "Log.h"
 #include <map>
+#include "assert.h"
+#include "DrawPlugin.h"
+#include "Log.h"
 
 using namespace model;
 using namespace std;
@@ -84,4 +85,93 @@ CMyWorld::CMyWorld(const World& world, const Car& self)
 			Oils[nextOilId++] = CMyOil(o);
 		}
 	}
+}
+
+void CMyWorld::RemoveInvalidWashers()
+{
+	int left = 0;
+	for (int right = 1; right < MaxWashers; right++) {
+		if (Washers[right].IsValid()) {
+			while (Washers[left].IsValid() && left < right) {
+				left++;
+			}
+			if (left < right) {
+				swap(Washers[left], Washers[right]);
+			}
+		}
+	}
+}
+
+void CMyWorld::RemoveInvalidTires()
+{
+	int left = 0;
+	for (int right = 1; right < MaxWashers; right++) {
+		if (Tires[right].IsValid()) {
+			while (left < right && Tires[left].IsValid()) {
+				left++;
+			}
+			if (left < right) {
+				swap(Tires[left], Tires[right]);
+			}
+		}
+	}
+}
+
+void CMyWorld::Log() const
+{
+#ifdef LOGGING
+	for (int i = 0; i < MaxCars; i++) {
+		CLog::Instance().LogMyCar(Cars[i], "Car");
+	}
+	for (int i = 0; i < MaxWashers; i++) {
+		if (Washers[i].IsValid()) {
+			CLog::Instance().Stream() << "Washer: "
+				<< Washers[i].Position.X << " " << Washers[i].Position.Y << " "
+				<< Washers[i].Speed.X << " " << Washers[i].Speed.Y << endl;
+		}
+	}
+	for (int i = 0; i < MaxTires; i++) {
+		if (Tires[i].IsValid()) {
+			CLog::Instance().Stream() << "Tire: "
+				<< Tires[i].Position.X << " " << Tires[i].Position.Y << " "
+				<< Tires[i].Speed.X << " " << Tires[i].Speed.Y << " " << Tires[i].AngularSpeed << endl;
+		}
+	}
+	for (int i = 0; i < MaxOils; i++) {
+		if (OilTicks[i] > 0) {
+			CLog::Instance().Stream() << "Oil: "
+				<< Oils[i].Position.X << " " << Oils[i].Position.Y << " " << OilTicks[i] << endl;
+		}
+	}
+#endif
+}
+
+void CMyWorld::LogDifference(const CMyWorld& world) const
+{
+#ifdef LOGGING
+	Cars[0].LogDifference(world.Cars[0]);
+#endif
+}
+
+void CMyWorld::Draw(int color) const
+{
+#ifdef LOGGING
+	for (int i = 0; i < MaxCars; i++) {
+		for (int j = 0; j < 4; j++) {
+			const CVec2D& p1 = Cars[i].RotatedRect.Corners[j];
+			const CVec2D& p2 = Cars[i].RotatedRect.Corners[(j + 1) % 4];
+			CDrawPlugin::Instance().Line(p1.X, p1.Y, p2.X, p2.Y, color);
+		}
+	}
+	for (int i = 0; i < MaxWashers; i++) {
+		if (Washers[i].IsValid()) {
+			CDrawPlugin::Instance().Circle(Washers[i].Position.X, Washers[i].Position.Y, CMyWasher::Radius, color);
+		}
+	}
+	for (int i = 0; i < MaxTires; i++) {
+		if (Tires[i].IsValid()) {
+			CDrawPlugin::Instance().Circle(Tires[i].Position.X, Tires[i].Position.Y, CMyWasher::Radius, color);
+		}
+	}
+#endif
 }

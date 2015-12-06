@@ -11,6 +11,7 @@
 #include "MyWorld.h"
 #include "Tools.h"
 #include "WaypointsDistanceMap.h"
+#include "WorldSimulator.h"
 
 using namespace model;
 using namespace std;
@@ -142,13 +143,33 @@ void MyStrategy::makeMove()
 	predictObjects();
 
 	CMyWorld myWorld(*world, *self);
+	if (world->getTick() > 180) {
+		prevWorldPrediction.LogDifference(myWorld);
+	}
+	CMyMove moves[4];
+	moves[0].Engine = 1;
+	moves[0].Turn = 1;
+	moves[1].Engine = 0;
+	moves[2].Engine = 0;
+	moves[3].Engine = 0;
+	CWorldSimulator::Instance().SetGame(*game);
+	CWorldSimulator::Instance().SetPrecision(10);
+
+	CMyWorld predictedWorld = CWorldSimulator::Instance().Simulate(myWorld, moves);
+	//CMyCar testCar = simulator.Predict(myWorld.Cars[0], moves[0].Convert(), 1);
+	//predictedWorld.Cars[0].LogDifference(testCar);
+	prevWorldPrediction = predictedWorld;
+	predictedWorld.Draw(0x00FF00);
+	for (auto& c : predictedWorld.Cars) c.SaveHistory();
 
 	if (world->getTick() < 1000000) {
-		resultMove->setWheelTurn(1);
+		*resultMove = moves[0].Convert();
+		//resultMove->setWheelTurn(1);
+		//resultMove->setEnginePower(1);
 		//resultMove->setBrake(true);
-		if (world->getTick() >= 300) {
-			resultMove->setThrowProjectile(true);
-		}
+		//if (world->getTick() >= 300) {
+		//	resultMove->setThrowProjectile(true);
+		//}
 		return;
 	}
 

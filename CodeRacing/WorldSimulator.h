@@ -3,6 +3,7 @@
 #include "model\Game.h"
 #include "MyMove.h"
 #include "MyWorld.h"
+#include "Vec3D.h"
 
 class CWorldSimulator {
 public:
@@ -58,5 +59,26 @@ private:
 	void collideCarWithBonuses(CMyCar& car, CMyWorld& world) const;
 	void collideCarWithCar(CMyCar& carA, CMyCar& carB) const;
 
-	bool findCarWithLeftWallCollision(const CMyCar& car, double xWall, CCollisionInfo& collisionInfo) const;
+	bool findLineWithCircleCollision(const CVec2D& point1A, const CVec2D& point2A,
+		const CVec2D& positionB, double radiusB,
+		CCollisionInfo& collisionInfo) const;
+
+	void resolveCollisionStatic(
+		const CCollisionInfo& collisionInfo,
+		CVec2D& positionA, CVec2D& speedA, double& angularSpeedA, CRotatedRect& rotatedRectA, double& collisionDeltaSpeed,
+		double invertedMassA, double invertedAngularMassA,
+		double momentumTransferFactorAB, double surfaceFrictionFactorAB) const;
+	void resolveImpactStatic(
+		const CVec3D& vectorAC, const CVec3D& collisionNormalB, const CVec3D& relativeVelocityC,
+		CVec2D& speedA, double& angularSpeedA,
+		double invertedMassA, double invertedAngularMassA,
+		double momentumTransferFactorAB) const;
+	void resolveSurfaceFrictionStatic(
+		const CVec3D& vectorAC, const CVec3D& collisionNormalB, const CVec3D& relativeVelocityC,
+		CVec2D& speedA, double& angularSpeedA,
+		double invertedMassA, double invertedAngularMassA,
+		double surfaceFrictionFactorAB) const;
+	void pushBackBodiesStatic(
+		const CVec2D& collisionNormalB2D, double depth,
+		CVec2D& positionA, CRotatedRect& rotatedRect) const;
 };
