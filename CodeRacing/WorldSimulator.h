@@ -35,8 +35,8 @@ private:
 	};
 
 	model::Game game;
-	int subtickCount = 10;
-	double dTime = 0.1;
+	int subtickCount = 0;
+	double dTime = 0;
 	double forwardAccelByType[2] = { 0, 0 };
 	double rearAccelByType[2] = { 0, 0 };
 	double carLengthwiseFrictionFactorDt = 0;

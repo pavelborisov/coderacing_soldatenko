@@ -1,5 +1,7 @@
 #include "MyWorld.h"
 
+#include <algorithm>
+#include <vector>
 #include "assert.h"
 #include "DrawPlugin.h"
 #include "Log.h"
@@ -93,6 +95,7 @@ CMyWorld::CMyWorld(const World& world, const Car& self)
 				Washers[nextWasherId++] = CMyWasher(p, CarIdMap[p.getCarId()]);
 			} else {
 				CLog::Instance().Stream() << "Warning! Too many washers" << endl;
+				break;
 			}
 		} else if (p.getType() == TIRE) {
 			if (nextTireId < MaxTires) {
@@ -100,23 +103,33 @@ CMyWorld::CMyWorld(const World& world, const Car& self)
 				Tires[nextTireId++] = CMyTire(p, CarIdMap[p.getCarId()]);
 			} else {
 				CLog::Instance().Stream() << "Warning! Too many tires" << endl;
+				break;
 			}
 		} else {
 			assert(false);
 		}
 	}
 
+	// Ѕонусы отсортируем по близости к машине.
 	auto bonuses = world.getBonuses();
+	vector<pair<double, int>> bonusDistanceIndex;
+	for (size_t i = 0; i < bonuses.size(); i++) {
+		const double distance = (CVec2D(bonuses[i].getX(), bonuses[i].getY()) - Cars[0].Position).Length();
+		bonusDistanceIndex.push_back(make_pair(distance, i));
+	}
+	sort(bonusDistanceIndex.begin(), bonusDistanceIndex.end());
 	int nextBonusId = 0;
 	for (int i = 0; i < MaxBonuses; i++) {
 		BonusExist[i] = false;
 	}
-	for (const auto& b : bonuses) {
+	for (const auto& bdi : bonusDistanceIndex) {
 		if (nextBonusId < MaxBonuses) {
 			BonusExist[nextBonusId] = true;
-			Bonuses[nextBonusId++] = CMyBonus(b);
+			Bonuses[nextBonusId++] = CMyBonus(bonuses[bdi.second]);
 		} else {
-			CLog::Instance().Stream() << "Warning! Too many bonuses" << endl;
+			CLog::Instance().Stream() << "Warning! Too many bonuses. Stopping at "
+				<< bonusDistanceIndex[nextBonusId - 1].first << " distance" << endl;
+			break;
 		}
 	}
 
@@ -131,6 +144,7 @@ CMyWorld::CMyWorld(const World& world, const Car& self)
 			Oils[nextOilId++] = CMyOil(o);
 		} else {
 			CLog::Instance().Stream() << "Warning! Too many oils" << endl;
+			break;
 		}
 	}
 }

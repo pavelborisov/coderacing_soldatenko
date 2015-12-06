@@ -107,9 +107,6 @@ CMyCar::CMyCar(const CMyCar& car) :
 CMyCar::CMyCar(const model::Car& car) :
 	CMyCar(car, static_cast<int>(car.getPlayerId()))
 {
-	MedianAngularSpeed = MedianAngularSpeedHistory[HistoryId(PlayerId, Type)];
-	DeadTicks = Durability > 1e-5 ? 0 : DeadTicksHistory[HistoryId(PlayerId, Type)];
-	RotatedRect = CRotatedRect(Position, 210, 140, Angle);
 }
 
 CMyCar::CMyCar(const model::Car& car, int playerId) :
