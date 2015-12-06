@@ -12,7 +12,18 @@ using namespace std;
 static const int maxCollisionsDetected = 1;
 //static const double veryBadScoreDif = -10000;
 static const double veryBadScoreDif = -1000000;
-static const int carSimulationSubticksCount = 2;
+//static const int carSimulationSubticksCount = 2;
+
+static void setSimulatorMode(int tick)
+{
+	CWorldSimulator::Instance().SetPrecision(tick > 60 ? 1 : 2);
+	if (tick > 60) {
+		CWorldSimulator::Instance().SetOptions(true, true, true);
+	} else {
+		CWorldSimulator::Instance().SetOptions(false, false, false);
+	}
+
+}
 
 const vector<pair<vector<CMyMove>, vector<int>>> CBestMoveFinder::allMovesWithLengths = {
 	// ѕервое множество действий
@@ -59,7 +70,6 @@ CBestMoveFinder::CBestMoveFinder(
 
 CBestMoveFinder::CResult CBestMoveFinder::Process()
 {
-	CWorldSimulator::Instance().SetPrecision(carSimulationSubticksCount);
 	simulationTicks = 0;
 	bestScore = INT_MIN;
 	bestMoveList.clear();
@@ -84,6 +94,7 @@ CBestMoveFinder::CResult CBestMoveFinder::Process()
 	}
 	result.Score = bestScore;
 
+#ifdef LOGGING
 	/////////////////////////////// log
 	static int totalSimulationTicks = 0;
 	totalSimulationTicks += simulationTicks;
@@ -95,23 +106,22 @@ CBestMoveFinder::CResult CBestMoveFinder::Process()
 	}
 
 	//////////////////////////////////////////// draw best
-	//CMyCar simCar = car;
-	//const int simulationEnd = bestMoveList.back().End;
-	//for (int tick = 0; tick < simulationEnd; tick++) {
-	//	model::Move simMove;
-	//	for (const auto& m : bestMoveList) {
-	//		if (tick >= m.Start && tick < m.End) {
-	//			simMove = m.Move.Convert();
-	//		}
-	//	}
-	//	simCar = simulator.Predict(simCar, simMove, tick);
-	//	CDrawPlugin::Instance().FillCircle(simCar.Position.X, simCar.Position.Y, 5, 0x0000FF);
-	//}
-	//const double halfHeight = game.getCarHeight() / 2;
-	//const double halfWidth = game.getCarWidth() / 2;
-	//for (const auto& corner : simCar.RotatedRect.Corners) {
-	//	CDrawPlugin::Instance().FillCircle(corner.X, corner.Y, 5, 0x00FFFF);
-	//}
+	CMyWorld simWorld = startWorld;
+	const int simulationEnd = bestMoveList.back().End;
+	for (int tick = 0; tick < simulationEnd; tick++) {
+		CMyMove moves[4];
+		for (const auto& m : bestMoveList) {
+			if (tick >= m.Start && tick < m.End) {
+				moves[0] = m.Move;
+			}
+		}
+		setSimulatorMode(tick);
+		simWorld = CWorldSimulator::Instance().Simulate(simWorld, moves);
+		//int color = min(200, 100 + tick);
+		//simWorld.Draw(0xFF00FF + 0x000100 * color);
+		CDrawPlugin::Instance().FillCircle(simWorld.Cars[0].Position.X, simWorld.Cars[0].Position.Y, 5, 0x0000FF);
+	}
+#endif
 
 	return result;
 }
@@ -144,6 +154,7 @@ void CBestMoveFinder::processPreviousMoveList()
 				break;
 			}
 		}
+		setSimulatorMode(current.Tick);
 		current.World = CWorldSimulator::Instance().Simulate(current.World, moves);
 		simulationTicks++;
 
@@ -235,6 +246,7 @@ void CBestMoveFinder::processMoveIndex(size_t moveIndex, const std::vector<CMove
 			assert(current.Tick <= end); // ѕроверка правильного пор€дка в массиве lenghtsArray
 			// ѕродолжаем симулировать с того места, откуда закончили в предыдущий раз.
 			for (; current.Tick < end; current.Tick++) {
+				setSimulatorMode(current.Tick);
 				current.World = CWorldSimulator::Instance().Simulate(current.World, moves);
 				simulationTicks++;
 
@@ -303,25 +315,28 @@ void CBestMoveFinder::processRouteScore(CState& state, bool firstTickBrake)
 	processBonus(state);
 }
 
-void CBestMoveFinder::processBonus(CState& state)
+void CBestMoveFinder::processBonus(CState& /*state*/)
 {
-	const CMyCar& startCar = startWorld.Cars[0];
-	const CMyCar& car = state.World.Cars[0];
-	const double durabilityDifPositive = max(0.0, car.Durability - startCar.Durability);
-	const int ammoDifPositive = max(0, car.ProjectilesCount - startCar.ProjectilesCount);
-	const int nitroDifPositive = max(0, car.NitroCount - startCar.NitroCount);
-	const int oilDifPositive = max(0, car.OilCount - startCar.OilCount);
-	const int scoreDif = state.World.Players[0].Score - startWorld.Players[0].Score;
+	//const CMyCar& startCar = startWorld.Cars[0];
+	//const CMyCar& car = state.World.Cars[0];
+	//const double durabilityDifPositive = max(0.0, car.Durability - startCar.Durability);
+	//const int ammoDifPositive = max(0, car.ProjectilesCount - startCar.ProjectilesCount);
+	//const int nitroDifPositive = max(0, car.NitroCount - startCar.NitroCount);
+	//const int oilDifPositive = max(0, car.OilCount - startCar.OilCount);
+	//const int moneyDifPositive = max(0, car.MoneyCount - startCar.MoneyCount);
+	////int scoreDif = state.World.Players[0].Score - startWorld.Players[0].Score;
 
-	state.RouteScore += durabilityDifPositive * 1500;
-	state.RouteScore += ammoDifPositive * 400;
-	state.RouteScore += nitroDifPositive * 1000;
-	state.RouteScore += oilDifPositive * 200;
-	state.RouteScore += scoreDif * 15;
+	//state.RouteScore += durabilityDifPositive * 1500;
+	//state.RouteScore += ammoDifPositive * 400;
+	//state.RouteScore += nitroDifPositive * 1000;
+	//state.RouteScore += oilDifPositive * 200;
+	////state.RouteScore += scoreDif * 15;
+	//state.RouteScore += moneyDifPositive * 1500;
 }
 
 double CBestMoveFinder::evaluate(const CState& state) const
 {
+	const CMyCar& startCar = startWorld.Cars[0];
 	const CMyCar& car = state.World.Cars[0];
 	const double angle = car.Angle;
 	const double dist = CWaypointDistanceMap::Instance().Query(
@@ -341,6 +356,20 @@ double CBestMoveFinder::evaluate(const CState& state) const
 		// == -20000 при durability == 1 и == -200000 при durability == 0.01
 		score += -20000 * sqrt(1 / car.Durability);
 	}
+
+	const double durabilityDifPositive = max(0.0, car.Durability - startCar.Durability);
+	const int ammoDifPositive = max(0, car.ProjectilesCount - startCar.ProjectilesCount);
+	const int nitroDifPositive = max(0, car.NitroCount - startCar.NitroCount);
+	const int oilDifPositive = max(0, car.OilCount - startCar.OilCount);
+	const int moneyDifPositive = max(0, car.MoneyCount - startCar.MoneyCount);
+	//int scoreDif = state.World.Players[0].Score - startWorld.Players[0].Score;
+
+	score += durabilityDifPositive * 1500;
+	score += ammoDifPositive * 400;
+	score += nitroDifPositive * 1000;
+	score += oilDifPositive * 200;
+	score += moneyDifPositive * 1500;
+	//score += scoreDif * 15;
 
 	return score;
 }

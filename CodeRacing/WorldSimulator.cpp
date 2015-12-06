@@ -51,6 +51,13 @@ void CWorldSimulator::SetPrecision(int _subtickCount)
 	carRotationAirFrictionFactorDt = pow(1 - game.getCarRotationAirFrictionFactor(), dTime);
 }
 
+void CWorldSimulator::SetOptions(bool _stopCollisions, bool _ignoreProjectiles, bool _ignoreOtherCars)
+{
+	stopCollisions = _stopCollisions;
+	ignoreProjectiles = _ignoreProjectiles;
+	ignoreOtherCars = _ignoreOtherCars;
+}
+
 CMyWorld CWorldSimulator::Simulate(const CMyWorld& startWorld, const CMyMove moves[CMyWorld::MaxCars]) const
 {
 	// TODO: NextWaypointIndex
@@ -64,56 +71,72 @@ CMyWorld CWorldSimulator::Simulate(const CMyWorld& startWorld, const CMyMove mov
 	}
 
 	for (int subtick = 0; subtick < subtickCount; subtick++) {
-		// Сначала всё двигаем.
+		// Двигаем машины
 		for (int i = 0; i < CMyWorld::MaxCars; i++) {
+			if (ignoreOtherCars && i > 0) {
+				break;
+			}
 			if (world.Cars[i].IsFinished) {
 				continue;
 			}
 			moveCar(carInfos[i], world.Cars[i]);
 		}
-		for (int i = 0; i < CMyWorld::MaxWashers; i++) {
-			if (!world.Washers[i].IsValid()) {
-				break;
+
+
+		if(!ignoreProjectiles) {
+			// Двигаем снаряды
+			for (int i = 0; i < CMyWorld::MaxWashers; i++) {
+				if (!world.Washers[i].IsValid()) {
+					break;
+				}
+				moveWasher(world.Washers[i]);
 			}
-			moveWasher(world.Washers[i]);
-		}
-		for (int i = 0; i < CMyWorld::MaxTires; i++) {
-			if (!world.Tires[i].IsValid()) {
-				break;
+			for (int i = 0; i < CMyWorld::MaxTires; i++) {
+				if (!world.Tires[i].IsValid()) {
+					break;
+				}
+				moveTire(world.Tires[i]);
 			}
-			moveTire(world.Tires[i]);
+
+			// Коллизии снарядов со стенами и друг с другом
+			bool shouldRemoveInvalidTires = false;
+			for (int i = 0; i < CMyWorld::MaxTires; i++) {
+				if (!world.Tires[i].IsValid()) {
+					break;
+				}
+				collideTireWithWalls(world.Tires[i]);
+				collideTireWithWashers(world.Tires[i], world);
+				if (world.Tires[i].Speed.Length() < minTireSpeed) {
+					world.Tires[i].Invalidate();
+					shouldRemoveInvalidTires = true;
+				}
+			}
+			if (shouldRemoveInvalidTires) {
+				world.RemoveInvalidTires();
+			}
 		}
 
-		// Теперь разбираемся с коллизиями. Какой правильный порядок - хз.
-		bool shouldRemoveInvalidTires = false;
-		for (int i = 0; i < CMyWorld::MaxTires; i++) {
-			if (!world.Tires[i].IsValid()) {
-				break;
-			}
-			collideTireWithWalls(world.Tires[i]);
-			collideTireWithWashers(world.Tires[i], world);
-			if (world.Tires[i].Speed.Length() < minTireSpeed) {
-				world.Tires[i].Invalidate();
-				shouldRemoveInvalidTires = true;
-			}
-		}
-		if (shouldRemoveInvalidTires) {
-			world.RemoveInvalidTires();
-		}
-
+		// Коллизии машин
 		for (int i = 0; i < CMyWorld::MaxCars; i++) {
+			if (ignoreOtherCars && i > 0) {
+				break;
+			}
 			if (world.Cars[i].IsFinished) {
 				continue;
 			}
 			collideCarWithWalls(world.Cars[i]);
-			collideCarWithWashers(i, world.Cars[i], world);
-			collideCarWithTires(i, world.Cars[i], world);
 			collideCarWithBonuses(world.Cars[i], world);
-			for (int j = i + 1; j < CMyWorld::MaxCars; j++) {
-				if (world.Cars[j].IsFinished) {
-					continue;
+			if (!ignoreProjectiles) {
+				collideCarWithWashers(i, world.Cars[i], world);
+				collideCarWithTires(i, world.Cars[i], world);
+			}
+			if (!ignoreOtherCars) {
+				for (int j = i + 1; j < CMyWorld::MaxCars; j++) {
+					if (world.Cars[j].IsFinished) {
+						continue;
+					}
+					collideCarWithCar(world.Cars[i], world.Cars[j], world);
 				}
-				collideCarWithCar(world.Cars[i], world.Cars[j], world);
 			}
 		}
 	}
@@ -880,6 +903,7 @@ void CWorldSimulator::collideCarWithBonuses(CMyCar& car, CMyWorld& world) const
 				car.OilCount += 1;
 				break;
 			case model::BonusType::PURE_SCORE:
+				car.MoneyCount += 1;
 				world.Players[car.PlayerId].Score += 100;
 				break;
 			default:
@@ -1118,10 +1142,15 @@ void CWorldSimulator::resolveImpactStatic(
 		return;
 	}
 
-	CVec3D velocityChangeA = collisionNormalB * (impulseChange * invertedMassA);
-	speedA = { speedA.X + velocityChangeA.X, speedA.Y + velocityChangeA.Y };
-	CVec3D angularVelocityChangeA = vectorAC.Cross(collisionNormalB * impulseChange) * invertedAngularMassA;
-	angularSpeedA = angularSpeedA + angularVelocityChangeA.Z;
+	if (stopCollisions) {
+		speedA = { 0, 0 };
+		angularSpeedA = 0;
+	} else {
+		CVec3D velocityChangeA = collisionNormalB * (impulseChange * invertedMassA);
+		speedA = { speedA.X + velocityChangeA.X, speedA.Y + velocityChangeA.Y };
+		CVec3D angularVelocityChangeA = vectorAC.Cross(collisionNormalB * impulseChange) * invertedAngularMassA;
+		angularSpeedA = angularSpeedA + angularVelocityChangeA.Z;
+	}
 }
 
 void CWorldSimulator::resolveSurfaceFrictionStatic(
@@ -1152,10 +1181,15 @@ void CWorldSimulator::resolveSurfaceFrictionStatic(
 		return;
 	}
 
-	CVec3D velocityChangeA = tangent * (impulseChange * invertedMassA);
-	speedA = { speedA.X + velocityChangeA.X, speedA.Y + velocityChangeA.Y };
-	CVec3D angularVelocityChangeA = vectorAC.Cross(tangent * impulseChange) * invertedAngularMassA;
-	angularSpeedA = angularSpeedA + angularVelocityChangeA.Z;
+	if (stopCollisions) {
+		speedA = { 0, 0 };
+		angularSpeedA = 0;
+	} else {
+		CVec3D velocityChangeA = tangent * (impulseChange * invertedMassA);
+		speedA = { speedA.X + velocityChangeA.X, speedA.Y + velocityChangeA.Y };
+		CVec3D angularVelocityChangeA = vectorAC.Cross(tangent * impulseChange) * invertedAngularMassA;
+		angularSpeedA = angularSpeedA + angularVelocityChangeA.Z;
+	}
 }
 
 void CWorldSimulator::pushBackBodiesStatic(
@@ -1217,15 +1251,23 @@ void CWorldSimulator::resolveImpact(
 		return;
 	}
 
-	CVec3D velocityChangeA = collisionNormalB * (impulseChange * invertedMassA);
-	speedA = { speedA.X + velocityChangeA.X, speedA.Y + velocityChangeA.Y };
-	CVec3D angularVelocityChangeA = vectorAC.Cross(collisionNormalB * impulseChange) * invertedAngularMassA;
-	angularSpeedA = angularSpeedA + angularVelocityChangeA.Z;
 
-	CVec3D velocityChangeB = collisionNormalB * (impulseChange * invertedMassB);
-	speedB = { speedB.X - velocityChangeB.X, speedB.Y - velocityChangeB.Y };
-	CVec3D angularVelocityChangeB = vectorBC.Cross(collisionNormalB * impulseChange) * invertedAngularMassB;
-	angularSpeedB = angularSpeedB - angularVelocityChangeB.Z;
+	if (stopCollisions) {
+		speedA = { 0, 0 };
+		angularSpeedA = 0;
+		speedB = { 0, 0 };
+		angularSpeedB = 0;
+	} else {
+		CVec3D velocityChangeA = collisionNormalB * (impulseChange * invertedMassA);
+		speedA = { speedA.X + velocityChangeA.X, speedA.Y + velocityChangeA.Y };
+		CVec3D angularVelocityChangeA = vectorAC.Cross(collisionNormalB * impulseChange) * invertedAngularMassA;
+		angularSpeedA = angularSpeedA + angularVelocityChangeA.Z;
+
+		CVec3D velocityChangeB = collisionNormalB * (impulseChange * invertedMassB);
+		speedB = { speedB.X - velocityChangeB.X, speedB.Y - velocityChangeB.Y };
+		CVec3D angularVelocityChangeB = vectorBC.Cross(collisionNormalB * impulseChange) * invertedAngularMassB;
+		angularSpeedB = angularSpeedB - angularVelocityChangeB.Z;
+	}
 }
 
 void CWorldSimulator::resolveSurfaceFriction(
@@ -1260,15 +1302,22 @@ void CWorldSimulator::resolveSurfaceFriction(
 		return;
 	}
 
-	CVec3D velocityChangeA = tangent * (impulseChange * invertedMassA);
-	speedA = { speedA.X + velocityChangeA.X, speedA.Y + velocityChangeA.Y };
-	CVec3D angularVelocityChangeA = vectorAC.Cross(tangent * impulseChange) * invertedAngularMassA;
-	angularSpeedA = angularSpeedA + angularVelocityChangeA.Z;
+	if (stopCollisions) {
+		speedA = { 0, 0 };
+		angularSpeedA = 0;
+		speedB = { 0, 0 };
+		angularSpeedB = 0;
+	} else {
+		CVec3D velocityChangeA = tangent * (impulseChange * invertedMassA);
+		speedA = { speedA.X + velocityChangeA.X, speedA.Y + velocityChangeA.Y };
+		CVec3D angularVelocityChangeA = vectorAC.Cross(tangent * impulseChange) * invertedAngularMassA;
+		angularSpeedA = angularSpeedA + angularVelocityChangeA.Z;
 
-	CVec3D velocityChangeB = tangent * (impulseChange * invertedMassB);
-	speedB = { speedB.X - velocityChangeB.X, speedB.Y - velocityChangeB.Y };
-	CVec3D angularVelocityChangeB = vectorBC.Cross(tangent * impulseChange) * invertedAngularMassB;
-	angularSpeedB = angularSpeedB - angularVelocityChangeB.Z;
+		CVec3D velocityChangeB = tangent * (impulseChange * invertedMassB);
+		speedB = { speedB.X - velocityChangeB.X, speedB.Y - velocityChangeB.Y };
+		CVec3D angularVelocityChangeB = vectorBC.Cross(tangent * impulseChange) * invertedAngularMassB;
+		angularSpeedB = angularSpeedB - angularVelocityChangeB.Z;
+	}
 }
 
 void CWorldSimulator::pushBackBodies(

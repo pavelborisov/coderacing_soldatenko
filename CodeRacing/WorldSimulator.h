@@ -15,6 +15,7 @@ public:
 
 	void SetGame(const model::Game& game);
 	void SetPrecision(int subtickCount);
+	void SetOptions(bool stopCollisions, bool ignoreProjectiles, bool ignoreOtherCars);
 
 	CMyWorld Simulate(const CMyWorld& startWorld, const CMyMove moves[CMyWorld::MaxCars]) const;
 
@@ -44,6 +45,10 @@ private:
 	double carMovementAirFrictionFactorDt = 0;
 	double carRotationAirFrictionFactorDt = 0;
 
+	bool stopCollisions = false;
+	bool ignoreProjectiles = false;
+	bool ignoreOtherCars = false;
+
 	CWorldSimulator();
 
 	void updateCar(const CMyMove& move, CMyCar& car, CCarInfo& carInfo, CMyWorld& world) const;
@@ -55,9 +60,9 @@ private:
 	void collideTireWithWashers(CMyTire& tire, CMyWorld& world) const;
 	void collideTireWithTires(CMyTire& tire, CMyWorld& world) const;
 	void collideCarWithWalls(CMyCar& car) const;
+	void collideCarWithBonuses(CMyCar& car, CMyWorld& world) const;
 	void collideCarWithWashers(int carId, CMyCar& car, CMyWorld& world) const;
 	void collideCarWithTires(int carId, CMyCar& car, CMyWorld& world) const;
-	void collideCarWithBonuses(CMyCar& car, CMyWorld& world) const;
 	void collideCarWithCar(CMyCar& carA, CMyCar& carB, CMyWorld& world) const;
 
 	bool findLineWithCircleCollision(const CVec2D& point1A, const CVec2D& point2A,

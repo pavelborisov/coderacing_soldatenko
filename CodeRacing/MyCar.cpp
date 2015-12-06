@@ -63,6 +63,7 @@ CMyCar::CMyCar() :
 	ProjectilesCount(0),
 	OilCount(0),
 	OiledTicks(0),
+	MoneyCount(0),
 	DeadTicks(0),
 	Type(0),
 	PlayerId(0),
@@ -89,6 +90,7 @@ CMyCar::CMyCar(const CMyCar& car) :
 	ProjectilesCount(car.ProjectilesCount),
 	OilCount(car.OilCount),
 	OiledTicks(car.OiledTicks),
+	MoneyCount(car.MoneyCount),
 	DeadTicks(car.DeadTicks),
 	Type(car.Type),
 	PlayerId(car.PlayerId),
@@ -122,6 +124,7 @@ CMyCar::CMyCar(const model::Car& car, int playerId) :
 	ProjectilesCount(car.getProjectileCount()),
 	OilCount(car.getOilCanisterCount()),
 	OiledTicks(car.getRemainingOiledTicks()),
+	MoneyCount(0),
 	DeadTicks(0), // Как узнать, сколько тиков ещё машина будет дохлой?
 	Type(car.getType()),
 	PlayerId(playerId),

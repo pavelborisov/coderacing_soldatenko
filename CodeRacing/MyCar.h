@@ -29,6 +29,7 @@ struct CMyCar {
 	int ProjectilesCount;
 	int OilCount;
 	int OiledTicks;
+	int MoneyCount;
 	int DeadTicks;
 	int Type;
 	int PlayerId;
