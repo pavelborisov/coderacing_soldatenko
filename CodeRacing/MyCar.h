@@ -39,6 +39,8 @@ struct CMyCar {
 	static const double CircumcircleRadius;
 	static const double CarToWallMomentumTransferFactor;
 	static const double CarToWallSurfaceFrictionFactor;
+	static const double CarToTireMomentumTransferFactor;
+	static const double CarToTireSurfaceFrictionFactor;
 	static const double BaseAngularMass;
 
 	CMyCar();

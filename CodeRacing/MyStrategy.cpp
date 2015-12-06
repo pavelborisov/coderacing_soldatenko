@@ -148,8 +148,9 @@ void MyStrategy::makeMove()
 		prevWorldPrediction.LogDifference(myWorld);
 	}
 	CMyMove moves[4];
-	moves[0].Engine = -1;
-	moves[0].Turn = 1;
+	//moves[0].Engine = 1;
+	//moves[0].Turn = 0;
+	moves[0].Brake = 1;
 	moves[1].Engine = 0;
 	moves[2].Engine = 0;
 	moves[3].Engine = 0;
@@ -176,6 +177,7 @@ void MyStrategy::makeMove()
 
 	if (world->getTick() < 1000000) {
 		*resultMove = moves[0].Convert();
+		resultMove->setThrowProjectile(true);
 		//resultMove->setWheelTurn(1);
 		//resultMove->setEnginePower(1);
 		//resultMove->setBrake(true);

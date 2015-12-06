@@ -54,8 +54,8 @@ private:
 	void collideTireWithWalls(CMyTire& tire) const;
 	void collideTireWithWashers(CMyTire& tire, CMyWorld& world) const;
 	void collideCarWithWalls(CMyCar& car) const;
-	void collideCarWithWashers(CMyCar& car, CMyWorld& world) const;
-	void collideCarWithTires(CMyCar& car, CMyWorld& world) const;
+	void collideCarWithWashers(int carId, CMyCar& car, CMyWorld& world) const;
+	void collideCarWithTires(int carId, CMyCar& car, CMyWorld& world) const;
 	void collideCarWithBonuses(CMyCar& car, CMyWorld& world) const;
 	void collideCarWithCar(CMyCar& carA, CMyCar& carB) const;
 
@@ -81,4 +81,27 @@ private:
 	void pushBackBodiesStatic(
 		const CVec2D& collisionNormalB2D, double depth,
 		CVec2D& positionA, CRotatedRect& rotatedRect) const;
+
+	void resolveCollision(
+		const CCollisionInfo& collisionInfo,
+		CVec2D& positionA, CVec2D& speedA, double& angularSpeedA, CRotatedRect& rotatedRectA,
+		CVec2D& positionB, CVec2D& speedB, double& angularSpeedB, CRotatedRect& rotatedRectB, double& collisionDeltaSpeed,
+		double invertedMassA, double invertedAngularMassA, double invertedMassB, double invertedAngularMassB,
+		double momentumTransferFactorAB, double surfaceFrictionFactorAB) const;
+	void resolveImpact(
+		const CVec3D& vectorAC, const CVec3D& vectorBC, const CVec3D& collisionNormalB, const CVec3D& relativeVelocityC,
+		CVec2D& speedA, double& angularSpeedA,
+		CVec2D& speedB, double& angularSpeedB,
+		double invertedMassA, double invertedAngularMassA, double invertedMassB, double invertedAngularMassB,
+		double momentumTransferFactorAB) const;
+	void resolveSurfaceFriction(
+		const CVec3D& vectorAC, const CVec3D& vectorBC, const CVec3D& collisionNormalB, const CVec3D& relativeVelocityC,
+		CVec2D& speedA, double& angularSpeedA,
+		CVec2D& speedB, double& angularSpeedB,
+		double invertedMassA, double invertedAngularMassA, double invertedMassB, double invertedAngularMassB,
+		double surfaceFrictionFactorAB) const;
+	void pushBackBodies(
+		const CVec2D& collisionNormalB2D, double depth,
+		CVec2D& positionA, CRotatedRect& rotatedRectA,
+		CVec2D& positionB, CRotatedRect& rotatedRectB) const;
 };

@@ -30,6 +30,8 @@ const double CMyCar::HalfHeight = Height / 2;
 const double CMyCar::CircumcircleRadius = sqrt(pow(HalfWidth, 2) + pow(HalfHeight, 2));
 const double CMyCar::CarToWallMomentumTransferFactor = 0.25;
 const double CMyCar::CarToWallSurfaceFrictionFactor = 0.25 * 0.25;
+const double CMyCar::CarToTireMomentumTransferFactor = 0.5;
+const double CMyCar::CarToTireSurfaceFrictionFactor = 0.25;
 const double CMyCar::BaseAngularMass = 1.0 / 12 * (Width * Width + Height * Height);
 
 CRotatedRect::CRotatedRect(const CVec2D& center, double width, double height, double angle)

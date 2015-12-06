@@ -18,6 +18,7 @@ static const double wallOffsetMin = CMyTile::WallRadius;
 static const double wallOffsetMin2 = CMyTile::WallRadius * 2;
 static const double wallOffsetMax = CMyTile::TileSize - CMyTile::WallRadius;
 static const double wallOffsetMax2 = CMyTile::TileSize - 2 * CMyTile::WallRadius;
+static const double minTireSpeed = 60 * 0.25;
 
 static const double limit(double val, double lim)
 {
@@ -84,7 +85,6 @@ CMyWorld CWorldSimulator::Simulate(const CMyWorld& startWorld, const CMyMove mov
 			}
 			collideTireWithWalls(world.Tires[i]);
 			collideTireWithWashers(world.Tires[i], world);
-			static const double minTireSpeed = 60 * 0.25;
 			if (world.Tires[i].Speed.Length() < minTireSpeed) {
 				world.Tires[i].Invalidate();
 				shouldRemoveInvalidTires = true;
@@ -93,10 +93,11 @@ CMyWorld CWorldSimulator::Simulate(const CMyWorld& startWorld, const CMyMove mov
 		if (shouldRemoveInvalidTires) {
 			world.RemoveInvalidTires();
 		}
+
 		for (int i = 0; i < CMyWorld::MaxCars; i++) {
 			collideCarWithWalls(world.Cars[i]);
-			collideCarWithWashers(world.Cars[i], world);
-			collideCarWithTires(world.Cars[i], world);
+			collideCarWithWashers(i, world.Cars[i], world);
+			collideCarWithTires(i, world.Cars[i], world);
 			collideCarWithBonuses(world.Cars[i], world);
 			for (int j = i + 1; j < CMyWorld::MaxCars; j++) {
 				collideCarWithCar(world.Cars[i], world.Cars[j]);
@@ -642,14 +643,80 @@ void CWorldSimulator::collideCarWithWalls(CMyCar& car) const
 	}
 }
 
-void CWorldSimulator::collideCarWithWashers(CMyCar& /*car*/, CMyWorld& /*world*/) const
+void CWorldSimulator::collideCarWithWashers(int carId, CMyCar& car, CMyWorld& world) const
 {
-
+	// TODO: Ѕолее точное определение?
+	bool shouldRemoveInvalidWashers = false;
+	for (auto& w : world.Washers) {
+		if (!w.IsValid()) {
+			break;
+		}
+		if (w.CarId == carId) {
+			continue;
+		}
+		static const double collisionDistanceSqr = pow(CMyWasher::Radius + CMyCar::HalfHeight, 2);
+		if ((w.Position - car.Position).LengthSquared() < collisionDistanceSqr) {
+			car.Durability = max(0.0, car.Durability - 0.15);
+			w.Invalidate();
+			shouldRemoveInvalidWashers = true;
+			// TODO: Ќачисл€ть очки игрокам.
+		}
+	}
+	if (shouldRemoveInvalidWashers) {
+		world.RemoveInvalidWashers();
+	}
 }
 
-void CWorldSimulator::collideCarWithTires(CMyCar& /*car*/, CMyWorld& /*world*/) const
+void CWorldSimulator::collideCarWithTires(int carId, CMyCar& car, CMyWorld& world) const
 {
-
+	// TODO: ѕроверка "невидимости"
+	CCollisionInfo collisionInfo;
+	CRotatedRect noRotatedRect;
+	double collisionDeltaSpeed = 0;
+	bool shouldRemoveInvalidTires = false;
+	for (auto& tire : world.Tires) {
+		if (!tire.IsValid()) {
+			break;
+		}
+		static const double minCollisionDistanceSqr = pow(CMyTire::Radius + CMyCar::CircumcircleRadius, 2);
+		if ((tire.Position - car.Position).LengthSquared() > minCollisionDistanceSqr) {
+			// Ўина находитс€ слишком далеко.
+			continue;
+		}
+		for (int i = 0; i < 4; i++) {
+			const CVec2D& p1 = car.RotatedRect.Corners[i];
+			const CVec2D& p2 = car.RotatedRect.Corners[(i + 1) % 4];
+			if (findLineWithCircleCollision(p1, p2, tire.Position, CMyTire::Radius, collisionInfo)) {
+				if (carId == tire.CarId) {
+					// ѕроверка, что шиной только что выстрелили - если еЄ центр находитс€ внутри машины,
+					// или если вектор скорости направлен от машины.
+					const CLine2D side = CLine2D::FromPoints(p1, p2);
+					if (side.GetSignedDistanceFrom(tire.Position) < 0) {
+						// Ўина находитс€ внутри машины относительно стороны столкновени€.
+						continue;
+					} else if(tire.Speed.DotProduct(collisionInfo.NormalB) < 0) {
+						// Ўина находитс€ снаружи, но еЄ скорость направлена от стороны, с которой предполагаетс€ столкновение.
+						continue;
+					}
+				}
+				resolveCollision(collisionInfo,
+					car.Position, car.Speed, car.AngularSpeed, car.RotatedRect,
+					tire.Position, tire.Speed, tire.AngularSpeed, noRotatedRect, collisionDeltaSpeed,
+					car.GetInvertedMass(), car.GetInvertedAngularMass(),
+					tire.InvertedMass, tire.InvertedAngularMass,
+					car.CarToTireMomentumTransferFactor, car.CarToTireSurfaceFrictionFactor);
+				if (tire.Speed.Length() < minTireSpeed) {
+					tire.Invalidate();
+					shouldRemoveInvalidTires = true;
+				}
+				// TODO: Ќачисл€ть очки и посчитать повереждени€
+				break;
+			}
+		}
+	}
+	if (shouldRemoveInvalidTires) {
+		world.RemoveInvalidTires();
+	}
 }
 
 void CWorldSimulator::collideCarWithBonuses(CMyCar& /*car*/, CMyWorld& /*world*/) const
@@ -661,7 +728,6 @@ void CWorldSimulator::collideCarWithCar(CMyCar& /*carA*/, CMyCar& /*carB*/) cons
 {
 
 }
-
 
 bool CWorldSimulator::findLineWithCircleCollision(const CVec2D& point1A, const CVec2D& point2A,
 	const CVec2D& positionB, double radiusB,
@@ -815,5 +881,123 @@ void CWorldSimulator::pushBackBodiesStatic(
 	positionA += shift;
 	for (auto& c : rotatedRect.Corners) {
 		c += shift;
+	}
+}
+
+void CWorldSimulator::resolveCollision(
+	const CCollisionInfo& collisionInfo,
+	CVec2D& positionA, CVec2D& speedA, double& angularSpeedA, CRotatedRect& rotatedRectA,
+	CVec2D& positionB, CVec2D& speedB, double& angularSpeedB, CRotatedRect& rotatedRectB, double& collisionDeltaSpeed,
+	double invertedMassA, double invertedAngularMassA, double invertedMassB, double invertedAngularMassB,
+	double momentumTransferFactorAB, double surfaceFrictionFactorAB) const
+{
+	CVec3D collisionNormalB(collisionInfo.NormalB);
+	CVec3D vectorAC(collisionInfo.Point - positionA);
+	CVec3D vectorBC(collisionInfo.Point - positionB);
+	CVec3D angularVelocityPartAC = CVec3D(angularSpeedA).Cross(vectorAC);
+	CVec3D angularVelocityPartBC = CVec3D(angularSpeedB).Cross(vectorBC);
+	CVec3D velocityAC = angularVelocityPartAC + CVec3D(speedA);
+	CVec3D velocityBC = angularVelocityPartBC + CVec3D(speedB);
+	CVec3D relativeVelocityC = velocityAC - velocityBC;
+
+	const double normalRelativeVelocityLengthC = -relativeVelocityC.DotProduct(collisionNormalB);
+	if (normalRelativeVelocityLengthC > -epsilon) {
+		resolveImpact(vectorAC, vectorBC, collisionNormalB, relativeVelocityC,
+			speedA, angularSpeedA, speedB, angularSpeedB,
+			invertedMassA, invertedAngularMassA, invertedMassB, invertedAngularMassB, momentumTransferFactorAB);
+		resolveSurfaceFriction(vectorAC, vectorBC, collisionNormalB, relativeVelocityC,
+			speedA, angularSpeedA, speedB, angularSpeedB,
+			invertedMassA, invertedAngularMassA, invertedMassB, invertedAngularMassB, surfaceFrictionFactorAB);
+		collisionDeltaSpeed += normalRelativeVelocityLengthC;
+	}
+	pushBackBodies(collisionInfo.NormalB, collisionInfo.Depth, positionA, rotatedRectA, positionB, rotatedRectB);
+}
+
+void CWorldSimulator::resolveImpact(
+	const CVec3D& vectorAC, const CVec3D& vectorBC, const CVec3D& collisionNormalB, const CVec3D& relativeVelocityC,
+	CVec2D& speedA, double& angularSpeedA,
+	CVec2D& speedB, double& angularSpeedB,
+	double invertedMassA, double invertedAngularMassA, double invertedMassB, double invertedAngularMassB,
+	double momentumTransferFactorAB) const
+{
+	CVec3D denominatorPartA = vectorAC.Cross(collisionNormalB);
+	denominatorPartA *= invertedAngularMassA;
+	denominatorPartA = denominatorPartA.Cross(vectorAC);
+	CVec3D denominatorPartB = vectorBC.Cross(collisionNormalB);
+	denominatorPartB *= invertedAngularMassB;
+	denominatorPartB = denominatorPartB.Cross(vectorBC);
+	const double denominator = invertedMassA + invertedMassB + collisionNormalB.DotProduct(denominatorPartA + denominatorPartB);
+	const double impulseChange = -(1 + momentumTransferFactorAB) * relativeVelocityC.DotProduct(collisionNormalB) / denominator;
+	if (impulseChange < epsilon) {
+		return;
+	}
+
+	CVec3D velocityChangeA = collisionNormalB * (impulseChange * invertedMassA);
+	speedA = { speedA.X + velocityChangeA.X, speedA.Y + velocityChangeA.Y };
+	CVec3D angularVelocityChangeA = vectorAC.Cross(collisionNormalB * impulseChange) * invertedAngularMassA;
+	angularSpeedA = angularSpeedA + angularVelocityChangeA.Z;
+
+	CVec3D velocityChangeB = collisionNormalB * (impulseChange * invertedMassB);
+	speedB = { speedB.X - velocityChangeB.X, speedB.Y - velocityChangeB.Y };
+	CVec3D angularVelocityChangeB = vectorBC.Cross(collisionNormalB * impulseChange) * invertedAngularMassB;
+	angularSpeedB = angularSpeedB - angularVelocityChangeB.Z;
+}
+
+void CWorldSimulator::resolveSurfaceFriction(
+	const CVec3D& vectorAC, const CVec3D& vectorBC, const CVec3D& collisionNormalB, const CVec3D& relativeVelocityC,
+	CVec2D& speedA, double& angularSpeedA,
+	CVec2D& speedB, double& angularSpeedB,
+	double invertedMassA, double invertedAngularMassA, double invertedMassB, double invertedAngularMassB,
+	double surfaceFrictionFactorAB) const
+{
+	CVec3D tangent = relativeVelocityC - (collisionNormalB * (relativeVelocityC.DotProduct(collisionNormalB)));
+	if (tangent.LengthSquared() < epsilon * epsilon) {
+		return;
+	}
+
+	tangent *= 1.0 / tangent.Length();
+	static const double sqrt2 = sqrt(2);
+	const double surfaceFrictionFactorABSqrt = sqrt2 * sqrt(surfaceFrictionFactorAB);
+	const double surfaceFriction = surfaceFrictionFactorABSqrt * abs(relativeVelocityC.DotProduct(collisionNormalB)) / relativeVelocityC.Length();
+	if (surfaceFriction < epsilon) {
+		return;
+	}
+
+	CVec3D denominatorPartA = vectorAC.Cross(tangent);
+	denominatorPartA *= invertedAngularMassA;
+	denominatorPartA = denominatorPartA.Cross(vectorAC);
+	CVec3D denominatorPartB = vectorBC.Cross(tangent);
+	denominatorPartB *= invertedAngularMassB;
+	denominatorPartB = denominatorPartB.Cross(vectorBC);
+	const double denominator = invertedMassA + invertedMassB + tangent.DotProduct(denominatorPartA + denominatorPartB);
+	const double impulseChange = -surfaceFriction * relativeVelocityC.DotProduct(tangent) / denominator;
+	if (abs(impulseChange) < epsilon) {
+		return;
+	}
+
+	CVec3D velocityChangeA = tangent * (impulseChange * invertedMassA);
+	speedA = { speedA.X + velocityChangeA.X, speedA.Y + velocityChangeA.Y };
+	CVec3D angularVelocityChangeA = vectorAC.Cross(tangent * impulseChange) * invertedAngularMassA;
+	angularSpeedA = angularSpeedA + angularVelocityChangeA.Z;
+
+	CVec3D velocityChangeB = tangent * (impulseChange * invertedMassB);
+	speedB = { speedB.X - velocityChangeB.X, speedB.Y - velocityChangeB.Y };
+	CVec3D angularVelocityChangeB = vectorBC.Cross(tangent * impulseChange) * invertedAngularMassB;
+	angularSpeedB = angularSpeedB - angularVelocityChangeB.Z;
+}
+
+void CWorldSimulator::pushBackBodies(
+	const CVec2D& collisionNormalB2D, double depth,
+	CVec2D& positionA, CRotatedRect& rotatedRectA,
+	CVec2D& positionB, CRotatedRect& rotatedRectB) const
+{
+	CVec2D normalOffset = collisionNormalB2D * (0.5 * depth + epsilon);
+	positionA += normalOffset;
+	for (auto& c : rotatedRectA.Corners) {
+		c += normalOffset;
+	}
+	positionB -= normalOffset;
+	for (auto& c : rotatedRectB.Corners) {
+		c -= normalOffset;
 	}
 }
