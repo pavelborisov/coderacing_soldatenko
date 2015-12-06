@@ -148,7 +148,7 @@ void MyStrategy::makeMove()
 	}
 	CMyMove moves[4];
 	moves[0].Engine = 1;
-	moves[0].Turn = 1;
+	moves[0].Turn = -1;
 	moves[1].Engine = 0;
 	moves[2].Engine = 0;
 	moves[3].Engine = 0;

@@ -187,8 +187,10 @@ void CWorldSimulator::moveCar(CCarInfo& carInfo, CMyCar& car) const
 	// Обновление скорости.
 	car.Speed += carInfo.AccelerationDt;
 	car.Speed *= carMovementAirFrictionFactorDt;
-	const double frictionLengthwise = limit(car.Speed.DotProduct(carInfo.LengthwiseUnitVector), carLengthwiseFrictionFactorDt);
-	const double frictionCrosswise = limit(car.Speed.DotProduct(carInfo.CrosswiseUnitVector), carCrosswiseFrictionFactorDt);
+	const double frictionLengthwise = limit(car.Speed.DotProduct(carInfo.LengthwiseUnitVector),
+		(carInfo.IsBrake && !carInfo.IsOiled) ? carCrosswiseFrictionFactorDt : carLengthwiseFrictionFactorDt);
+	const double frictionCrosswise = limit(car.Speed.DotProduct(carInfo.CrosswiseUnitVector),
+		carInfo.IsOiled ? carLengthwiseFrictionFactorDt : carCrosswiseFrictionFactorDt);
 	car.Speed -= carInfo.LengthwiseUnitVector * frictionLengthwise + carInfo.CrosswiseUnitVector * frictionCrosswise;
 
 	// Обновление угла.
@@ -200,7 +202,8 @@ void CWorldSimulator::moveCar(CCarInfo& carInfo, CMyCar& car) const
 	// Все трения применяются к той части, которая отличается от базовой скорости. Сначала воздушное трение, потом общее трение.
 	car.AngularSpeed -= car.MedianAngularSpeed;
 	car.AngularSpeed *= carRotationAirFrictionFactorDt;
-	car.AngularSpeed -= limit(car.AngularSpeed, carRotationFrictionFactorDt);
+	car.AngularSpeed -= limit(car.AngularSpeed,
+		carInfo.IsOiled ? carRotationFrictionFactorDt / 5 : carRotationFrictionFactorDt);
 	car.AngularSpeed += car.MedianAngularSpeed;
 
 	normalizeAngle(car.Angle);
