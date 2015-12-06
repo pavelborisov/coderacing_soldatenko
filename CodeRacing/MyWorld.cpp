@@ -172,8 +172,8 @@ void CMyWorld::LogDifference(const CMyWorld& world) const
 #ifdef LOGGING
 	CLog::Instance().Stream() << "Car[0] check difference" << endl;
 	Cars[0].LogDifference(world.Cars[0]);
-	CLog::Instance().Stream() << "Car[1] check difference" << endl;
-	Cars[1].LogDifference(world.Cars[1]);
+	//CLog::Instance().Stream() << "Car[1] check difference" << endl;
+	//Cars[1].LogDifference(world.Cars[1]);
 	for (int i = 0; i < MaxTires; i++) {
 		if (!Tires[i].IsValid()) {
 			break;

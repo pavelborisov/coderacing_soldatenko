@@ -673,7 +673,6 @@ void CWorldSimulator::collideCarWithWashers(int carId, CMyCar& car, CMyWorld& wo
 
 void CWorldSimulator::collideCarWithTires(int carId, CMyCar& car, CMyWorld& world) const
 {
-	// TODO: Проверка "невидимости"
 	CCollisionInfo collisionInfo;
 	CRotatedRect noRotatedRect;
 	double collisionDeltaSpeed = 0;
@@ -709,11 +708,15 @@ void CWorldSimulator::collideCarWithTires(int carId, CMyCar& car, CMyWorld& worl
 					car.GetInvertedMass(), car.GetInvertedAngularMass(),
 					tire.InvertedMass, tire.InvertedAngularMass,
 					car.CarToTireMomentumTransferFactor, car.CarToTireSurfaceFrictionFactor);
+				// TODO: Начислять очки
+				const double durabilityChange = 0.35 * collisionDeltaSpeed / 60.0;
+				if (durabilityChange > 0.01) {
+					car.Durability = max(0.0, car.Durability - durabilityChange);
+				}
 				if (tire.Speed.Length() < minTireSpeed) {
 					tire.Invalidate();
 					shouldRemoveInvalidTires = true;
 				}
-				// TODO: Начислять очки и посчитать повереждения
 				break;
 			}
 		}
