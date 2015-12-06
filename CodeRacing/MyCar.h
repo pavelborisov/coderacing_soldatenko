@@ -25,12 +25,15 @@ struct CMyCar {
 	int NitroCount;
 	int NitroTicks;
 	int NitroCooldown;
+	int ProjectilesCount;
+	int OilCount;
 	int OiledTicks;
 	int DeadTicks;
 	int Type;
 	int PlayerId;
 	int CollisionsDetected;
 	double CollisionDeltaSpeed;
+	bool IsFinished;
 
 	static const double Width;
 	static const double Height;
@@ -41,6 +44,8 @@ struct CMyCar {
 	static const double CarToWallSurfaceFrictionFactor;
 	static const double CarToTireMomentumTransferFactor;
 	static const double CarToTireSurfaceFrictionFactor;
+	static const double CarToCarMomentumTransferFactor;
+	static const double CarToCarSurfaceFrictionFactor;
 	static const double BaseAngularMass;
 
 	CMyCar();

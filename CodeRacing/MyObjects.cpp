@@ -13,7 +13,7 @@ CMyOil::CMyOil(const model::OilSlick& oil) :
 {
 }
 
-
+const double CMyBonus::Size = 40;
 CMyBonus::CMyBonus()
 {
 }

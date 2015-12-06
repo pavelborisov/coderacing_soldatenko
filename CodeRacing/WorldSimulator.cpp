@@ -56,12 +56,18 @@ CMyWorld CWorldSimulator::Simulate(const CMyWorld& startWorld, const CMyMove mov
 	CMyWorld world = startWorld;
 	CCarInfo carInfos[CMyWorld::MaxCars];
 	for (int i = 0; i < CMyWorld::MaxCars; i++) {
+		if (world.Cars[i].IsFinished) {
+			continue;
+		}
 		updateCar(moves[i], world.Cars[i], carInfos[i], world);
 	}
 
 	for (int subtick = 0; subtick < subtickCount; subtick++) {
 		// Сначала всё двигаем.
 		for (int i = 0; i < CMyWorld::MaxCars; i++) {
+			if (world.Cars[i].IsFinished) {
+				continue;
+			}
 			moveCar(carInfos[i], world.Cars[i]);
 		}
 		for (int i = 0; i < CMyWorld::MaxWashers; i++) {
@@ -95,12 +101,18 @@ CMyWorld CWorldSimulator::Simulate(const CMyWorld& startWorld, const CMyMove mov
 		}
 
 		for (int i = 0; i < CMyWorld::MaxCars; i++) {
+			if (world.Cars[i].IsFinished) {
+				continue;
+			}
 			collideCarWithWalls(world.Cars[i]);
 			collideCarWithWashers(i, world.Cars[i], world);
 			collideCarWithTires(i, world.Cars[i], world);
 			collideCarWithBonuses(world.Cars[i], world);
 			for (int j = i + 1; j < CMyWorld::MaxCars; j++) {
-				collideCarWithCar(world.Cars[i], world.Cars[j]);
+				if (world.Cars[j].IsFinished) {
+					continue;
+				}
+				collideCarWithCar(world.Cars[i], world.Cars[j], world);
 			}
 		}
 	}
@@ -649,7 +661,6 @@ void CWorldSimulator::collideCarWithWalls(CMyCar& car) const
 
 void CWorldSimulator::collideCarWithWashers(int carId, CMyCar& car, CMyWorld& world) const
 {
-	// TODO: Пролетать сквозь финишированные машины
 #define PRECISE_WASHER
 #ifdef PRECISE_WASHER
 	CCollisionInfo collisionInfo;
@@ -745,7 +756,6 @@ void CWorldSimulator::collideCarWithWashers(int carId, CMyCar& car, CMyWorld& wo
 
 void CWorldSimulator::collideCarWithTires(int carId, CMyCar& car, CMyWorld& world) const
 {
-	// TODO: Пролетать сквозь финишированные машины
 	CCollisionInfo collisionInfo;
 	CRotatedRect noRotatedRect;
 	double collisionDeltaSpeed = 0;
@@ -806,15 +816,99 @@ void CWorldSimulator::collideCarWithTires(int carId, CMyCar& car, CMyWorld& worl
 	}
 }
 
-void CWorldSimulator::collideCarWithBonuses(CMyCar& /*car*/, CMyWorld& /*world*/) const
+void CWorldSimulator::collideCarWithBonuses(CMyCar& car, CMyWorld& world) const
 {
-	// TODO: Запоминать взятые бонусы?
-
+//#define PRECISE_BONUSES
+#undef PRECISE_BONUSES
+#ifdef PRECISE_BONUSES
+	//TODO
+#else
+	for (int i = 0; i < CMyWorld::MaxBonuses; i++) {
+		if (!world.BonusExist[i]) continue;
+		const double distanceSqr = (world.Bonuses[i].Position - car.Position).LengthSquared();
+		static const double minDistanceSqr = pow(CMyCar::CircumcircleRadius + CMyBonus::Size / 2, 2);
+		if (distanceSqr > minDistanceSqr) {
+			continue;
+		}
+		static const double sureDistanceSqr = pow(CMyCar::HalfHeight + CMyBonus::Size / 2, 2);
+		bool pickedUp = distanceSqr < sureDistanceSqr;
+		if (!pickedUp) {
+			for (const auto& c : car.RotatedRect.Corners) {
+				const double cornerDistanceSqr = (world.Bonuses[i].Position - c).LengthSquared();
+				static const double sureCornerDistanceSqr = pow(CMyBonus::Size / 2, 2);
+				if (cornerDistanceSqr < sureCornerDistanceSqr) {
+					pickedUp = true;
+					break;
+				}
+			}
+		}
+		if (pickedUp) {
+			world.BonusExist[i] = false;
+			switch (world.Bonuses[i].Type) {
+			case model::BonusType::REPAIR_KIT:
+				car.Durability = 1;
+				break;
+			case model::BonusType::AMMO_CRATE:
+				car.ProjectilesCount += 1;
+				break;
+			case model::BonusType::NITRO_BOOST:
+				car.NitroCount += 1;
+				break;
+			case model::BonusType::OIL_CANISTER:
+				car.OilCount += 1;
+				break;
+			case model::BonusType::PURE_SCORE:
+				world.Players[car.PlayerId].Score += 100;
+				break;
+			default:
+				assert(false);
+			}
+		}
+	}
+#endif
 }
 
-void CWorldSimulator::collideCarWithCar(CMyCar& /*carA*/, CMyCar& /*carB*/) const
+void CWorldSimulator::collideCarWithCar(CMyCar& carA, CMyCar& carB, CMyWorld& world) const
 {
+	static const double minCollisionDistanceSqr = pow(CMyCar::CircumcircleRadius + CMyCar::CircumcircleRadius, 2);
+	if ((carA.Position - carB.Position).LengthSquared() < minCollisionDistanceSqr) {
+		CCollisionInfo collisionInfo;
+		double collisionDeltaSpeed = 0;
+		if (findCarWithCarCollision(carA, carB, collisionInfo)) {
+			resolveCollision(collisionInfo,
+				carA.Position, carA.Speed, carA.AngularSpeed, carA.RotatedRect,
+				carB.Position, carB.Speed, carB.AngularSpeed, carB.RotatedRect, collisionDeltaSpeed,
+				carA.GetInvertedMass(), carA.GetInvertedAngularMass(),
+				carB.GetInvertedMass(), carB.GetInvertedAngularMass(),
+				CMyCar::CarToCarMomentumTransferFactor, CMyCar::CarToCarSurfaceFrictionFactor);
 
+			// TODO: проверить повреждения при машинах разной массы
+			static const double durabilityFactor = 0.003;
+			const double durabilityChangeA = min(durabilityFactor * collisionDeltaSpeed, carA.Durability);
+			if (durabilityChangeA > 0.01) {
+				carA.Durability = max(0.0, carA.Durability - durabilityChangeA);
+				const int otherPlayerId = carB.PlayerId;
+				if (carA.PlayerId != otherPlayerId) {
+					world.Players[otherPlayerId].Score += static_cast<int>(100 * durabilityChangeA);
+					if (carB.Durability == 0.0) {
+						world.Players[otherPlayerId].Score += 100;
+					}
+				}
+			}
+
+			const double durabilityChangeB = min(durabilityFactor * collisionDeltaSpeed, carB.Durability);
+			if (durabilityChangeB > 0.01) {
+				carB.Durability = max(0.0, carB.Durability - durabilityChangeB);
+				const int otherPlayerId = carA.PlayerId;
+				if (carB.PlayerId != otherPlayerId) {
+					world.Players[otherPlayerId].Score += static_cast<int>(100 * durabilityChangeB);
+					if (carB.Durability == 0.0) {
+						world.Players[otherPlayerId].Score += 100;
+					}
+				}
+			}
+		}
+	}
 }
 
 bool CWorldSimulator::findLineWithCircleCollision(const CVec2D& point1A, const CVec2D& point2A,
@@ -879,6 +973,87 @@ bool CWorldSimulator::findLineWithCircleCollision(const CVec2D& point1A, const C
 	collisionInfo.Depth = radiusB - distanceToNearestPointA;
 	return true;
 }
+
+bool CWorldSimulator::findCarWithCarCollision(const CMyCar& carA, const CMyCar& carB,
+	CCollisionInfo& collisionInfo) const
+{
+	CCollisionInfo collisionInfoA;
+	if (!findCarWithCarCollisionPartial(carA, carB, collisionInfoA)) {
+		return false;
+	}
+
+	CCollisionInfo collisionInfoB;
+	if (!findCarWithCarCollisionPartial(carB, carA, collisionInfoB)) {
+		return false;
+	}
+
+	if (collisionInfoB.Depth < collisionInfoA.Depth) {
+		collisionInfo.Point = collisionInfoB.Point;
+		collisionInfo.Depth = collisionInfoB.Depth;
+		collisionInfo.NormalB = -collisionInfoB.NormalB;
+		return true;
+	} else {
+		collisionInfo = collisionInfoA;
+		return true;
+	}
+}
+
+bool CWorldSimulator::findCarWithCarCollisionPartial(const CMyCar& carA, const CMyCar& carB,
+	CCollisionInfo& collisionInfo) const
+{
+	double minDepth = INT_MAX;
+	CVec2D bestIntersectionPoint;
+	CVec2D bestCollisionNormalB;
+
+	for (int pointAIndex = 0; pointAIndex < 4; ++pointAIndex) {
+		const CVec2D& point1A = carA.RotatedRect.Corners[pointAIndex];
+		const CVec2D& point2A = carA.RotatedRect.Corners[(pointAIndex + 1) % 4];
+		CLine2D lineA = CLine2D::FromPoints(point1A, point2A);
+
+		if (lineA.GetSignedDistanceFrom(carA.Position) > -epsilon) {
+			//throw new IllegalStateException(String.format("%s of %s is too small, " +
+			//	"does not represent a convex polygon, or its points are going in wrong order.",
+			//	Form.toString(bodyA.getForm()), bodyA
+			//	));
+			assert(false);
+		}
+
+		double minDistanceFromB = INT_MAX;
+		CVec2D intersectionPoint;
+		CVec2D collisionNormalB;
+
+		for (int pointBIndex = 0; pointBIndex < 4; ++pointBIndex) {
+			const CVec2D& pointB = carB.RotatedRect.Corners[pointBIndex];
+			double distanceFromPointB = lineA.GetSignedDistanceFrom(pointB);
+
+			if (distanceFromPointB < minDistanceFromB) {
+				minDistanceFromB = distanceFromPointB;
+				intersectionPoint = pointB;
+				collisionNormalB = -lineA.GetUnitNormalFrom(carA.Position);
+			}
+		}
+
+		if (minDistanceFromB > 0.0) {
+			return false;
+		}
+
+		double depth = -minDistanceFromB;
+		if (depth < minDepth) {
+			minDepth = depth;
+			bestIntersectionPoint = intersectionPoint;
+			bestCollisionNormalB = collisionNormalB;
+		}
+	}
+
+	if (minDepth == INT_MAX) {
+		return false;
+	}
+	collisionInfo.Point = bestIntersectionPoint;
+	collisionInfo.NormalB = bestCollisionNormalB;
+	collisionInfo.Depth = minDepth;
+	return true;
+}
+
 
 void CWorldSimulator::resolveCollisionStatic(
 	const CCollisionInfo& collisionInfo,

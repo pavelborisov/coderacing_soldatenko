@@ -57,10 +57,14 @@ private:
 	void collideCarWithWashers(int carId, CMyCar& car, CMyWorld& world) const;
 	void collideCarWithTires(int carId, CMyCar& car, CMyWorld& world) const;
 	void collideCarWithBonuses(CMyCar& car, CMyWorld& world) const;
-	void collideCarWithCar(CMyCar& carA, CMyCar& carB) const;
+	void collideCarWithCar(CMyCar& carA, CMyCar& carB, CMyWorld& world) const;
 
 	bool findLineWithCircleCollision(const CVec2D& point1A, const CVec2D& point2A,
 		const CVec2D& positionB, double radiusB,
+		CCollisionInfo& collisionInfo) const;
+	bool findCarWithCarCollision(const CMyCar& carA, const CMyCar& carB,
+		CCollisionInfo& collisionInfo) const;
+	bool findCarWithCarCollisionPartial(const CMyCar& carA, const CMyCar& carB,
 		CCollisionInfo& collisionInfo) const;
 
 	void resolveCollisionStatic(

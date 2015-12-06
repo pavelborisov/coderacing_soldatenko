@@ -20,6 +20,8 @@ struct CMyBonus {
 	CVec2D Position;
 	model::BonusType Type = model::BonusType::_UNKNOWN_BONUS_TYPE_;
 
+	static const double Size;
+
 	CMyBonus();
 	explicit CMyBonus(const model::Bonus& bonus);
 };
