@@ -48,9 +48,12 @@ struct CMyTire {
 	static const double InvertedMass;
 	static const double AngularMass;
 	static const double InvertedAngularMass;
+	static const double TireToWallMomentumTransferFactor;
+	static const double TireToWallSurfaceFrictionFactor;
 
 	CMyTire();
 	explicit CMyTire(const model::Projectile& projectile, int carId);
 	bool IsValid() const { return CarId >= 0; }
 	void Invalidate() { CarId = -1; }
+	void LogDifference(const CMyTire& tire) const;
 };

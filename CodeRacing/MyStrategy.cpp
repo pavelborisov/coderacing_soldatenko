@@ -12,6 +12,7 @@
 #include "Tools.h"
 #include "WaypointsDistanceMap.h"
 #include "WorldSimulator.h"
+//#include <Windows.h>
 
 using namespace model;
 using namespace std;
@@ -156,11 +157,22 @@ void MyStrategy::makeMove()
 	CWorldSimulator::Instance().SetPrecision(10);
 
 	CMyWorld predictedWorld = CWorldSimulator::Instance().Simulate(myWorld, moves);
-	//CMyCar testCar = simulator.Predict(myWorld.Cars[0], moves[0].Convert(), 1);
-	//predictedWorld.Cars[0].LogDifference(testCar);
 	prevWorldPrediction = predictedWorld;
 	predictedWorld.Draw(0x00FF00);
 	for (auto& c : predictedWorld.Cars) c.SaveHistory();
+
+	//DWORD startTime = GetTickCount();
+	//for (int i = 0; i < 100000; i++) {
+	//	predictedWorld = CWorldSimulator::Instance().Simulate(myWorld, moves);
+	//}
+	//DWORD elapsedTime = GetTickCount() - startTime;
+	//CLog::Instance().Stream() << "100000 world simulations in: " << elapsedTime << "ms" << endl;
+	//startTime = GetTickCount();
+	//for (int i = 0; i < 100000; i++) {
+	//	CMyCar predCar = simulator.Predict(car, moves[0].Convert(), 0);
+	//}
+	//elapsedTime = GetTickCount() - startTime;
+	//CLog::Instance().Stream() << "100000 car simulations in: " << elapsedTime << "ms" << endl;
 
 	if (world->getTick() < 1000000) {
 		*resultMove = moves[0].Convert();
@@ -446,17 +458,17 @@ void MyStrategy::experiment()
 	//		}
 	//	}
 	//}
-	for (const auto& t : CGlobalPredictions::TiresPerTick) {
-		for (int i = 0; i < 3; i++) {
-			CLog::Instance().Stream() << "Tire Tick " << i << ": "
-				<< t[i].Position.X << "," << t[i].Position.Y << " "
-				<< t[i].Speed.X << "," << t[i].Speed.Y << " "
-				<< t[i].AngularSpeed << endl;
-		}
-		for (int i = 0; i < 30; i++) {
-			CDrawPlugin::Instance().Circle(t[i].Position.X, t[i].Position.Y, CMyTire::Radius, 0xFF0000);
-		}
-	}
+	//for (const auto& t : CGlobalPredictions::TiresPerTick) {
+	//	for (int i = 0; i < 3; i++) {
+	//		CLog::Instance().Stream() << "Tire Tick " << i << ": "
+	//			<< t[i].Position.X << "," << t[i].Position.Y << " "
+	//			<< t[i].Speed.X << "," << t[i].Speed.Y << " "
+	//			<< t[i].AngularSpeed << endl;
+	//	}
+	//	for (int i = 0; i < 30; i++) {
+	//		CDrawPlugin::Instance().Circle(t[i].Position.X, t[i].Position.Y, CMyTire::Radius, 0xFF0000);
+	//	}
+	//}
 }
 
 void MyStrategy::predict()
@@ -469,20 +481,7 @@ void MyStrategy::doLog()
 	log.LogMyCar(prediction, "Prediction         ");
 
 	if (currentTick > 180) {
-		logIfDiffers(car.Angle, prevPrediction.Angle, "Angle", log);
-		logIfDiffers(car.AngularSpeed, prevPrediction.AngularSpeed, "AngularSpeed", log);
-		logIfDiffers(car.EnginePower, prevPrediction.EnginePower, "EnginePower", log);
-		logIfDiffers(car.WheelTurn, prevPrediction.WheelTurn, "WheelTurn", log);
-		logIfDiffers(car.Durability, prevPrediction.Durability, "Durability", log);
-		logIfDiffers(car.NitroCooldown, prevPrediction.NitroCooldown, "NitroCooldown", log);
-		logIfDiffers(car.NitroCount, prevPrediction.NitroCount, "NitroCount", log);
-		logIfDiffers(car.NitroTicks, prevPrediction.NitroTicks, "NitroTicks", log);
-		logIfDiffers(car.OiledTicks, prevPrediction.OiledTicks, "OiledTicks", log);
-		logIfDiffers(car.Position.X, prevPrediction.Position.X, "Position.X", log);
-		logIfDiffers(car.Position.Y, prevPrediction.Position.Y, "Position.Y", log);
-		logIfDiffers(car.Speed.X, prevPrediction.Speed.X, "Speed.X", log);
-		logIfDiffers(car.Speed.Y, prevPrediction.Speed.Y, "Speed.Y", log);
-		logIfDiffers(car.Type, prevPrediction.Type, "Type", log);
+		prevPrediction.LogDifference(car);
 	}
 }
 

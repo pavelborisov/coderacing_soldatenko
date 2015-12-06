@@ -77,12 +77,21 @@ CMyWorld CWorldSimulator::Simulate(const CMyWorld& startWorld, const CMyMove mov
 		}
 
 		// Теперь разбираемся с коллизиями. Какой правильный порядок - хз.
+		bool shouldRemoveInvalidTires = false;
 		for (int i = 0; i < CMyWorld::MaxTires; i++) {
 			if (!world.Tires[i].IsValid()) {
 				break;
 			}
 			collideTireWithWalls(world.Tires[i]);
 			collideTireWithWashers(world.Tires[i], world);
+			static const double minTireSpeed = 60 * 0.25;
+			if (world.Tires[i].Speed.Length() < minTireSpeed) {
+				world.Tires[i].Invalidate();
+				shouldRemoveInvalidTires = true;
+			}
+		}
+		if (shouldRemoveInvalidTires) {
+			world.RemoveInvalidTires();
 		}
 		for (int i = 0; i < CMyWorld::MaxCars; i++) {
 			collideCarWithWalls(world.Cars[i]);
@@ -220,9 +229,194 @@ void CWorldSimulator::moveTire(CMyTire& tire) const
 	tire.Position += tire.Speed * dTime;
 }
 
-void CWorldSimulator::collideTireWithWalls(CMyTire& /*tire*/) const
+void CWorldSimulator::collideTireWithWalls(CMyTire& tire) const
 {
+	double collisionDeltaSpeed = 0;
+	CCollisionInfo collisionInfo;
 
+	// Точки расположены по порядку. Начнём с самого левого угла и левой стенки.
+	int cornerIndex = 0;
+	CRotatedRect noRotatedRect;
+	const CVec2D corners[4] = {
+		{ tire.Position.X - CMyTire::Radius, tire.Position.Y },
+		{ tire.Position.X, tire.Position.Y - CMyTire::Radius },
+		{ tire.Position.X + CMyTire::Radius, tire.Position.Y },
+		{ tire.Position.X, tire.Position.Y + CMyTire::Radius }
+	};
+	CMyTile cornerTile(corners[cornerIndex]);
+	double tileLeftX = cornerTile.X * CMyTile::TileSize;
+	double tileTopY = cornerTile.Y * CMyTile::TileSize;
+	double tileRightX = (cornerTile.X + 1) * CMyTile::TileSize;
+	double tileBottomY = (cornerTile.Y + 1) * CMyTile::TileSize;
+	if (!cornerTile.IsLeftOpen()) {
+		const double xWall = tileLeftX + CMyTile::WallRadius;
+		const CVec2D& corner = corners[cornerIndex];
+		if (corner.X < xWall) {
+			const CVec2D& cornerNext = corners[(cornerIndex + 1) % 4];
+			const CVec2D& cornerOpposite = corners[(cornerIndex + 2) % 4];
+			const CVec2D& cornerPrev = corners[(cornerIndex + 3) % 4];
+			const CLine2D wall = { 1, 0, -xWall };
+			collisionInfo.NormalB = { 1, 0 };
+			collisionInfo.Depth = xWall - corner.X;
+			CLine2D side1, side2;
+			if (cornerNext.X < xWall) {
+				side1 = CLine2D::FromPoints(cornerNext, cornerOpposite);
+				side2 = CLine2D::FromPoints(corner, cornerPrev);
+			} else if (cornerPrev.X < xWall) {
+				side1 = CLine2D::FromPoints(corner, cornerNext);
+				side2 = CLine2D::FromPoints(cornerPrev, cornerOpposite);
+			} else {
+				side1 = CLine2D::FromPoints(corner, cornerNext);
+				side2 = CLine2D::FromPoints(corner, cornerPrev);
+			}
+			CVec2D intersection1;
+			bool hasIntersection1 = wall.GetIntersectionPoint(side1, intersection1);
+			assert(hasIntersection1);
+			CVec2D intersection2;
+			bool hasIntersection2 = wall.GetIntersectionPoint(side2, intersection2);
+			assert(hasIntersection2);
+			collisionInfo.Point = (intersection2 + intersection1) * 0.5;
+			resolveCollisionStatic(collisionInfo, tire.Position, tire.Speed, tire.AngularSpeed, noRotatedRect, collisionDeltaSpeed,
+				tire.InvertedMass, tire.InvertedAngularMass, tire.TireToWallMomentumTransferFactor, tire.TireToWallSurfaceFrictionFactor);
+		}
+	}
+
+	// Верхняя стенка.
+	cornerIndex = (cornerIndex + 1) % 4;
+	cornerTile = CMyTile(corners[cornerIndex]);
+	tileLeftX = cornerTile.X * CMyTile::TileSize;
+	tileTopY = cornerTile.Y * CMyTile::TileSize;
+	tileRightX = (cornerTile.X + 1) * CMyTile::TileSize;
+	tileBottomY = (cornerTile.Y + 1) * CMyTile::TileSize;
+	if (!cornerTile.IsTopOpen()) {
+		const double yWall = tileTopY + CMyTile::WallRadius;
+		const CVec2D& corner = corners[cornerIndex];
+		if (corner.Y < yWall) {
+			const CVec2D& cornerNext = corners[(cornerIndex + 1) % 4];
+			const CVec2D& cornerOpposite = corners[(cornerIndex + 2) % 4];
+			const CVec2D& cornerPrev = corners[(cornerIndex + 3) % 4];
+			const CLine2D wall = { 0, 1, -yWall };
+			collisionInfo.NormalB = { 0, 1 };
+			collisionInfo.Depth = yWall - corner.Y;
+			CLine2D side1, side2;
+			if (cornerNext.Y < yWall) {
+				side1 = CLine2D::FromPoints(cornerNext, cornerOpposite);
+				side2 = CLine2D::FromPoints(corner, cornerPrev);
+			} else if (cornerPrev.Y < yWall) {
+				side1 = CLine2D::FromPoints(corner, cornerNext);
+				side2 = CLine2D::FromPoints(cornerPrev, cornerOpposite);
+			} else {
+				side1 = CLine2D::FromPoints(corner, cornerNext);
+				side2 = CLine2D::FromPoints(corner, cornerPrev);
+			}
+			CVec2D intersection1;
+			bool hasIntersection1 = wall.GetIntersectionPoint(side1, intersection1);
+			assert(hasIntersection1);
+			CVec2D intersection2;
+			bool hasIntersection2 = wall.GetIntersectionPoint(side2, intersection2);
+			assert(hasIntersection2);
+			collisionInfo.Point = (intersection2 + intersection1) * 0.5;
+			resolveCollisionStatic(collisionInfo, tire.Position, tire.Speed, tire.AngularSpeed, noRotatedRect, collisionDeltaSpeed,
+				tire.InvertedMass, tire.InvertedAngularMass, tire.TireToWallMomentumTransferFactor, tire.TireToWallSurfaceFrictionFactor);
+		}
+	}
+
+	// Правая стенка.
+	cornerIndex = (cornerIndex + 1) % 4;
+	cornerTile = CMyTile(corners[cornerIndex]);
+	tileLeftX = cornerTile.X * CMyTile::TileSize;
+	tileTopY = cornerTile.Y * CMyTile::TileSize;
+	tileRightX = (cornerTile.X + 1) * CMyTile::TileSize;
+	tileBottomY = (cornerTile.Y + 1) * CMyTile::TileSize;
+	if (!cornerTile.IsRightOpen()) {
+		const double xWall = tileRightX - CMyTile::WallRadius;
+		const CVec2D& corner = corners[cornerIndex];
+		if (corner.X > xWall) {
+			const CVec2D& cornerNext = corners[(cornerIndex + 1) % 4];
+			const CVec2D& cornerOpposite = corners[(cornerIndex + 2) % 4];
+			const CVec2D& cornerPrev = corners[(cornerIndex + 3) % 4];
+			const CLine2D wall = { 1, 0, -xWall };
+			collisionInfo.NormalB = { -1, 0 };
+			collisionInfo.Depth = corner.X - xWall;
+			CLine2D side1, side2;
+			if (cornerNext.X > xWall) {
+				side1 = CLine2D::FromPoints(cornerNext, cornerOpposite);
+				side2 = CLine2D::FromPoints(corner, cornerPrev);
+			} else if (cornerPrev.X > xWall) {
+				side1 = CLine2D::FromPoints(corner, cornerNext);
+				side2 = CLine2D::FromPoints(cornerPrev, cornerOpposite);
+			} else {
+				side1 = CLine2D::FromPoints(corner, cornerNext);
+				side2 = CLine2D::FromPoints(corner, cornerPrev);
+			}
+			CVec2D intersection1;
+			bool hasIntersection1 = wall.GetIntersectionPoint(side1, intersection1);
+			assert(hasIntersection1);
+			CVec2D intersection2;
+			bool hasIntersection2 = wall.GetIntersectionPoint(side2, intersection2);
+			assert(hasIntersection2);
+			collisionInfo.Point = (intersection2 + intersection1) * 0.5;
+			resolveCollisionStatic(collisionInfo, tire.Position, tire.Speed, tire.AngularSpeed, noRotatedRect, collisionDeltaSpeed,
+				tire.InvertedMass, tire.InvertedAngularMass, tire.TireToWallMomentumTransferFactor, tire.TireToWallSurfaceFrictionFactor);
+		}
+	}
+
+	// Нижняя стенка.
+	cornerIndex = (cornerIndex + 1) % 4;
+	cornerTile = CMyTile(corners[cornerIndex]);
+	tileLeftX = cornerTile.X * CMyTile::TileSize;
+	tileTopY = cornerTile.Y * CMyTile::TileSize;
+	tileRightX = (cornerTile.X + 1) * CMyTile::TileSize;
+	tileBottomY = (cornerTile.Y + 1) * CMyTile::TileSize;
+	if (!cornerTile.IsBottomOpen()) {
+		const double yWall = tileBottomY - CMyTile::WallRadius;
+		const CVec2D& corner = corners[cornerIndex];
+		if (corner.Y > yWall) {
+			const CVec2D& cornerNext = corners[(cornerIndex + 1) % 4];
+			const CVec2D& cornerOpposite = corners[(cornerIndex + 2) % 4];
+			const CVec2D& cornerPrev = corners[(cornerIndex + 3) % 4];
+			const CLine2D wall = { 0, 1, -yWall };
+			collisionInfo.NormalB = { 0, -1 };
+			collisionInfo.Depth = corner.Y - yWall;
+			CLine2D side1, side2;
+			if (cornerNext.Y > yWall) {
+				side1 = CLine2D::FromPoints(cornerNext, cornerOpposite);
+				side2 = CLine2D::FromPoints(corner, cornerPrev);
+			} else if (cornerPrev.Y > yWall) {
+				side1 = CLine2D::FromPoints(corner, cornerNext);
+				side2 = CLine2D::FromPoints(cornerPrev, cornerOpposite);
+			} else {
+				side1 = CLine2D::FromPoints(corner, cornerNext);
+				side2 = CLine2D::FromPoints(corner, cornerPrev);
+			}
+			CVec2D intersection1;
+			bool hasIntersection1 = wall.GetIntersectionPoint(side1, intersection1);
+			assert(hasIntersection1);
+			CVec2D intersection2;
+			bool hasIntersection2 = wall.GetIntersectionPoint(side2, intersection2);
+			assert(hasIntersection2);
+			collisionInfo.Point = (intersection2 + intersection1) * 0.5;
+			resolveCollisionStatic(collisionInfo, tire.Position, tire.Speed, tire.AngularSpeed, noRotatedRect, collisionDeltaSpeed,
+				tire.InvertedMass, tire.InvertedAngularMass, tire.TireToWallMomentumTransferFactor, tire.TireToWallSurfaceFrictionFactor);
+		}
+	}
+
+	// Ближайший угол.
+	static const double halfTileSize = CMyTile::TileSize;
+	const double nearestTileCornerX = (tire.Position.X - tileLeftX < halfTileSize) ? tileLeftX : tileRightX;
+	const double nearestTileCornerY = (tire.Position.Y - tileTopY < halfTileSize) ? tileTopY : tileBottomY;
+	const CVec2D nearestTileCorner(nearestTileCornerX, nearestTileCornerY);
+	const double distanceSqr = (tire.Position - nearestTileCorner).LengthSquared();
+	static const double maxDistanceSqr = pow(CMyTile::WallRadius + CMyTire::Radius, 2);
+	if (distanceSqr < maxDistanceSqr) {
+		CVec2D vectorBA = CVec2D(nearestTileCorner, tire.Position);
+		collisionInfo.NormalB = vectorBA;
+		collisionInfo.NormalB.Normalize();
+		collisionInfo.Point = nearestTileCorner + vectorBA * (CMyTile::WallRadius / (CMyTile::WallRadius + CMyTire::Radius));
+		collisionInfo.Depth = CMyTile::WallRadius + CMyTire::Radius - sqrt(distanceSqr);
+		resolveCollisionStatic(collisionInfo, tire.Position, tire.Speed, tire.AngularSpeed, noRotatedRect, collisionDeltaSpeed,
+			tire.InvertedMass, tire.InvertedAngularMass, tire.TireToWallMomentumTransferFactor, tire.TireToWallSurfaceFrictionFactor);
+	}
 }
 
 void CWorldSimulator::collideTireWithWashers(CMyTire& tire, CMyWorld& world) const
@@ -446,7 +640,6 @@ void CWorldSimulator::collideCarWithWalls(CMyCar& car) const
 	if (durabilityChange >= durabilityEps) {
 		car.Durability = max(0.0, car.Durability - durabilityChange);
 	}
-
 }
 
 void CWorldSimulator::collideCarWithWashers(CMyCar& /*car*/, CMyWorld& /*world*/) const

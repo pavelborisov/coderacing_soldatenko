@@ -136,36 +136,27 @@ void CMyCar::SaveHistory()
 	DeadTicksHistory[HistoryId(PlayerId, Type)] = DeadTicks;
 }
 
-template<class T>
-static const void logIfDifferent(const T& a, const T& b, const char* name)
-{
-	if (abs(a - b) > 1e-5) {
-		CLog::Instance().Stream() << "Warning! Different " << name << ": "
-			<< a << " " << b << " " << a - b << std::endl;
-	}
-}
-
 void CMyCar::LogDifference(const CMyCar& car) const
 {
 #ifdef LOGGING
-	logIfDifferent(Position.X, car.Position.X, "Position.X");
-	logIfDifferent(Position.Y, car.Position.Y, "Position.Y");
-	logIfDifferent(Angle, car.Angle, "Angle");
+	CLog::Instance().LogIfDifferent(Position.X, car.Position.X, "Position.X");
+	CLog::Instance().LogIfDifferent(Position.Y, car.Position.Y, "Position.Y");
+	CLog::Instance().LogIfDifferent(Angle, car.Angle, "Angle");
 	//CRotatedRect RotatedRect;
-	logIfDifferent(Speed.X, car.Speed.X, "Speed.X");
-	logIfDifferent(Speed.Y, car.Speed.Y, "Speed.Y");
-	logIfDifferent(AngularSpeed, car.AngularSpeed, "AngularSpeed");
-	logIfDifferent(MedianAngularSpeed, car.MedianAngularSpeed, "MedianAngularSpeed");
-	logIfDifferent(EnginePower, car.EnginePower, "EnginePower");
-	logIfDifferent(WheelTurn, car.WheelTurn, "WheelTurn");
-	logIfDifferent(Durability, car.Durability, "Durability");
-	logIfDifferent(NitroCount, car.NitroCount, "NitroCount");
-	logIfDifferent(NitroTicks, car.NitroTicks, "NitroTicks");
-	logIfDifferent(NitroCooldown, car.NitroCooldown, "NitroCooldown"); 
-	logIfDifferent(OiledTicks, car.OiledTicks, "OiledTicks");
-	logIfDifferent(DeadTicks, car.DeadTicks, "DeadTicks");
-	logIfDifferent(Type, car.Type, "Type");
-	logIfDifferent(PlayerId, car.PlayerId, "Type");
+	CLog::Instance().LogIfDifferent(Speed.X, car.Speed.X, "Speed.X");
+	CLog::Instance().LogIfDifferent(Speed.Y, car.Speed.Y, "Speed.Y");
+	CLog::Instance().LogIfDifferent(AngularSpeed, car.AngularSpeed, "AngularSpeed");
+	CLog::Instance().LogIfDifferent(MedianAngularSpeed, car.MedianAngularSpeed, "MedianAngularSpeed");
+	CLog::Instance().LogIfDifferent(EnginePower, car.EnginePower, "EnginePower");
+	CLog::Instance().LogIfDifferent(WheelTurn, car.WheelTurn, "WheelTurn");
+	CLog::Instance().LogIfDifferent(Durability, car.Durability, "Durability");
+	CLog::Instance().LogIfDifferent(NitroCount, car.NitroCount, "NitroCount");
+	CLog::Instance().LogIfDifferent(NitroTicks, car.NitroTicks, "NitroTicks");
+	CLog::Instance().LogIfDifferent(NitroCooldown, car.NitroCooldown, "NitroCooldown");
+	CLog::Instance().LogIfDifferent(OiledTicks, car.OiledTicks, "OiledTicks");
+	CLog::Instance().LogIfDifferent(DeadTicks, car.DeadTicks, "DeadTicks");
+	CLog::Instance().LogIfDifferent(Type, car.Type, "Type");
+	CLog::Instance().LogIfDifferent(PlayerId, car.PlayerId, "Type");
 	//int CollisionsDetected;
 	//double CollisionDeltaSpeed;
 #endif

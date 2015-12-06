@@ -1,7 +1,7 @@
 #include "MyObjects.h"
 
 #include "assert.h"
-
+#include "Log.h"
 
 const double CMyOil::Radius = 300 / 2;
 CMyOil::CMyOil()
@@ -43,6 +43,8 @@ const double CMyTire::Mass = 1000;
 const double CMyTire::InvertedMass = 1.0 / Mass;
 const double CMyTire::AngularMass = 1.0 / 2 * Mass * Radius * Radius;
 const double CMyTire::InvertedAngularMass = 1.0 / AngularMass;
+const double CMyTire::TireToWallMomentumTransferFactor = 0.5;
+const double CMyTire::TireToWallSurfaceFrictionFactor = 0.25;
 CMyTire::CMyTire()
 {
 }
@@ -53,4 +55,13 @@ CMyTire::CMyTire(const model::Projectile& projectile, int carId) :
 	AngularSpeed(projectile.getAngularSpeed())
 {
 	assert(projectile.getType() == model::TIRE);
+}
+void CMyTire::LogDifference(const CMyTire& tire) const
+{
+	CLog::Instance().LogIfDifferent(CarId, tire.CarId, "Tire CarId");
+	CLog::Instance().LogIfDifferent(Position.X, tire.Position.X, "Tire Position.X");
+	CLog::Instance().LogIfDifferent(Position.Y, tire.Position.Y, "Tire Position.Y");
+	CLog::Instance().LogIfDifferent(Speed.X, tire.Speed.X, "Tire Speed.X");
+	CLog::Instance().LogIfDifferent(Speed.Y, tire.Speed.Y, "Tire Speed.Y");
+	CLog::Instance().LogIfDifferent(AngularSpeed, tire.AngularSpeed, "Tire AngularSpeed");
 }

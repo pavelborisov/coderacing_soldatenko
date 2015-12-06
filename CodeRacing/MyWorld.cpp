@@ -15,6 +15,7 @@ CMyWorld::CMyWorld(const World& world, const Car& self)
 {
 	map<long long, int> carIdMap;
 	auto cars = world.getCars();
+	// 0 - наша машина
 	int nextCarIndex = 0;
 	for (const auto& car : cars) {
 		if (car.getId() == self.getId()) {
@@ -23,20 +24,40 @@ CMyWorld::CMyWorld(const World& world, const Car& self)
 			break;
 		}
 	}
-	for (const auto& car : cars) {
-		if (car.getId() != self.getId() && car.getPlayerId() == self.getPlayerId()) {
-			carIdMap[car.getId()] = nextCarIndex;
-			Cars[nextCarIndex++] = CMyCar(car);
-			break;
+	if (world.getPlayers().size() == 4) {
+		// 1, 2, 3 - машины врагов, отсортированы по playerId
+		for (int playerId = 1; playerId <= 4; playerId++) {
+			if (playerId == self.getPlayerId()) continue;
+			for (const auto& car : cars) {
+				if (car.getPlayerId() == playerId) {
+					carIdMap[car.getId()] = nextCarIndex;
+					Cars[nextCarIndex++] = CMyCar(car);
+					break;
+				}
+			}
 		}
-	}
-	for (const auto& car : cars) {
-		if (car.getPlayerId() != self.getPlayerId()) {
-			assert(nextCarIndex < MaxCars);
-			carIdMap[car.getId()] = nextCarIndex;
-			Cars[nextCarIndex++] = CMyCar(car);
+	} else if (world.getPlayers().size() == 2) {
+		// 1 - машина тиммейт
+		for (const auto& car : cars) {
+			if (car.getId() != self.getId() && car.getPlayerId() == self.getPlayerId()) {
+				carIdMap[car.getId()] = nextCarIndex;
+				Cars[nextCarIndex++] = CMyCar(car);
+				break;
+			}
 		}
+		// 2, 3 - машины врага, отсортированы по типу
+		for (int type = 0; type <= 1; type++) {
+			for (const auto& car : cars) {
+				if (car.getType() == type && car.getPlayerId() != self.getPlayerId()) {
+					carIdMap[car.getId()] = nextCarIndex;
+					Cars[nextCarIndex++] = CMyCar(car);
+				}
+			}
+		}
+	} else {
+		assert(false);
 	}
+	assert(nextCarIndex < MaxCars);
 
 	auto projectiles = world.getProjectiles();
 	int nextWasherId = 0;
@@ -150,6 +171,9 @@ void CMyWorld::LogDifference(const CMyWorld& world) const
 {
 #ifdef LOGGING
 	Cars[0].LogDifference(world.Cars[0]);
+	for (int i = 0; i < MaxTires; i++) {
+		Tires[i].LogDifference(world.Tires[i]);
+	}
 #endif
 }
 
