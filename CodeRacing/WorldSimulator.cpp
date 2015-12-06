@@ -106,6 +106,7 @@ CMyWorld CWorldSimulator::Simulate(const CMyWorld& startWorld, const CMyMove mov
 				}
 				collideTireWithWalls(world.Tires[i]);
 				collideTireWithWashers(world.Tires[i], world);
+				//collideTireWithTires();
 				if (world.Tires[i].Speed.Length() < minTireSpeed) {
 					world.Tires[i].Invalidate();
 					shouldRemoveInvalidTires = true;
@@ -673,7 +674,7 @@ void CWorldSimulator::collideCarWithWalls(CMyCar& car) const
 	}
 
 	// Ближайший угол.
-	static const double halfTileSize = CMyTile::TileSize;
+	static const double halfTileSize = CMyTile::TileSize / 2;
 	const double nearestTileCornerX = (car.Position.X - tileLeftX < halfTileSize) ? tileLeftX : tileRightX;
 	const double nearestTileCornerY = (car.Position.Y - tileTopY < halfTileSize) ? tileTopY : tileBottomY;
 	const CVec2D nearestTileCorner(nearestTileCornerX, nearestTileCornerY);

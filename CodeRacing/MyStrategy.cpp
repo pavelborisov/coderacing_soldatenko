@@ -433,8 +433,6 @@ void MyStrategy::experiment()
 	//	simWorld.Draw(0xFF00FF + 0x000100 * green);
 	//}
 	//CWorldSimulator::Instance().SetPrecision(10);
-
-
 }
 
 void MyStrategy::predict()
@@ -444,6 +442,8 @@ void MyStrategy::predict()
 	moves[1].Engine = 0;
 	moves[2].Engine = 0;
 	moves[3].Engine = 0;
+	CWorldSimulator::Instance().SetPrecision(10);
+	CWorldSimulator::Instance().SetOptions(false, false, false);
 	predictedWorld = CWorldSimulator::Instance().Simulate(currentWorld, moves);
 }
 
@@ -452,7 +452,7 @@ void MyStrategy::doLog()
 	log.LogMyCar(predictedWorld.Cars[0], "Prediction         ");
 
 	if (currentTick > 180) {
-		//prevPrediction.LogDifference(car);
+		previousPredictedWorld.LogDifference(currentWorld);
 	}
 }
 

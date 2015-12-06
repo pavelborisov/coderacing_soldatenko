@@ -11,7 +11,7 @@ struct CMyWorld {
 	static const int MaxCars = 4;
 	static const int MaxWashers = 3 * 4 * 2;
 	static const int MaxTires = 4 * 2;
-	static const int MaxBonuses = 20; // TODO: сколько?
+	static const int MaxBonuses = 60; // TODO: сколько?
 	static const int MaxOils = 10;
 
 	static std::map<long long, int> PlayerIdMap;

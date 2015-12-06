@@ -20,7 +20,8 @@ static void setSimulatorMode(int tick)
 	if (tick > 60) {
 		CWorldSimulator::Instance().SetOptions(true, true, true);
 	} else {
-		CWorldSimulator::Instance().SetOptions(false, false, false);
+		//CWorldSimulator::Instance().SetOptions(false, false, false);
+		CWorldSimulator::Instance().SetOptions(true, true, true);
 	}
 
 }
