@@ -171,9 +171,13 @@ void CWorldSimulator::updateCar(const CMyMove& move, CMyCar& car, CCarInfo& carI
 	}
 
 	// Вектор ускорения. Будет постоянный для всех итераций физики.
-	carInfo.AccelerationDt = car.EnginePower >= 0 ?
-		carInfo.LengthwiseUnitVector * forwardAccelByType[car.Type] * car.EnginePower * dTime :
-		carInfo.LengthwiseUnitVector * rearAccelByType[car.Type] * car.EnginePower * dTime;
+	if (carInfo.IsBrake) {
+		carInfo.AccelerationDt = CVec2D(0, 0);
+	} else {
+		carInfo.AccelerationDt = car.EnginePower >= 0 ?
+			carInfo.LengthwiseUnitVector * forwardAccelByType[car.Type] * car.EnginePower * dTime :
+			carInfo.LengthwiseUnitVector * rearAccelByType[car.Type] * car.EnginePower * dTime;
+	}
 
 	// Обновляем угол поворота колёс и базовые (медианные) скорости.
 	if (car.MedianAngularSpeed == UndefinedMedianAngularSpeed) {
