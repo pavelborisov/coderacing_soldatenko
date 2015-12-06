@@ -37,8 +37,6 @@ void MyStrategy::move(const Car& _self, const World& _world, const Game& _game, 
 	game = &_game;
 	resultMove = &_resultMove;
 
-	if (world->getPlayers().size() == 2 && self->getType() == JEEP) return;
-
 	CDrawPluginSwitcher drawSwitcher(draw); 
 	currentTick = world->getTick();
 
@@ -144,7 +142,6 @@ void MyStrategy::makeMove()
 	processOil();
 
 	// Тупой задний ход
-	static int rear = 0;
 	double angleToTarget = (tileRoute[1].ToVec() - car.Position).GetAngle();
 	double angle = angleToTarget - car.Angle;
 	normalizeAngle(angle);
