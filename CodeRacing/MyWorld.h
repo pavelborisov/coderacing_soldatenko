@@ -1,18 +1,26 @@
 #pragma once
 
+#include <map>
 #include "model\car.h"
 #include "model\world.h"
 #include "MyCar.h"
 #include "MyObjects.h"
 
 struct CMyWorld {
+	static const int MaxPlayers = 4;
 	static const int MaxCars = 4;
 	static const int MaxWashers = 3 * 4 * 2;
 	static const int MaxTires = 4 * 2;
 	static const int MaxBonuses = 20; // TODO: сколько?
 	static const int MaxOils = 10;
 
+	static std::map<long long, int> PlayerIdMap;
+	static int PlayersCount;
+	CMyPlayer Players[MaxPlayers]; // в нуле - наш игрок, остальные - чужие.
+
+	static std::map<long long, int> CarIdMap;
 	CMyCar Cars[MaxCars]; // в нуле - наша машина, в единице - возможно союзник, остальные - враги.
+
 	CMyWasher Washers[MaxWashers];
 	CMyTire Tires[MaxTires];
 	static CMyBonus Bonuses[MaxBonuses];

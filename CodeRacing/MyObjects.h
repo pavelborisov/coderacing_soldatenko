@@ -2,6 +2,7 @@
 
 #include "model\Bonus.h"
 #include "model\OilSlick.h"
+#include "model\Player.h"
 #include "model\Projectile.h"
 #include "Vec2D.h"
 
@@ -30,7 +31,10 @@ struct CMyWasher {
 
 	static const double Radius;
 	static const double Mass;
-	
+	static const double InvertedMass;
+	static const double AngularMass;
+	static const double InvertedAngularMass;
+
 	CMyWasher();
 	explicit CMyWasher(const model::Projectile& projectile, int carId);
 	bool IsValid() const { return CarId >= 0; }
@@ -56,4 +60,13 @@ struct CMyTire {
 	bool IsValid() const { return CarId >= 0; }
 	void Invalidate() { CarId = -1; }
 	void LogDifference(const CMyTire& tire) const;
+};
+
+
+struct CMyPlayer {
+	int Score = 0;
+
+	CMyPlayer();
+	explicit CMyPlayer(const model::Player& player);
+	void LogDifference(const CMyPlayer& player) const;
 };

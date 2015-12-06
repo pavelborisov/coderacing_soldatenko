@@ -26,6 +26,9 @@ CMyBonus::CMyBonus(const model::Bonus& bonus) :
 
 const double CMyWasher::Radius = 40 / 2;
 const double CMyWasher::Mass = 10;
+const double CMyWasher::InvertedMass = 1.0 / Mass;
+const double CMyWasher::AngularMass = 1.0 / 2 * Mass * Radius * Radius;
+const double CMyWasher::InvertedAngularMass = 1.0 / AngularMass;
 CMyWasher::CMyWasher()
 {
 }
@@ -64,4 +67,18 @@ void CMyTire::LogDifference(const CMyTire& tire) const
 	CLog::Instance().LogIfDifferent(Speed.X, tire.Speed.X, "Tire Speed.X");
 	CLog::Instance().LogIfDifferent(Speed.Y, tire.Speed.Y, "Tire Speed.Y");
 	CLog::Instance().LogIfDifferent(AngularSpeed, tire.AngularSpeed, "Tire AngularSpeed");
+}
+
+
+CMyPlayer::CMyPlayer()
+{
+}
+CMyPlayer::CMyPlayer(const model::Player& player) :
+	Score(player.getScore())
+{
+}
+
+void CMyPlayer::LogDifference(const CMyPlayer& player) const
+{
+	CLog::Instance().LogIfDifferent(Score, player.Score, "Score");
 }

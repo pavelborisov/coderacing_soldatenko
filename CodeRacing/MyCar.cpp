@@ -17,7 +17,7 @@ static int DeadTicksHistory[10] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
 static int HistoryId(int PlayerId, int Type)
 {
-	assert(PlayerId >= 1 && PlayerId <= 4 && (Type == 0 || Type == 1));
+	assert(PlayerId >= 0 && PlayerId <= 4 && (Type == 0 || Type == 1));
 	const int id = PlayerId * 2 + Type;
 	assert(id >= 0 && id < 10);
 	return id;
@@ -104,6 +104,31 @@ CMyCar::CMyCar(const model::Car& car) :
 	DeadTicks(0), // Как узнать, сколько тиков ещё машина будет дохлой?
 	Type(car.getType()),
 	PlayerId(static_cast<int>(car.getPlayerId())),
+	CollisionsDetected(false),
+	CollisionDeltaSpeed(0)
+{
+	// TODO: удалить
+	MedianAngularSpeed = MedianAngularSpeedHistory[HistoryId(PlayerId, Type)];
+	DeadTicks = Durability > 1e-5 ? 0 : DeadTicksHistory[HistoryId(PlayerId, Type)];
+	RotatedRect = CRotatedRect(Position, 210, 140, Angle);
+}
+
+CMyCar::CMyCar(const model::Car& car, int playerId) :
+	Position(car.getX(), car.getY()),
+	Speed(car.getSpeedX(), car.getSpeedY()),
+	Angle(car.getAngle()),
+	AngularSpeed(car.getAngularSpeed()),
+	MedianAngularSpeed(UndefinedMedianAngularSpeed), // Игра не даёт таких данных
+	EnginePower(car.getEnginePower()),
+	WheelTurn(car.getWheelTurn()),
+	Durability(car.getDurability()),
+	NitroCount(car.getNitroChargeCount()),
+	NitroTicks(car.getRemainingNitroTicks()),
+	NitroCooldown(car.getRemainingNitroCooldownTicks()),
+	OiledTicks(car.getRemainingOiledTicks()),
+	DeadTicks(0), // Как узнать, сколько тиков ещё машина будет дохлой?
+	Type(car.getType()),
+	PlayerId(playerId),
 	CollisionsDetected(false),
 	CollisionDeltaSpeed(0)
 {

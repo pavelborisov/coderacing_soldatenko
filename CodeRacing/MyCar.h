@@ -46,6 +46,7 @@ struct CMyCar {
 	CMyCar();
 	CMyCar(const CMyCar& car);
 	explicit CMyCar(const model::Car& car);
+	CMyCar(const model::Car& car, int playerId);
 
 	double GetMass() const;
 	double GetInvertedMass() const;

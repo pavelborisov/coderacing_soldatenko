@@ -649,7 +649,68 @@ void CWorldSimulator::collideCarWithWalls(CMyCar& car) const
 
 void CWorldSimulator::collideCarWithWashers(int carId, CMyCar& car, CMyWorld& world) const
 {
-	// TODO: Более точное определение?
+	// TODO: Пролетать сквозь финишированные машины
+#define PRECISE_WASHER
+#ifdef PRECISE_WASHER
+	CCollisionInfo collisionInfo;
+	CRotatedRect noRotatedRect;
+	double noAngularSpeed = 0;
+	double collisionDeltaSpeed = 0;
+	bool shouldRemoveInvalidWashers = false;
+	for (auto& washer : world.Washers) {
+		if (!washer.IsValid()) {
+			break;
+		}
+		static const double minCollisionDistanceSqr = pow(CMyWasher::Radius + CMyCar::CircumcircleRadius, 2);
+		if ((washer.Position - car.Position).LengthSquared() > minCollisionDistanceSqr) {
+			// Шина находится слишком далеко.
+			continue;
+		}
+		for (int i = 0; i < 4; i++) {
+			const CVec2D& p1 = car.RotatedRect.Corners[i];
+			const CVec2D& p2 = car.RotatedRect.Corners[(i + 1) % 4];
+			if (findLineWithCircleCollision(p1, p2, washer.Position, CMyWasher::Radius, collisionInfo)) {
+				if (carId == washer.CarId) {
+					// Проверка, что шиной только что выстрелили - если её центр находится внутри машины,
+					// или если вектор скорости направлен от машины.
+					const CLine2D side = CLine2D::FromPoints(p1, p2);
+					if (side.GetSignedDistanceFrom(washer.Position) < 0) {
+						// Шина находится внутри машины относительно стороны столкновения.
+						continue;
+					} else if (washer.Speed.DotProduct(collisionInfo.NormalB) < 0) {
+						// Шина находится снаружи, но её скорость направлена от стороны, с которой предполагается столкновение.
+						continue;
+					}
+				}
+				resolveCollision(collisionInfo,
+					car.Position, car.Speed, car.AngularSpeed, car.RotatedRect,
+					washer.Position, washer.Speed, noAngularSpeed, noRotatedRect, collisionDeltaSpeed,
+					car.GetInvertedMass(), car.GetInvertedAngularMass(),
+					washer.InvertedMass, washer.InvertedAngularMass,
+					0.5, 0.25);
+				// Начисление очков
+				const double durabilityChange = min(0.15, car.Durability);
+				if (durabilityChange > 0.01) {
+					car.Durability = max(0.0, car.Durability - durabilityChange);
+					const int washerPlayerId = world.Cars[washer.CarId].PlayerId;
+					if (car.PlayerId != washerPlayerId) {
+						world.Players[washerPlayerId].Score += static_cast<int>(100 * durabilityChange);
+						if (car.Durability == 0.0) {
+							world.Players[washerPlayerId].Score += 100;
+						}
+					}
+				}
+				washer.Invalidate();
+				shouldRemoveInvalidWashers = true;
+				break;
+			}
+		}
+	}
+	if (shouldRemoveInvalidWashers) {
+		world.RemoveInvalidWashers();
+	}
+#else
+	// Неточное, но простое определение.
 	bool shouldRemoveInvalidWashers = false;
 	for (auto& w : world.Washers) {
 		if (!w.IsValid()) {
@@ -660,7 +721,17 @@ void CWorldSimulator::collideCarWithWashers(int carId, CMyCar& car, CMyWorld& wo
 		}
 		static const double collisionDistanceSqr = pow(CMyWasher::Radius + CMyCar::HalfHeight, 2);
 		if ((w.Position - car.Position).LengthSquared() < collisionDistanceSqr) {
-			car.Durability = max(0.0, car.Durability - 0.15);
+			const double durabilityChange = min(0.15, car.Durability);
+			if (durabilityChange > 0.01) {
+				car.Durability = max(0.0, car.Durability - durabilityChange);
+				const int washerPlayerId = world.Cars[washer.CarId].PlayerId;
+				if (car.PlayerId != washerPlayerId) {
+					world.Players[washerPlayerId].Score += static_cast<int>(100 * durabilityChange);
+					if (car.Durability == 0.0) {
+						world.Players[washerPlayerId].Score += 100;
+					}
+				}
+			}
 			w.Invalidate();
 			shouldRemoveInvalidWashers = true;
 			// TODO: Начислять очки игрокам.
@@ -669,10 +740,12 @@ void CWorldSimulator::collideCarWithWashers(int carId, CMyCar& car, CMyWorld& wo
 	if (shouldRemoveInvalidWashers) {
 		world.RemoveInvalidWashers();
 	}
+#endif
 }
 
 void CWorldSimulator::collideCarWithTires(int carId, CMyCar& car, CMyWorld& world) const
 {
+	// TODO: Пролетать сквозь финишированные машины
 	CCollisionInfo collisionInfo;
 	CRotatedRect noRotatedRect;
 	double collisionDeltaSpeed = 0;
@@ -708,10 +781,17 @@ void CWorldSimulator::collideCarWithTires(int carId, CMyCar& car, CMyWorld& worl
 					car.GetInvertedMass(), car.GetInvertedAngularMass(),
 					tire.InvertedMass, tire.InvertedAngularMass,
 					car.CarToTireMomentumTransferFactor, car.CarToTireSurfaceFrictionFactor);
-				// TODO: Начислять очки
-				const double durabilityChange = 0.35 * collisionDeltaSpeed / 60.0;
+				// Начисление очков
+				const double durabilityChange = min(0.35 * collisionDeltaSpeed / 60.0, car.Durability);
 				if (durabilityChange > 0.01) {
 					car.Durability = max(0.0, car.Durability - durabilityChange);
+					const int tirePlayerId = world.Cars[tire.CarId].PlayerId;
+					if (car.PlayerId != tirePlayerId) {
+						world.Players[tirePlayerId].Score += static_cast<int>(100 * durabilityChange);
+						if (car.Durability == 0.0) {
+							world.Players[tirePlayerId].Score += 100;
+						}
+					}
 				}
 				if (tire.Speed.Length() < minTireSpeed) {
 					tire.Invalidate();
@@ -728,6 +808,7 @@ void CWorldSimulator::collideCarWithTires(int carId, CMyCar& car, CMyWorld& worl
 
 void CWorldSimulator::collideCarWithBonuses(CMyCar& /*car*/, CMyWorld& /*world*/) const
 {
+	// TODO: Запоминать взятые бонусы?
 
 }
 

@@ -1,6 +1,5 @@
 #include "MyWorld.h"
 
-#include <map>
 #include "assert.h"
 #include "DrawPlugin.h"
 #include "Log.h"
@@ -10,17 +9,43 @@ using namespace std;
 
 CMyBonus CMyWorld::Bonuses[MaxBonuses];
 CMyOil CMyWorld::Oils[MaxOils];
+int CMyWorld::PlayersCount = 0;
+map<long long, int> CMyWorld::PlayerIdMap;
+map<long long, int> CMyWorld::CarIdMap;
 
 CMyWorld::CMyWorld(const World& world, const Car& self)
 {
-	map<long long, int> carIdMap;
+	PlayerIdMap.clear();
+	auto players = world.getPlayers();
+	PlayersCount = players.size();
+	int nextPlayerIndex = 0;
+	// 0 - наш игрок
+	for (const auto& p : players) {
+		if (p.getId() == self.getPlayerId()) {
+			PlayerIdMap[p.getId()] = nextPlayerIndex;
+			Players[nextPlayerIndex++] = CMyPlayer(p);
+		}
+	}
+	// 1, 2, 3 - чужие игроки
+	for (int playerId = 1; playerId <= 4; playerId++) {
+		if (playerId == self.getPlayerId()) continue;
+		for (const auto& p : players) {
+			if (p.getId() == playerId) {
+				PlayerIdMap[p.getId()] = nextPlayerIndex;
+				Players[nextPlayerIndex++] = CMyPlayer(p);
+				break;
+			}
+		}
+	}
+
+	CarIdMap.clear();
 	auto cars = world.getCars();
 	// 0 - наша машина
 	int nextCarIndex = 0;
 	for (const auto& car : cars) {
 		if (car.getId() == self.getId()) {
-			carIdMap[car.getId()] = nextCarIndex;
-			Cars[nextCarIndex++] = CMyCar(car);
+			CarIdMap[car.getId()] = nextCarIndex;
+			Cars[nextCarIndex++] = CMyCar(car, PlayerIdMap[car.getPlayerId()]);
 			break;
 		}
 	}
@@ -30,8 +55,8 @@ CMyWorld::CMyWorld(const World& world, const Car& self)
 			if (playerId == self.getPlayerId()) continue;
 			for (const auto& car : cars) {
 				if (car.getPlayerId() == playerId) {
-					carIdMap[car.getId()] = nextCarIndex;
-					Cars[nextCarIndex++] = CMyCar(car);
+					CarIdMap[car.getId()] = nextCarIndex;
+					Cars[nextCarIndex++] = CMyCar(car, PlayerIdMap[car.getPlayerId()]);
 					break;
 				}
 			}
@@ -40,8 +65,8 @@ CMyWorld::CMyWorld(const World& world, const Car& self)
 		// 1 - машина тиммейт
 		for (const auto& car : cars) {
 			if (car.getId() != self.getId() && car.getPlayerId() == self.getPlayerId()) {
-				carIdMap[car.getId()] = nextCarIndex;
-				Cars[nextCarIndex++] = CMyCar(car);
+				CarIdMap[car.getId()] = nextCarIndex;
+				Cars[nextCarIndex++] = CMyCar(car, PlayerIdMap[car.getPlayerId()]);
 				break;
 			}
 		}
@@ -49,8 +74,8 @@ CMyWorld::CMyWorld(const World& world, const Car& self)
 		for (int type = 0; type <= 1; type++) {
 			for (const auto& car : cars) {
 				if (car.getType() == type && car.getPlayerId() != self.getPlayerId()) {
-					carIdMap[car.getId()] = nextCarIndex;
-					Cars[nextCarIndex++] = CMyCar(car);
+					CarIdMap[car.getId()] = nextCarIndex;
+					Cars[nextCarIndex++] = CMyCar(car, PlayerIdMap[car.getPlayerId()]);
 				}
 			}
 		}
@@ -65,16 +90,16 @@ CMyWorld::CMyWorld(const World& world, const Car& self)
 	for (const auto& p : projectiles) {
 		if (p.getType() == WASHER) {
 			if (nextWasherId < MaxWashers) {
-				Washers[nextWasherId++] = CMyWasher(p, carIdMap[p.getCarId()]);
+				Washers[nextWasherId++] = CMyWasher(p, CarIdMap[p.getCarId()]);
 			} else {
-				CLog::Instance().Stream() << "Too many washers" << endl;
+				CLog::Instance().Stream() << "Warning! Too many washers" << endl;
 			}
 		} else if (p.getType() == TIRE) {
 			if (nextTireId < MaxTires) {
 				// TODO: Разделить объект на статическую и пременную части.
-				Tires[nextTireId++] = CMyTire(p, carIdMap[p.getCarId()]);
+				Tires[nextTireId++] = CMyTire(p, CarIdMap[p.getCarId()]);
 			} else {
-				CLog::Instance().Stream() << "Too many tires" << endl;
+				CLog::Instance().Stream() << "Warning! Too many tires" << endl;
 			}
 		} else {
 			assert(false);
@@ -91,7 +116,7 @@ CMyWorld::CMyWorld(const World& world, const Car& self)
 			BonusExist[nextBonusId] = true;
 			Bonuses[nextBonusId++] = CMyBonus(b);
 		} else {
-			CLog::Instance().Stream() << "Too many bonuses" << endl;
+			CLog::Instance().Stream() << "Warning! Too many bonuses" << endl;
 		}
 	}
 
@@ -104,6 +129,8 @@ CMyWorld::CMyWorld(const World& world, const Car& self)
 		if (nextOilId < MaxOils) {
 			OilTicks[nextOilId] = o.getRemainingLifetime();
 			Oils[nextOilId++] = CMyOil(o);
+		} else {
+			CLog::Instance().Stream() << "Warning! Too many oils" << endl;
 		}
 	}
 }
@@ -170,7 +197,11 @@ void CMyWorld::Log() const
 void CMyWorld::LogDifference(const CMyWorld& world) const
 {
 #ifdef LOGGING
-	CLog::Instance().Stream() << "Car[0] check difference" << endl;
+	CLog::Instance().Stream() << "Players[0] check difference" << endl;
+	Players[0].LogDifference(world.Players[0]);
+	CLog::Instance().Stream() << "Players[1] check difference" << endl;
+	Players[1].LogDifference(world.Players[1]);
+	CLog::Instance().Stream() << "Cars[0] check difference" << endl;
 	Cars[0].LogDifference(world.Cars[0]);
 	//CLog::Instance().Stream() << "Car[1] check difference" << endl;
 	//Cars[1].LogDifference(world.Cars[1]);
