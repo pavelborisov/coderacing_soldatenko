@@ -53,6 +53,7 @@ void CWorldSimulator::SetPrecision(int _subtickCount)
 
 CMyWorld CWorldSimulator::Simulate(const CMyWorld& startWorld, const CMyMove moves[CMyWorld::MaxCars]) const
 {
+	// TODO: NextWaypointIndex
 	CMyWorld world = startWorld;
 	CCarInfo carInfos[CMyWorld::MaxCars];
 	for (int i = 0; i < CMyWorld::MaxCars; i++) {
@@ -288,13 +289,15 @@ void CWorldSimulator::collideTireWithWalls(CMyTire& tire) const
 			}
 			CVec2D intersection1;
 			bool hasIntersection1 = wall.GetIntersectionPoint(side1, intersection1);
-			assert(hasIntersection1);
 			CVec2D intersection2;
 			bool hasIntersection2 = wall.GetIntersectionPoint(side2, intersection2);
-			assert(hasIntersection2);
-			collisionInfo.Point = (intersection2 + intersection1) * 0.5;
-			resolveCollisionStatic(collisionInfo, tire.Position, tire.Speed, tire.AngularSpeed, noRotatedRect, collisionDeltaSpeed,
-				tire.InvertedMass, tire.InvertedAngularMass, tire.TireToWallMomentumTransferFactor, tire.TireToWallSurfaceFrictionFactor);
+			if (hasIntersection1 && hasIntersection2) {
+				collisionInfo.Point = (intersection2 + intersection1) * 0.5;
+				resolveCollisionStatic(collisionInfo, tire.Position, tire.Speed, tire.AngularSpeed, noRotatedRect, collisionDeltaSpeed,
+					tire.InvertedMass, tire.InvertedAngularMass, tire.TireToWallMomentumTransferFactor, tire.TireToWallSurfaceFrictionFactor);
+			} else {
+				assert(false);
+			}
 		}
 	}
 
@@ -328,13 +331,15 @@ void CWorldSimulator::collideTireWithWalls(CMyTire& tire) const
 			}
 			CVec2D intersection1;
 			bool hasIntersection1 = wall.GetIntersectionPoint(side1, intersection1);
-			assert(hasIntersection1);
 			CVec2D intersection2;
 			bool hasIntersection2 = wall.GetIntersectionPoint(side2, intersection2);
-			assert(hasIntersection2);
-			collisionInfo.Point = (intersection2 + intersection1) * 0.5;
-			resolveCollisionStatic(collisionInfo, tire.Position, tire.Speed, tire.AngularSpeed, noRotatedRect, collisionDeltaSpeed,
-				tire.InvertedMass, tire.InvertedAngularMass, tire.TireToWallMomentumTransferFactor, tire.TireToWallSurfaceFrictionFactor);
+			if (hasIntersection1 && hasIntersection2) {
+				collisionInfo.Point = (intersection2 + intersection1) * 0.5;
+				resolveCollisionStatic(collisionInfo, tire.Position, tire.Speed, tire.AngularSpeed, noRotatedRect, collisionDeltaSpeed,
+					tire.InvertedMass, tire.InvertedAngularMass, tire.TireToWallMomentumTransferFactor, tire.TireToWallSurfaceFrictionFactor);
+			} else {
+				assert(false);
+			}
 		}
 	}
 
@@ -368,13 +373,15 @@ void CWorldSimulator::collideTireWithWalls(CMyTire& tire) const
 			}
 			CVec2D intersection1;
 			bool hasIntersection1 = wall.GetIntersectionPoint(side1, intersection1);
-			assert(hasIntersection1);
 			CVec2D intersection2;
 			bool hasIntersection2 = wall.GetIntersectionPoint(side2, intersection2);
-			assert(hasIntersection2);
-			collisionInfo.Point = (intersection2 + intersection1) * 0.5;
-			resolveCollisionStatic(collisionInfo, tire.Position, tire.Speed, tire.AngularSpeed, noRotatedRect, collisionDeltaSpeed,
-				tire.InvertedMass, tire.InvertedAngularMass, tire.TireToWallMomentumTransferFactor, tire.TireToWallSurfaceFrictionFactor);
+			if (hasIntersection1 && hasIntersection2) {
+				collisionInfo.Point = (intersection2 + intersection1) * 0.5;
+				resolveCollisionStatic(collisionInfo, tire.Position, tire.Speed, tire.AngularSpeed, noRotatedRect, collisionDeltaSpeed,
+					tire.InvertedMass, tire.InvertedAngularMass, tire.TireToWallMomentumTransferFactor, tire.TireToWallSurfaceFrictionFactor);
+			} else {
+				assert(false);
+			}
 		}
 	}
 
@@ -408,13 +415,15 @@ void CWorldSimulator::collideTireWithWalls(CMyTire& tire) const
 			}
 			CVec2D intersection1;
 			bool hasIntersection1 = wall.GetIntersectionPoint(side1, intersection1);
-			assert(hasIntersection1);
 			CVec2D intersection2;
 			bool hasIntersection2 = wall.GetIntersectionPoint(side2, intersection2);
-			assert(hasIntersection2);
-			collisionInfo.Point = (intersection2 + intersection1) * 0.5;
-			resolveCollisionStatic(collisionInfo, tire.Position, tire.Speed, tire.AngularSpeed, noRotatedRect, collisionDeltaSpeed,
-				tire.InvertedMass, tire.InvertedAngularMass, tire.TireToWallMomentumTransferFactor, tire.TireToWallSurfaceFrictionFactor);
+			if (hasIntersection1 && hasIntersection2) {
+				collisionInfo.Point = (intersection2 + intersection1) * 0.5;
+				resolveCollisionStatic(collisionInfo, tire.Position, tire.Speed, tire.AngularSpeed, noRotatedRect, collisionDeltaSpeed,
+					tire.InvertedMass, tire.InvertedAngularMass, tire.TireToWallMomentumTransferFactor, tire.TireToWallSurfaceFrictionFactor);
+			} else {
+				assert(false);
+			}
 		}
 	}
 
@@ -502,13 +511,15 @@ void CWorldSimulator::collideCarWithWalls(CMyCar& car) const
 			}
 			CVec2D intersection1;
 			bool hasIntersection1 = wall.GetIntersectionPoint(side1, intersection1);
-			assert(hasIntersection1);
 			CVec2D intersection2;
 			bool hasIntersection2 = wall.GetIntersectionPoint(side2, intersection2);
-			assert(hasIntersection2);
-			collisionInfo.Point = (intersection2 + intersection1) * 0.5;
-			resolveCollisionStatic(collisionInfo, car.Position, car.Speed, car.AngularSpeed, car.RotatedRect, collisionDeltaSpeed,
-				car.GetInvertedMass(), car.GetInvertedAngularMass(), car.CarToWallMomentumTransferFactor, car.CarToWallSurfaceFrictionFactor);
+			if (hasIntersection1 && hasIntersection2) {
+				collisionInfo.Point = (intersection2 + intersection1) * 0.5;
+				resolveCollisionStatic(collisionInfo, car.Position, car.Speed, car.AngularSpeed, car.RotatedRect, collisionDeltaSpeed,
+					car.GetInvertedMass(), car.GetInvertedAngularMass(), car.CarToWallMomentumTransferFactor, car.CarToWallSurfaceFrictionFactor);
+			} else {
+				assert(false);
+			}
 		}
 	}
 
@@ -542,13 +553,15 @@ void CWorldSimulator::collideCarWithWalls(CMyCar& car) const
 			}
 			CVec2D intersection1;
 			bool hasIntersection1 = wall.GetIntersectionPoint(side1, intersection1);
-			assert(hasIntersection1);
 			CVec2D intersection2;
 			bool hasIntersection2 = wall.GetIntersectionPoint(side2, intersection2);
-			assert(hasIntersection2);
-			collisionInfo.Point = (intersection2 + intersection1) * 0.5;
-			resolveCollisionStatic(collisionInfo, car.Position, car.Speed, car.AngularSpeed, car.RotatedRect, collisionDeltaSpeed,
-				car.GetInvertedMass(), car.GetInvertedAngularMass(), car.CarToWallMomentumTransferFactor, car.CarToWallSurfaceFrictionFactor);
+			if (hasIntersection1 && hasIntersection2) {
+				collisionInfo.Point = (intersection2 + intersection1) * 0.5;
+				resolveCollisionStatic(collisionInfo, car.Position, car.Speed, car.AngularSpeed, car.RotatedRect, collisionDeltaSpeed,
+					car.GetInvertedMass(), car.GetInvertedAngularMass(), car.CarToWallMomentumTransferFactor, car.CarToWallSurfaceFrictionFactor);
+			} else {
+				assert(false);
+			}
 		}
 	}
 
@@ -582,13 +595,15 @@ void CWorldSimulator::collideCarWithWalls(CMyCar& car) const
 			}
 			CVec2D intersection1;
 			bool hasIntersection1 = wall.GetIntersectionPoint(side1, intersection1);
-			assert(hasIntersection1);
 			CVec2D intersection2;
 			bool hasIntersection2 = wall.GetIntersectionPoint(side2, intersection2);
-			assert(hasIntersection2);
-			collisionInfo.Point = (intersection2 + intersection1) * 0.5;
-			resolveCollisionStatic(collisionInfo, car.Position, car.Speed, car.AngularSpeed, car.RotatedRect, collisionDeltaSpeed,
-				car.GetInvertedMass(), car.GetInvertedAngularMass(), car.CarToWallMomentumTransferFactor, car.CarToWallSurfaceFrictionFactor);
+			if (hasIntersection1 && hasIntersection2) {
+				collisionInfo.Point = (intersection2 + intersection1) * 0.5;
+				resolveCollisionStatic(collisionInfo, car.Position, car.Speed, car.AngularSpeed, car.RotatedRect, collisionDeltaSpeed,
+					car.GetInvertedMass(), car.GetInvertedAngularMass(), car.CarToWallMomentumTransferFactor, car.CarToWallSurfaceFrictionFactor);
+			} else {
+				assert(false);
+			}
 		}
 	}
 
@@ -622,13 +637,15 @@ void CWorldSimulator::collideCarWithWalls(CMyCar& car) const
 			}
 			CVec2D intersection1;
 			bool hasIntersection1 = wall.GetIntersectionPoint(side1, intersection1);
-			assert(hasIntersection1);
 			CVec2D intersection2;
 			bool hasIntersection2 = wall.GetIntersectionPoint(side2, intersection2);
-			assert(hasIntersection2);
-			collisionInfo.Point = (intersection2 + intersection1) * 0.5;
-			resolveCollisionStatic(collisionInfo, car.Position, car.Speed, car.AngularSpeed, car.RotatedRect, collisionDeltaSpeed,
-				car.GetInvertedMass(), car.GetInvertedAngularMass(), car.CarToWallMomentumTransferFactor, car.CarToWallSurfaceFrictionFactor);
+			if (hasIntersection1 && hasIntersection2) {
+				collisionInfo.Point = (intersection2 + intersection1) * 0.5;
+				resolveCollisionStatic(collisionInfo, car.Position, car.Speed, car.AngularSpeed, car.RotatedRect, collisionDeltaSpeed,
+					car.GetInvertedMass(), car.GetInvertedAngularMass(), car.CarToWallMomentumTransferFactor, car.CarToWallSurfaceFrictionFactor);
+			} else {
+				assert(false);
+			}
 		}
 	}
 

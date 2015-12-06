@@ -11,7 +11,6 @@
 #include "MyCar.h"
 #include "MyTile.h"
 #include "MyWorld.h"
-#include "Simulator.h"
 #include "TileRouteFinder.h"
 #include "Vec2D.h"
 #include "WaypointsDistanceMap.h"
@@ -38,18 +37,16 @@ private:
 	std::vector<CMyTile> tileRoute;
 	int nextWaypointIndex;
 
-	CSimulator simulator;
-	CMyCar prevPrediction;
-	CMyWorld prevWorldPrediction;
-	CMyCar car;
-	CMyCar prediction;
+	CMyWorld previousPredictedWorld;
+	CMyWorld currentWorld;
+	CMyCar currentCar;
+	CMyWorld predictedWorld;;
 	CBestMoveFinder::CResult previousResult;
 
 	MyStrategy& operator = (const MyStrategy&) { return *this; }
 
 	void updateWaypoints();
 	void findTileRoute();
-	void firstTick();
 	void makeMove();
 	void predictObjects();
 	void processShooting();

@@ -22,6 +22,7 @@ struct CMyCar {
 	double EnginePower;
 	double WheelTurn;
 	double Durability;
+	int NextWaypointIndex;
 	int NitroCount;
 	int NitroTicks;
 	int NitroCooldown;

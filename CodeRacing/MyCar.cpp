@@ -56,6 +56,7 @@ CMyCar::CMyCar() :
 	EnginePower(0),
 	WheelTurn(0),
 	Durability(0),
+	NextWaypointIndex(0),
 	NitroCount(0),
 	NitroTicks(0),
 	NitroCooldown(0),
@@ -81,6 +82,7 @@ CMyCar::CMyCar(const CMyCar& car) :
 	EnginePower(car.EnginePower),
 	WheelTurn(car.WheelTurn),
 	Durability(car.Durability),
+	NextWaypointIndex(car.NextWaypointIndex),
 	NitroCount(car.NitroCount),
 	NitroTicks(car.NitroTicks),
 	NitroCooldown(car.NitroCooldown),
@@ -113,6 +115,7 @@ CMyCar::CMyCar(const model::Car& car, int playerId) :
 	EnginePower(car.getEnginePower()),
 	WheelTurn(car.getWheelTurn()),
 	Durability(car.getDurability()),
+	NextWaypointIndex(car.getNextWaypointIndex()),
 	NitroCount(car.getNitroChargeCount()),
 	NitroTicks(car.getRemainingNitroTicks()),
 	NitroCooldown(car.getRemainingNitroCooldownTicks()),
@@ -171,6 +174,7 @@ void CMyCar::LogDifference(const CMyCar& car) const
 	CLog::Instance().LogIfDifferent(EnginePower, car.EnginePower, "EnginePower");
 	CLog::Instance().LogIfDifferent(WheelTurn, car.WheelTurn, "WheelTurn");
 	CLog::Instance().LogIfDifferent(Durability, car.Durability, "Durability");
+	CLog::Instance().LogIfDifferent(NextWaypointIndex, car.NextWaypointIndex, "NextWaypointIndex");
 	CLog::Instance().LogIfDifferent(NitroCount, car.NitroCount, "NitroCount");
 	CLog::Instance().LogIfDifferent(NitroTicks, car.NitroTicks, "NitroTicks");
 	CLog::Instance().LogIfDifferent(NitroCooldown, car.NitroCooldown, "NitroCooldown");
@@ -180,5 +184,7 @@ void CMyCar::LogDifference(const CMyCar& car) const
 	CLog::Instance().LogIfDifferent(PlayerId, car.PlayerId, "Type");
 	//int CollisionsDetected;
 	//double CollisionDeltaSpeed;
+#else
+	car;
 #endif
 }

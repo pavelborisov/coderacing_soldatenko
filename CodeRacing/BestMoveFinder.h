@@ -3,10 +3,9 @@
 #include <vector>
 #include "model\Game.h"
 #include "model\World.h"
-#include "MyCar.h"
 #include "MyMove.h"
 #include "MyTile.h"
-#include "Simulator.h"
+#include "MyWorld.h"
 
 class CBestMoveFinder {
 public:
@@ -30,38 +29,25 @@ public:
 	};
 
 	CBestMoveFinder(
-		const CMyCar& car,
-		int nextWaypointIndex,
-		const model::Car& self,
-		const model::World& world,
-		const model::Game& game,
+		const CMyWorld& startWorld,
 		const std::vector<CMyTile>& waypointTiles,
-		CSimulator& simulator,
 		const CBestMoveFinder::CResult& previousResult);
 	
 	CResult Process();
 
 private:
 	struct CState {
-		CMyCar Car;
+		CMyWorld World;
 		int Tick = 0;
-		int NextWaypointIndex = -1;
 		double RouteScore = 0;
-		std::vector<bool> PickedBonuses;
-		CState(const CMyCar& Car, int Tick, int NextWaypointIndex, double RouteScore, size_t BonusesSize) :
-			Car(Car), Tick(Tick), NextWaypointIndex(NextWaypointIndex), RouteScore(RouteScore)
+		CState(const CMyWorld& World, int Tick, double RouteScore) :
+			World(World), Tick(Tick), RouteScore(RouteScore)
 		{
-			PickedBonuses.assign(BonusesSize, false);
 		}
 	};
 
-	const CMyCar& car;
-	int nextWaypointIndex;
-	const model::Car& self;
-	const model::World& world;
-	const model::Game& game;
+	const CMyWorld& startWorld;
 	const std::vector<CMyTile>& waypointTiles;
-	CSimulator& simulator;
 	std::vector<CMoveWithDuration> correctedPreviousMoveList;
 
 	int simulationTicks = 0;

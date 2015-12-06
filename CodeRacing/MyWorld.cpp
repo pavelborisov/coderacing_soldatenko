@@ -212,6 +212,8 @@ void CMyWorld::LogDifference(const CMyWorld& world) const
 		CLog::Instance().Stream() << "Tires[i] check difference" << endl;
 		Tires[i].LogDifference(world.Tires[i]);
 	}
+#else
+	world;
 #endif
 }
 
@@ -235,5 +237,7 @@ void CMyWorld::Draw(int color) const
 			CDrawPlugin::Instance().Circle(Tires[i].Position.X, Tires[i].Position.Y, CMyWasher::Radius, color);
 		}
 	}
+#else
+	color;
 #endif
 }

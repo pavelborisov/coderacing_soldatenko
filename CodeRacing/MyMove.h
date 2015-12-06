@@ -3,14 +3,16 @@
 #include "model\Move.h"
 
 struct CMyMove {
-	int Turn = 0;   // 0, 1, -1
-	int Engine = 1; // 1, -1
-	int Brake = 0;  // 0, 1
+	double Turn = 0;   // 0, 1, -1
+	double Engine = 1; // 1, -1
+	bool Brake = false;
 	bool Nitro = false;
 
 	CMyMove() {}
-	CMyMove(int Turn, int Brake) : Turn(Turn), Brake(Brake) {}
-	CMyMove(int Turn, int Brake, int Engine) : Turn(Turn), Brake(Brake), Engine(Engine) {}
+	explicit CMyMove(const model::Move& move) :
+		Turn(move.getWheelTurn()), Brake(move.isBrake()), Engine(move.getEnginePower()), Nitro(move.isUseNitro()) {}
+	CMyMove(double Turn, bool Brake) : Turn(Turn), Brake(Brake) {}
+	CMyMove(double Turn, bool Brake, double Engine) : Turn(Turn), Brake(Brake), Engine(Engine) {}
 
 	bool operator == (const CMyMove& m) const { return Turn == m.Turn && Brake == m.Brake && Engine == m.Engine && Nitro == m.Nitro; }
 	bool operator != (const CMyMove& m) const { return Turn != m.Turn || Brake != m.Brake || Engine != m.Engine || Nitro != m.Nitro; }
@@ -22,7 +24,7 @@ model::Move CMyMove::Convert() const
 {
 	model::Move result;
 	result.setWheelTurn(Turn);
-	result.setBrake(Brake == 1);
+	result.setBrake(Brake);
 	result.setEnginePower(Engine);
 	result.setUseNitro(Nitro);
 	return result;
