@@ -454,6 +454,11 @@ void CWorldSimulator::collideTireWithWashers(CMyTire& tire, CMyWorld& world) con
 	}
 }
 
+void CWorldSimulator::collideTireWithTires(CMyTire& /*tire*/, CMyWorld& /*world*/) const
+{
+	//TODO:
+}
+
 void CWorldSimulator::collideCarWithWalls(CMyCar& car) const
 {
 	double collisionDeltaSpeed = 0;

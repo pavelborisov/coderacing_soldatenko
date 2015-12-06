@@ -149,6 +149,7 @@ void MyStrategy::makeMove()
 	}
 	CMyMove moves[4];
 	moves[0].Engine = 0;
+	//moves[0].Turn = -1;
 	if (world->getTick() < 250) {
 		moves[0].Brake = 1;
 	}
@@ -158,9 +159,16 @@ void MyStrategy::makeMove()
 	CWorldSimulator::Instance().SetGame(*game);
 	CWorldSimulator::Instance().SetPrecision(10);
 
+	CMyWorld simWorld = myWorld;
+	for (int i = 0; i < 100; i++) {
+		simWorld = CWorldSimulator::Instance().Simulate(simWorld, moves);
+		int green = 156 + i;
+		simWorld.Draw(0xFF00FF + 0x000100 * green);
+	}
+
 	CMyWorld predictedWorld = CWorldSimulator::Instance().Simulate(myWorld, moves);
 	prevWorldPrediction = predictedWorld;
-	predictedWorld.Draw(0x00FF00);
+	//predictedWorld.Draw(0x00FF00);
 	for (auto& c : predictedWorld.Cars) c.SaveHistory();
 
 	//DWORD startTime = GetTickCount();
