@@ -93,9 +93,6 @@
     <ClCompile Include="Log.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Simulator.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="MyCar.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -115,9 +112,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Debug.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="GlobalPredictions.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Vec3D.cpp">
@@ -227,9 +221,6 @@
     <ClInclude Include="Log.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Simulator.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="MyCar.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -251,16 +242,10 @@
     <ClInclude Include="BestMoveFinder.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="LowResMap.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="WaypointsDistanceMap.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Debug.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="GlobalPredictions.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Vec3D.h">

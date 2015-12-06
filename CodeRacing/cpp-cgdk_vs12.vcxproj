@@ -130,7 +130,6 @@
     <ClCompile Include="BestMoveFinder.cpp" />
     <ClCompile Include="Debug.cpp" />
     <ClCompile Include="DrawPlugin.cpp" />
-    <ClCompile Include="GlobalPredictions.cpp" />
     <ClCompile Include="Line2D.cpp" />
     <ClCompile Include="Log.cpp" />
     <ClCompile Include="model\Bonus.cpp" />
@@ -152,7 +151,6 @@
     <ClCompile Include="MyWorld.cpp" />
     <ClCompile Include="RemoteProcessClient.cpp" />
     <ClCompile Include="Runner.cpp" />
-    <ClCompile Include="Simulator.cpp" />
     <ClCompile Include="Strategy.cpp" />
     <ClCompile Include="csimplesocket\ActiveSocket.cpp" />
     <ClCompile Include="csimplesocket\HTTPActiveSocket.cpp" />
@@ -169,10 +167,8 @@
     <ClInclude Include="BestMoveFinder.h" />
     <ClInclude Include="Debug.h" />
     <ClInclude Include="DrawPlugin.h" />
-    <ClInclude Include="GlobalPredictions.h" />
     <ClInclude Include="Line2D.h" />
     <ClInclude Include="Log.h" />
-    <ClInclude Include="LowResMap.h" />
     <ClInclude Include="model\Bonus.h" />
     <ClInclude Include="model\BonusType.h" />
     <ClInclude Include="model\Car.h" />
@@ -198,7 +194,6 @@
     <ClInclude Include="MyWorld.h" />
     <ClInclude Include="RemoteProcessClient.h" />
     <ClInclude Include="Runner.h" />
-    <ClInclude Include="Simulator.h" />
     <ClInclude Include="Strategy.h" />
     <ClInclude Include="csimplesocket\ActiveSocket.h" />
     <ClInclude Include="csimplesocket\Host.h" />

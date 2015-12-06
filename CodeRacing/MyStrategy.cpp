@@ -7,7 +7,6 @@
 #include <set>
 #include <string>
 #include <assert.h>
-#include "GlobalPredictions.h"
 #include "MyWorld.h"
 #include "Tools.h"
 #include "WaypointsDistanceMap.h"
