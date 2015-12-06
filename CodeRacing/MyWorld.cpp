@@ -126,7 +126,7 @@ void CMyWorld::RemoveInvalidWashers()
 void CMyWorld::RemoveInvalidTires()
 {
 	int left = 0;
-	for (int right = 1; right < MaxWashers; right++) {
+	for (int right = 1; right < MaxTires; right++) {
 		if (Tires[right].IsValid()) {
 			while (left < right && Tires[left].IsValid()) {
 				left++;
