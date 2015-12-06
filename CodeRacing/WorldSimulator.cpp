@@ -15,10 +15,6 @@
 using namespace std;
 
 static const double epsilon = 1e-7;
-static const double wallOffsetMin = CMyTile::WallRadius;
-static const double wallOffsetMin2 = CMyTile::WallRadius * 2;
-static const double wallOffsetMax = CMyTile::TileSize - CMyTile::WallRadius;
-static const double wallOffsetMax2 = CMyTile::TileSize - 2 * CMyTile::WallRadius;
 static const double minTireSpeed = 60 * 0.25;
 
 static const double limit(double val, double lim)

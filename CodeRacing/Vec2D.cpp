@@ -1,11 +1,14 @@
 #include "Vec2D.h"
 
 #include <cmath>
+#include <cstdlib>
 #include <math.h>
 #include <assert.h>
 #include "Tools.h"
 
 static const double epsilon = 1e-7;
+
+using namespace std;
 
 double CVec2D::Length() const
 {

@@ -1,10 +1,13 @@
 #include "Line2D.h"
 
 #include <cmath>
+#include <cstdlib>
 #include "math.h"
 #include "assert.h"
 
 static const double epsilon = 1e-7;
+
+using namespace std;
 
 CLine2D::CLine2D(double A, double B, double C) : A(A), B(B), C(C)
 {
