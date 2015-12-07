@@ -226,13 +226,13 @@ void CWorldSimulator::updateCar(const CMyMove& move, CMyCar& car, CCarInfo& carI
 	car.OilCooldown = max(0, car.OilCooldown - 1);
 
 	// Проверка дохлости.
-	if (car.Durability < 1e-7) {
+	if (car.Durability <= 0) {
 		if (car.DeadTicks == 0) {
 			car.DeadTicks = game.getCarReactivationTimeTicks();
 		}
 	}
 	const bool isDead = car.DeadTicks > 0;
-	assert(isDead || car.Durability > 1e-5);
+	assert(isDead || car.Durability > 0);
 	car.DeadTicks = max(0, car.DeadTicks - 1);
 	if (isDead && car.DeadTicks == 0) {
 		car.Durability = 1;
