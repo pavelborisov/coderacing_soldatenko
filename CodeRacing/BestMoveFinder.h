@@ -32,6 +32,12 @@ public:
 		const CMyWorld& startWorld,
 		const std::vector<CMyTile>& waypointTiles,
 		const CBestMoveFinder::CResult& previousResult);
+	CBestMoveFinder(
+		const CMyWorld& startWorld,
+		const std::vector<CMyTile>& waypointTiles,
+		const CBestMoveFinder::CResult& previousResult,
+		const CBestMoveFinder::CResult& allyResult,
+		bool correctAllyResult);
 	
 	CResult Process();
 
@@ -48,6 +54,8 @@ private:
 	const CMyWorld& startWorld;
 	const std::vector<CMyTile>& waypointTiles;
 	std::vector<CMoveWithDuration> correctedPreviousMoveList;
+	std::vector<CMoveWithDuration> allyMoveList;
+	bool hasAlly;
 
 	int simulationTicks = 0;
 	double startScore = INT_MIN;

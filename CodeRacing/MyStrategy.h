@@ -43,6 +43,8 @@ private:
 	CMyCar currentCar;
 	CMyWorld predictedWorld;;
 	CBestMoveFinder::CResult previousResult;
+	static CBestMoveFinder::CResult allyResult[2];
+	static int allyResultTick[2];
 	
 	int rear;
 

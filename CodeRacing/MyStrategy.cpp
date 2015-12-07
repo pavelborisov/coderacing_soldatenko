@@ -17,6 +17,8 @@ using namespace model;
 using namespace std;
 
 long long MyStrategy::randomSeed = 0;
+CBestMoveFinder::CResult MyStrategy::allyResult[2];
+int MyStrategy::allyResultTick[2] = { -1, -1 };
 
 MyStrategy::MyStrategy() :
 	log(CLog::Instance()),
@@ -137,10 +139,22 @@ void MyStrategy::makeMove()
 		return;
 	}
 
-	CBestMoveFinder bestMoveFinder(currentWorld, waypointTiles, previousResult);
-	CBestMoveFinder::CResult result = bestMoveFinder.Process();
-	previousResult = result;
-	*resultMove = result.CurrentMove.Convert();
+	CBestMoveFinder::CResult result;
+	if (world->getPlayers().size() == 2) {
+		const int allyType = 1 - currentCar.Type;
+		CBestMoveFinder bestMoveFinder(currentWorld, waypointTiles, previousResult,
+			allyResult[allyType], allyResultTick[allyType] != currentTick);
+		result = bestMoveFinder.Process();
+		previousResult = result;
+		allyResult[currentCar.Type] = result;
+		allyResultTick[currentCar.Type] = currentTick;
+		*resultMove = result.CurrentMove.Convert();
+	} else {
+		CBestMoveFinder bestMoveFinder(currentWorld, waypointTiles, previousResult);
+		result = bestMoveFinder.Process();
+		previousResult = result;
+		*resultMove = result.CurrentMove.Convert();
+	}
 
 	// Тупой задний ход
 	double angleToTarget = (tileRoute[1].ToVec() - currentCar.Position).GetAngle();
