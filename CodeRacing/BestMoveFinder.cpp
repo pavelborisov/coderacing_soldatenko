@@ -406,7 +406,7 @@ double CBestMoveFinder::evaluate(const CState& state) const
 	const int moneyDifPositive = max(0, car.MoneyCount - startCar.MoneyCount);
 	//int scoreDif = state.World.Players[0].Score - startWorld.Players[0].Score;
 
-	score += durabilityDifPositive * 1500;
+	score += durabilityDifPositive * durabilityDifPositive * 5000;
 	score += ammoDifPositive * 400;
 	score += nitroDifPositive * 1000;
 	score += oilDifPositive * 200;
