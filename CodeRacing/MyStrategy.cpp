@@ -16,11 +16,14 @@
 using namespace model;
 using namespace std;
 
+long long MyStrategy::randomSeed = 0;
+
 MyStrategy::MyStrategy() :
 	log(CLog::Instance()),
 	draw(CDrawPlugin::Instance()),
 	currentTick(0),
-	nextWaypointIndex(0)
+	nextWaypointIndex(0),
+	rear(0)
 {
 }
 
@@ -30,6 +33,11 @@ void MyStrategy::move(const Car& _self, const World& _world, const Game& _game, 
 	world = &_world;
 	game = &_game;
 	resultMove = &_resultMove;
+
+	if (randomSeed == 0) {
+		randomSeed = game->getRandomSeed();
+		srand(static_cast<unsigned int>(randomSeed));
+	}
 
 	CDrawPluginSwitcher drawSwitcher(draw); 
 	currentTick = world->getTick();

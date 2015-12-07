@@ -30,6 +30,7 @@ private:
 	const model::Game* game;
 	model::Move* resultMove;
 	int currentTick;
+	static long long randomSeed;
 
 	CTileRouteFinder tileRouteFinder;
 	std::vector<CMyTile> waypointTiles;
@@ -43,7 +44,7 @@ private:
 	CMyWorld predictedWorld;;
 	CBestMoveFinder::CResult previousResult;
 	
-	int rear = 0;
+	int rear;
 
 	MyStrategy& operator = (const MyStrategy&) { return *this; }
 
