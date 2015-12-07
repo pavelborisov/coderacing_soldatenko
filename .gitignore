@@ -47,3 +47,4 @@ ReleaseNoLogging
 /log.txt
 /local-runner/game.log
 /local-runner/result.txt
+/CodeRacing/compilation.log
