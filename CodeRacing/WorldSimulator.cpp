@@ -356,7 +356,7 @@ void CWorldSimulator::collideTireWithWalls(CMyTire& tire) const
 		const int cornerTileX = static_cast<int>(corners[cornerIndex].X / 800);
 		const int cornerTileY = static_cast<int>(corners[cornerIndex].Y / 800);
 		const double tileLeftX = cornerTileX * CMyTile::TileSize;
-		if (!CMyTile::IsLeftOpen(cornerTileX, cornerTileY)) {
+		if (cornerTileX == 0 || !CMyTile::IsLeftOpen(cornerTileX, cornerTileY)) {
 			const double xWall = tileLeftX + CMyTile::WallRadius;
 			const CVec2D& corner = corners[cornerIndex];
 			if (corner.X < xWall) {
@@ -398,7 +398,7 @@ void CWorldSimulator::collideTireWithWalls(CMyTire& tire) const
 		const int cornerTileX = static_cast<int>(corners[cornerIndex].X / 800);
 		const int cornerTileY = static_cast<int>(corners[cornerIndex].Y / 800);
 		const double tileTopY = cornerTileY * CMyTile::TileSize;
-		if (!CMyTile::IsTopOpen(cornerTileX, cornerTileY)) {
+		if (cornerTileY == 0 || !CMyTile::IsTopOpen(cornerTileX, cornerTileY)) {
 			const double yWall = tileTopY + CMyTile::WallRadius;
 			const CVec2D& corner = corners[cornerIndex];
 			if (corner.Y < yWall) {
@@ -440,7 +440,7 @@ void CWorldSimulator::collideTireWithWalls(CMyTire& tire) const
 		const int cornerTileX = static_cast<int>(corners[cornerIndex].X / 800);
 		const int cornerTileY = static_cast<int>(corners[cornerIndex].Y / 800);
 		const double tileRightX = (cornerTileX + 1) * CMyTile::TileSize;
-		if (!CMyTile::IsRightOpen(cornerTileX, cornerTileY)) {
+		if (cornerTileX == CMyTile::SizeX() - 1 || !CMyTile::IsRightOpen(cornerTileX, cornerTileY)) {
 			const double xWall = tileRightX - CMyTile::WallRadius;
 			const CVec2D& corner = corners[cornerIndex];
 			if (corner.X > xWall) {
@@ -482,7 +482,7 @@ void CWorldSimulator::collideTireWithWalls(CMyTire& tire) const
 		const int cornerTileX = static_cast<int>(corners[cornerIndex].X / 800);
 		const int cornerTileY = static_cast<int>(corners[cornerIndex].Y / 800);
 		const double tileBottomY = (cornerTileY + 1) * CMyTile::TileSize;
-		if (!CMyTile::IsBottomOpen(cornerTileX, cornerTileY)) {
+		if (cornerTileY == CMyTile::SizeY() - 1 || !CMyTile::IsBottomOpen(cornerTileX, cornerTileY)) {
 			const double yWall = tileBottomY - CMyTile::WallRadius;
 			const CVec2D& corner = corners[cornerIndex];
 			if (corner.Y > yWall) {
@@ -579,7 +579,7 @@ void CWorldSimulator::collideCarWithWalls(CMyCar& car) const
 		const int cornerTileX = static_cast<int>(corners[cornerIndex].X / 800);
 		const int cornerTileY = static_cast<int>(corners[cornerIndex].Y / 800);
 		const double tileLeftX = cornerTileX * CMyTile::TileSize;
-		if (!CMyTile::IsLeftOpen(cornerTileX, cornerTileY)) {
+		if (cornerTileX == 0 || !CMyTile::IsLeftOpen(cornerTileX, cornerTileY)) {
 			const double xWall = tileLeftX + CMyTile::WallRadius;
 			const CVec2D& corner = corners[cornerIndex];
 			if (corner.X < xWall) {
@@ -621,7 +621,7 @@ void CWorldSimulator::collideCarWithWalls(CMyCar& car) const
 		const int cornerTileX = static_cast<int>(corners[cornerIndex].X / 800);
 		const int cornerTileY = static_cast<int>(corners[cornerIndex].Y / 800);
 		const double tileTopY = cornerTileY * CMyTile::TileSize;
-		if (!CMyTile::IsTopOpen(cornerTileX, cornerTileY)) {
+		if (cornerTileY == 0 || !CMyTile::IsTopOpen(cornerTileX, cornerTileY)) {
 			const double yWall = tileTopY + CMyTile::WallRadius;
 			const CVec2D& corner = corners[cornerIndex];
 			if (corner.Y < yWall) {
@@ -663,7 +663,7 @@ void CWorldSimulator::collideCarWithWalls(CMyCar& car) const
 		const int cornerTileX = static_cast<int>(corners[cornerIndex].X / 800);
 		const int cornerTileY = static_cast<int>(corners[cornerIndex].Y / 800);
 		const double tileRightX = (cornerTileX + 1) * CMyTile::TileSize;
-		if (!CMyTile::IsRightOpen(cornerTileX, cornerTileY)) {
+		if (cornerTileX == CMyTile::SizeX() - 1 || !CMyTile::IsRightOpen(cornerTileX, cornerTileY)) {
 			const double xWall = tileRightX - CMyTile::WallRadius;
 			const CVec2D& corner = corners[cornerIndex];
 			if (corner.X > xWall) {
@@ -705,7 +705,7 @@ void CWorldSimulator::collideCarWithWalls(CMyCar& car) const
 		const int cornerTileX = static_cast<int>(corners[cornerIndex].X / 800);
 		const int cornerTileY = static_cast<int>(corners[cornerIndex].Y / 800);
 		const double tileBottomY = (cornerTileY + 1) * CMyTile::TileSize;
-		if (!CMyTile::IsBottomOpen(cornerTileX, cornerTileY)) {
+		if (cornerTileY == CMyTile::SizeY() - 1 || !CMyTile::IsBottomOpen(cornerTileX, cornerTileY)) {
 			const double yWall = tileBottomY - CMyTile::WallRadius;
 			const CVec2D& corner = corners[cornerIndex];
 			if (corner.Y > yWall) {
