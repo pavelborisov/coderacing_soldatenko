@@ -488,6 +488,7 @@ void CBestMoveFinder::postProcessOil(const CState& before, CResult& result)
 	for (int i = 1; i < CMyWorld::MaxCars; i++) {
 		if (CMyWorld::PlayersCount == 2 && i == 1) continue;
 		const CMyCar& enemyCar = before.World.Cars[i];
+		if (!enemyCar.IsValid()) continue;
 		if (enemyCar.OiledTicks > 0) {
 			enemyMaxOiledSpeedBefore = max(enemyMaxOiledSpeedBefore, before.World.Cars[i].Speed.Length());
 		}
@@ -518,6 +519,7 @@ void CBestMoveFinder::postProcessOil(const CState& before, CResult& result)
 	for (int i = 1; i < CMyWorld::MaxCars; i++) {
 		if (CMyWorld::PlayersCount == 2 && i == 1) continue;
 		const CMyCar& enemyCar = current.World.Cars[i];
+		if (!enemyCar.IsValid()) continue;
 		if (enemyCar.OiledTicks > 0) {
 			enemyMaxOiledSpeedAfter = max(enemyMaxOiledSpeedAfter, current.World.Cars[i].Speed.Length());
 		}

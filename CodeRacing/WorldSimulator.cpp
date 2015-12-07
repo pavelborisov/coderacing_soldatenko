@@ -64,7 +64,7 @@ CMyWorld CWorldSimulator::Simulate(const CMyWorld& startWorld, const CMyMove mov
 	// TODO: NextWaypointIndex
 	CCarInfo carInfos[CMyWorld::MaxCars];
 	for (int i = 0; i < CMyWorld::MaxCars; i++) {
-		if (world.Cars[i].IsFinished) {
+		if (!world.Cars[i].IsValid() || world.Cars[i].IsFinished) {
 			continue;
 		}
 		updateCar(moves[i], world.Cars[i], carInfos[i], world);
@@ -81,7 +81,7 @@ CMyWorld CWorldSimulator::Simulate(const CMyWorld& startWorld, const CMyMove mov
 			if (ignoreOtherCars && i > 0) {
 				break;
 			}
-			if (world.Cars[i].IsFinished) {
+			if (!world.Cars[i].IsValid() || world.Cars[i].IsFinished) {
 				continue;
 			}
 			moveCar(carInfos[i], world.Cars[i]);
@@ -127,7 +127,7 @@ CMyWorld CWorldSimulator::Simulate(const CMyWorld& startWorld, const CMyMove mov
 			if (ignoreOtherCars && i > 0) {
 				break;
 			}
-			if (world.Cars[i].IsFinished) {
+			if (!world.Cars[i].IsValid() || world.Cars[i].IsFinished) {
 				continue;
 			}
 			collideCarWithWalls(world.Cars[i]);
@@ -138,7 +138,7 @@ CMyWorld CWorldSimulator::Simulate(const CMyWorld& startWorld, const CMyMove mov
 			}
 			if (!ignoreOtherCars) {
 				for (int j = i + 1; j < CMyWorld::MaxCars; j++) {
-					if (world.Cars[j].IsFinished) {
+					if (!world.Cars[i].IsValid() || world.Cars[j].IsFinished) {
 						continue;
 					}
 					collideCarWithCar(world.Cars[i], world.Cars[j], world);
@@ -150,6 +150,9 @@ CMyWorld CWorldSimulator::Simulate(const CMyWorld& startWorld, const CMyMove mov
 	// Проверка на масло.
 	// TODO: вынести в отдельный метод
 	for(auto& car : world.Cars) {
+		if (!car.IsValid() || car.IsFinished) {
+			continue;
+		}
 		if (car.OiledTicks == 0) {
 			for (int oilIndex = 0; oilIndex < CMyWorld::MaxOils; oilIndex++) {
 				int& oilTicks = world.OilTicks[oilIndex];
@@ -818,6 +821,7 @@ void CWorldSimulator::collideCarWithWashers(int carId, CMyCar& car, CMyWorld& wo
 				const double durabilityChange = min(0.15, car.Durability);
 				if (durabilityChange > 0.01) {
 					car.Durability = max(0.0, car.Durability - durabilityChange);
+					// TODO: Какой ID, если снаряд летит из тумана?
 					const int washerPlayerId = world.Cars[washer.CarId].PlayerId;
 					if (car.PlayerId != washerPlayerId) {
 						world.Players[washerPlayerId].Score += static_cast<int>(100 * durabilityChange);
@@ -852,6 +856,7 @@ void CWorldSimulator::collideCarWithWashers(int carId, CMyCar& car, CMyWorld& wo
 			const double durabilityChange = min(0.15, car.Durability);
 			if (durabilityChange > 0.01) {
 				car.Durability = max(0.0, car.Durability - durabilityChange);
+				// TODO: Какой ID, если снаряд летит из тумана?
 				const int washerPlayerId = world.Cars[washer.CarId].PlayerId;
 				if (car.PlayerId != washerPlayerId) {
 					world.Players[washerPlayerId].Score += static_cast<int>(100 * durabilityChange);
@@ -912,6 +917,7 @@ void CWorldSimulator::collideCarWithTires(int carId, CMyCar& car, CMyWorld& worl
 				const double durabilityChange = min(0.35 * collisionDeltaSpeed / 60.0, car.Durability);
 				if (durabilityChange > 0.01) {
 					car.Durability = max(0.0, car.Durability - durabilityChange);
+					// TODO: Какой ID, если снаряд летит из тумана?
 					const int tirePlayerId = world.Cars[tire.CarId].PlayerId;
 					if (car.PlayerId != tirePlayerId) {
 						world.Players[tirePlayerId].Score += static_cast<int>(100 * durabilityChange);

@@ -84,7 +84,10 @@ CMyWorld::CMyWorld(const World& world, const Car& self)
 	} else {
 		assert(false);
 	}
-	assert(nextCarIndex == MaxCars);
+	assert(nextCarIndex <= MaxCars);
+	for (nextCarIndex; nextCarIndex < MaxCars; nextCarIndex++) {
+		Cars[nextCarIndex].Invalidate();
+	}
 
 	auto projectiles = world.getProjectiles();
 	int nextWasherId = 0;
@@ -213,8 +216,8 @@ void CMyWorld::LogDifference(const CMyWorld& world) const
 #ifdef LOGGING
 	CLog::Instance().Stream() << "Players[0] check difference" << endl;
 	Players[0].LogDifference(world.Players[0]);
-	CLog::Instance().Stream() << "Players[1] check difference" << endl;
-	Players[1].LogDifference(world.Players[1]);
+	//CLog::Instance().Stream() << "Players[1] check difference" << endl;
+	//Players[1].LogDifference(world.Players[1]);
 	CLog::Instance().Stream() << "Cars[0] check difference" << endl;
 	Cars[0].LogDifference(world.Cars[0]);
 	//CLog::Instance().Stream() << "Car[1] check difference" << endl;

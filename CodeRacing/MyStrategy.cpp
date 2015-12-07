@@ -50,6 +50,9 @@ void MyStrategy::move(const Car& _self, const World& _world, const Game& _game, 
 
 	previousPredictedWorld = predictedWorld;
 	for (auto& c : predictedWorld.Cars) {
+		if (!c.IsValid()) {
+			continue;
+		}
 		c.SaveHistory();
 	}
 }

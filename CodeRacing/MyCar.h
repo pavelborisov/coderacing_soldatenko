@@ -57,6 +57,9 @@ struct CMyCar {
 	explicit CMyCar(const model::Car& car);
 	CMyCar(const model::Car& car, int playerId);
 
+	bool IsValid() const { return PlayerId == 4; }
+	void Invalidate() { PlayerId = 4; }
+
 	double GetMass() const;
 	double GetInvertedMass() const;
 	double GetAngularMass() const;
