@@ -36,6 +36,7 @@ void MyStrategy::move(const Car& _self, const World& _world, const Game& _game, 
 
 	if (randomSeed == 0) {
 		randomSeed = game->getRandomSeed();
+		CLog::Instance().Stream() << "getRandomSeed() == " << randomSeed << endl;
 		srand(static_cast<unsigned int>(randomSeed));
 	}
 

@@ -24,7 +24,7 @@ public:
 	void LogMyCar(const CMyCar& car, const char* name);
 	void LogVec2D(const CVec2D& position, const char* name);
 	template<typename T>
-	void Log(const T& value, const char* name) { logfile << name << ": " << value << endl; }
+	void Log(const T& value, const char* name) { logfile << name << ": " << value << std::endl; }
 	template<typename T>
 	void LogIfDifferent(const T& a, const T& b, const char* name)
 	{
