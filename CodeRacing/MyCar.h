@@ -38,6 +38,7 @@ struct CMyCar {
 	int CollisionsDetected;
 	double CollisionDeltaSpeed;
 	bool IsFinished;
+	bool Initialized;
 
 	static const double Width;
 	static const double Height;
@@ -57,8 +58,8 @@ struct CMyCar {
 	explicit CMyCar(const model::Car& car);
 	CMyCar(const model::Car& car, int playerId);
 
-	bool IsValid() const { return PlayerId >= 0 && PlayerId < 4; }
-	void Invalidate() { PlayerId = 4; }
+	bool IsValid() const { return Initialized; }
+	void Invalidate() { Initialized = false; }
 
 	double GetMass() const;
 	double GetInvertedMass() const;

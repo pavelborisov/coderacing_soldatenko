@@ -41,6 +41,9 @@ CMyWorld::CMyWorld(const World& world, const Car& self)
 	}
 
 	CarIdMap.clear();
+	for (int i = 0; i < MaxCars; i++) {
+		Cars[i].Invalidate();
+	}
 	auto cars = world.getCars();
 	// 0 - наша машина
 	int nextCarIndex = 0;
@@ -68,42 +71,68 @@ CMyWorld::CMyWorld(const World& world, const Car& self)
 		for (const auto& car : cars) {
 			if (car.getId() != self.getId() && car.getPlayerId() == self.getPlayerId()) {
 				CarIdMap[car.getId()] = nextCarIndex;
-				Cars[nextCarIndex++] = CMyCar(car, PlayerIdMap[car.getPlayerId()]);
+				Cars[1] = CMyCar(car, PlayerIdMap[car.getPlayerId()]);
 				break;
 			}
 		}
+		if (!Cars[1].IsValid()) {
+			Cars[1].PlayerId = Cars[0].PlayerId;
+			Cars[1].Type = 1 - Cars[0].Type;
+		}
+		nextCarIndex++;
+
 		// 2, 3 - машины врага, отсортированы по типу
-		for (int type = 0; type <= 1; type++) {
-			for (const auto& car : cars) {
-				if (car.getType() == type && car.getPlayerId() != self.getPlayerId()) {
-					CarIdMap[car.getId()] = nextCarIndex;
-					Cars[nextCarIndex++] = CMyCar(car, PlayerIdMap[car.getPlayerId()]);
-				}
+		for (const auto& car : cars) {
+			if (car.getType() == BUGGY && car.getPlayerId() != self.getPlayerId()) {
+				CarIdMap[car.getId()] = nextCarIndex;
+				Cars[2] = CMyCar(car, PlayerIdMap[car.getPlayerId()]);
 			}
 		}
+		if (!Cars[2].IsValid()) {
+			Cars[2].PlayerId = 1;
+			Cars[2].Type = 0;
+		}
+		nextCarIndex++;
+
+		for (const auto& car : cars) {
+			if (car.getType() == JEEP && car.getPlayerId() != self.getPlayerId()) {
+				CarIdMap[car.getId()] = nextCarIndex;
+				Cars[3] = CMyCar(car, PlayerIdMap[car.getPlayerId()]);
+			}
+		}
+		if (!Cars[3].IsValid()) {
+			Cars[3].PlayerId = 1;
+			Cars[3].Type = 0;
+		}
+		nextCarIndex++;
 	} else {
 		assert(false);
 	}
-	assert(nextCarIndex <= MaxCars);
-	for (nextCarIndex; nextCarIndex < MaxCars; nextCarIndex++) {
-		Cars[nextCarIndex].Invalidate();
-	}
+	assert(nextCarIndex == MaxCars);
 
 	auto projectiles = world.getProjectiles();
 	int nextWasherId = 0;
 	int nextTireId = 0;
 	for (const auto& p : projectiles) {
+		const long long carId = p.getCarId();
 		if (p.getType() == WASHER) {
 			if (nextWasherId < MaxWashers) {
-				Washers[nextWasherId++] = CMyWasher(p, CarIdMap[p.getCarId()]);
+				if (CarIdMap.find(carId) == CarIdMap.end()) {
+					Washers[nextWasherId++] = CMyWasher(p, 2);
+				} else {
+					Washers[nextWasherId++] = CMyWasher(p, CarIdMap[p.getCarId()]);
+				}
 			} else {
 				CLog::Instance().Stream() << "Warning! Too many washers" << endl;
 				break;
 			}
 		} else if (p.getType() == TIRE) {
 			if (nextTireId < MaxTires) {
-				// TODO: Разделить объект на статическую и пременную части.
-				Tires[nextTireId++] = CMyTire(p, CarIdMap[p.getCarId()]);
+				if (CarIdMap.find(carId) == CarIdMap.end()) {
+					Tires[nextTireId++] = CMyTire(p, 3);
+				} else {
+					Tires[nextTireId++] = CMyTire(p, CarIdMap[p.getCarId()]);
+				}
 			} else {
 				CLog::Instance().Stream() << "Warning! Too many tires" << endl;
 				break;

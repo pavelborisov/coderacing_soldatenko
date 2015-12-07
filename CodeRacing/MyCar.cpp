@@ -71,7 +71,8 @@ CMyCar::CMyCar() :
 	PlayerId(0),
 	CollisionsDetected(0),
 	CollisionDeltaSpeed(0),
-	IsFinished(false)
+	IsFinished(false),
+	Initialized(false)
 {
 }
 
@@ -100,7 +101,8 @@ CMyCar::CMyCar(const CMyCar& car) :
 	PlayerId(car.PlayerId),
 	CollisionsDetected(car.CollisionsDetected),
 	CollisionDeltaSpeed(car.CollisionDeltaSpeed),
-	IsFinished(car.IsFinished)
+	IsFinished(car.IsFinished),
+	Initialized(car.Initialized)
 {
 }
 
@@ -131,9 +133,10 @@ CMyCar::CMyCar(const model::Car& car, int playerId) :
 	DeadTicks(0), // Как узнать, сколько тиков ещё машина будет дохлой?
 	Type(car.getType()),
 	PlayerId(playerId),
-	CollisionsDetected(false),
+	CollisionsDetected(0),
 	CollisionDeltaSpeed(0),
-	IsFinished(car.isFinishedTrack())
+	IsFinished(car.isFinishedTrack()),
+	Initialized(true)
 {
 	MedianAngularSpeed = MedianAngularSpeedHistory[HistoryId(PlayerId, Type)];
 	DeadTicks = Durability > 1e-5 ? 0 : DeadTicksHistory[HistoryId(PlayerId, Type)];
