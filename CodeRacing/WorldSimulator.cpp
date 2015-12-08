@@ -821,7 +821,6 @@ void CWorldSimulator::collideCarWithWashers(int carId, CMyCar& car, CMyWorld& wo
 				const double durabilityChange = min(0.15, car.Durability);
 				if (durabilityChange > 0.01) {
 					car.Durability = max(0.0, car.Durability - durabilityChange);
-					// TODO: Какой ID, если снаряд летит из тумана?
 					const int washerPlayerId = world.Cars[washer.CarId].PlayerId;
 					if (car.PlayerId != washerPlayerId) {
 						world.Players[washerPlayerId].Score += static_cast<int>(100 * durabilityChange);
@@ -856,7 +855,6 @@ void CWorldSimulator::collideCarWithWashers(int carId, CMyCar& car, CMyWorld& wo
 			const double durabilityChange = min(0.15, car.Durability);
 			if (durabilityChange > 0.01) {
 				car.Durability = max(0.0, car.Durability - durabilityChange);
-				// TODO: Какой ID, если снаряд летит из тумана?
 				const int washerPlayerId = world.Cars[washer.CarId].PlayerId;
 				if (car.PlayerId != washerPlayerId) {
 					world.Players[washerPlayerId].Score += static_cast<int>(100 * durabilityChange);
@@ -867,7 +865,6 @@ void CWorldSimulator::collideCarWithWashers(int carId, CMyCar& car, CMyWorld& wo
 			}
 			w.Invalidate();
 			shouldRemoveInvalidWashers = true;
-			// TODO: Начислять очки игрокам.
 		}
 	}
 	if (shouldRemoveInvalidWashers) {
@@ -917,7 +914,6 @@ void CWorldSimulator::collideCarWithTires(int carId, CMyCar& car, CMyWorld& worl
 				const double durabilityChange = min(0.35 * collisionDeltaSpeed / 60.0, car.Durability);
 				if (durabilityChange > 0.01) {
 					car.Durability = max(0.0, car.Durability - durabilityChange);
-					// TODO: Какой ID, если снаряд летит из тумана?
 					const int tirePlayerId = world.Cars[tire.CarId].PlayerId;
 					if (car.PlayerId != tirePlayerId) {
 						world.Players[tirePlayerId].Score += static_cast<int>(100 * durabilityChange);
