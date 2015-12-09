@@ -58,7 +58,7 @@ private:
 
 	void collideTireWithWalls(CMyTire& tire) const;
 	void collideTireWithWashers(CMyTire& tire, CMyWorld& world) const;
-	void collideTireWithTires(CMyTire& tire, CMyWorld& world) const;
+	void collideTireWithTire(CMyTire& tireA, CMyTire& tireB) const;
 	void collideCarWithWalls(CMyCar& car) const;
 	void collideCarWithBonuses(CMyCar& car, CMyWorld& world) const;
 	void collideCarWithWashers(int carId, CMyCar& car, CMyWorld& world) const;

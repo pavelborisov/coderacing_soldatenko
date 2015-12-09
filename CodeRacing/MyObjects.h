@@ -47,6 +47,7 @@ struct CMyTire {
 	CVec2D Position;
 	CVec2D Speed;
 	double AngularSpeed = 0;
+	int CollisionsCount = 0;
 
 	static const double Radius;
 	static const double Mass;
@@ -55,6 +56,8 @@ struct CMyTire {
 	static const double InvertedAngularMass;
 	static const double TireToWallMomentumTransferFactor;
 	static const double TireToWallSurfaceFrictionFactor;
+	static const double TireToTireMomentumTransferFactor;
+	static const double TireToTireSurfaceFrictionFactor;
 
 	CMyTire();
 	explicit CMyTire(const model::Projectile& projectile, int carId);

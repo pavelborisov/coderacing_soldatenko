@@ -111,7 +111,12 @@ CMyWorld CWorldSimulator::Simulate(const CMyWorld& startWorld, const CMyMove mov
 				}
 				collideTireWithWalls(world.Tires[i]);
 				collideTireWithWashers(world.Tires[i], world);
-				//collideTireWithTires();
+				for (int j = i + 1; j < CMyWorld::MaxTires; j++) {
+					if (!world.Tires[j].IsValid()) {
+						break;
+					}
+					collideTireWithTire(world.Tires[i], world.Tires[j]);
+				}
 				if (world.Tires[i].Speed.Length() < minTireSpeed) {
 					world.Tires[i].Invalidate();
 					shouldRemoveInvalidTires = true;
@@ -198,6 +203,7 @@ void CWorldSimulator::updateCar(const CMyMove& move, CMyCar& car, CCarInfo& carI
 				world.Tires[i].Position = car.Position;
 				world.Tires[i].Speed = CVec2D(cos(car.Angle), sin(car.Angle)) * game.getTireInitialSpeed();
 				world.Tires[i].AngularSpeed = 0;
+				world.Tires[i].CollisionsCount = 0;
 				i++;
 			} else {
 				CLog::Instance().Stream() << "Warning! Too many tires" << endl;
@@ -388,6 +394,7 @@ void CWorldSimulator::collideTireWithWalls(CMyTire& tire) const
 					collisionInfo.Point = (intersection2 + intersection1) * 0.5;
 					resolveCollisionStatic(collisionInfo, tire.Position, tire.Speed, tire.AngularSpeed, noRotatedRect, collisionDeltaSpeed,
 						tire.InvertedMass, tire.InvertedAngularMass, tire.TireToWallMomentumTransferFactor, tire.TireToWallSurfaceFrictionFactor);
+					tire.CollisionsCount += 1;
 				} else {
 					assert(false);
 				}
@@ -430,6 +437,7 @@ void CWorldSimulator::collideTireWithWalls(CMyTire& tire) const
 					collisionInfo.Point = (intersection2 + intersection1) * 0.5;
 					resolveCollisionStatic(collisionInfo, tire.Position, tire.Speed, tire.AngularSpeed, noRotatedRect, collisionDeltaSpeed,
 						tire.InvertedMass, tire.InvertedAngularMass, tire.TireToWallMomentumTransferFactor, tire.TireToWallSurfaceFrictionFactor);
+					tire.CollisionsCount += 1;
 				} else {
 					assert(false);
 				}
@@ -472,6 +480,7 @@ void CWorldSimulator::collideTireWithWalls(CMyTire& tire) const
 					collisionInfo.Point = (intersection2 + intersection1) * 0.5;
 					resolveCollisionStatic(collisionInfo, tire.Position, tire.Speed, tire.AngularSpeed, noRotatedRect, collisionDeltaSpeed,
 						tire.InvertedMass, tire.InvertedAngularMass, tire.TireToWallMomentumTransferFactor, tire.TireToWallSurfaceFrictionFactor);
+					tire.CollisionsCount += 1;
 				} else {
 					assert(false);
 				}
@@ -514,6 +523,7 @@ void CWorldSimulator::collideTireWithWalls(CMyTire& tire) const
 					collisionInfo.Point = (intersection2 + intersection1) * 0.5;
 					resolveCollisionStatic(collisionInfo, tire.Position, tire.Speed, tire.AngularSpeed, noRotatedRect, collisionDeltaSpeed,
 						tire.InvertedMass, tire.InvertedAngularMass, tire.TireToWallMomentumTransferFactor, tire.TireToWallSurfaceFrictionFactor);
+					tire.CollisionsCount += 1;
 				} else {
 					assert(false);
 				}
@@ -537,6 +547,7 @@ void CWorldSimulator::collideTireWithWalls(CMyTire& tire) const
 		collisionInfo.Depth = CMyTile::WallRadius + CMyTire::Radius - sqrt(distanceSqr);
 		resolveCollisionStatic(collisionInfo, tire.Position, tire.Speed, tire.AngularSpeed, noRotatedRect, collisionDeltaSpeed,
 			tire.InvertedMass, tire.InvertedAngularMass, tire.TireToWallMomentumTransferFactor, tire.TireToWallSurfaceFrictionFactor);
+		tire.CollisionsCount += 1;
 	}
 }
 
@@ -558,9 +569,30 @@ void CWorldSimulator::collideTireWithWashers(CMyTire& tire, CMyWorld& world) con
 	}
 }
 
-void CWorldSimulator::collideTireWithTires(CMyTire& /*tire*/, CMyWorld& /*world*/) const
+void CWorldSimulator::collideTireWithTire(CMyTire& tireA, CMyTire& tireB) const
 {
-	//TODO:
+	CCollisionInfo collisionInfo;
+	CRotatedRect noRotatedRect1, noRotatedRect2;
+	double collisionDeltaSpeed = 0;
+
+	static const double collisionDistanceSqr = pow(CMyTire::Radius + CMyTire::Radius, 2);
+	const double distanceSqr = (tireA.Position - tireB.Position).LengthSquared();
+	if (distanceSqr < collisionDistanceSqr) {
+		CVec2D vectorBA = CVec2D(tireB.Position, tireA.Position);
+		collisionInfo.NormalB = vectorBA;
+		collisionInfo.NormalB.Normalize();
+		collisionInfo.Point = tireB.Position + vectorBA * (CMyTire::Radius / (CMyTire::Radius + CMyTire::Radius));
+		collisionInfo.Depth = CMyTire::Radius + CMyTire::Radius - sqrt(distanceSqr);
+
+		resolveCollision(collisionInfo,
+			tireA.Position, tireA.Speed, tireA.AngularSpeed, noRotatedRect1,
+			tireB.Position, tireB.Speed, tireB.AngularSpeed, noRotatedRect2, collisionDeltaSpeed,
+			tireA.InvertedMass, tireA.InvertedAngularMass,
+			tireB.InvertedMass, tireB.InvertedAngularMass,
+			CMyTire::TireToTireMomentumTransferFactor, CMyTire::TireToTireSurfaceFrictionFactor);
+		tireA.CollisionsCount += 1;
+		tireB.CollisionsCount += 1;
+	}
 }
 
 void CWorldSimulator::collideCarWithWalls(CMyCar& car) const
@@ -892,16 +924,17 @@ void CWorldSimulator::collideCarWithTires(int carId, CMyCar& car, CMyWorld& worl
 			const CVec2D& p1 = car.RotatedRect.Corners[i];
 			const CVec2D& p2 = car.RotatedRect.Corners[(i + 1) % 4];
 			if (findLineWithCircleCollision(p1, p2, tire.Position, CMyTire::Radius, collisionInfo)) {
+				bool badSelfCollision = false;
 				if (carId == tire.CarId) {
-					// ѕроверка, что шиной только что выстрелили - если еЄ центр находитс€ внутри машины,
-					// или если вектор скорости направлен от машины.
+					if (tire.CollisionsCount == 0) {
+						continue;
+					}
 					const CLine2D side = CLine2D::FromPoints(p1, p2);
 					if (side.GetSignedDistanceFrom(tire.Position) < 0) {
 						// Ўина находитс€ внутри машины относительно стороны столкновени€.
-						continue;
-					} else if(tire.Speed.DotProduct(collisionInfo.NormalB) < 0) {
-						// Ўина находитс€ снаружи, но еЄ скорость направлена от стороны, с которой предполагаетс€ столкновение.
-						continue;
+						collisionInfo.NormalB = -collisionInfo.NormalB;
+						collisionInfo.Depth = CMyTire::Radius - collisionInfo.Depth;
+						badSelfCollision = true;
 					}
 				}
 				resolveCollision(collisionInfo,
@@ -910,6 +943,7 @@ void CWorldSimulator::collideCarWithTires(int carId, CMyCar& car, CMyWorld& worl
 					car.GetInvertedMass(), car.GetInvertedAngularMass(),
 					tire.InvertedMass, tire.InvertedAngularMass,
 					car.CarToTireMomentumTransferFactor, car.CarToTireSurfaceFrictionFactor);
+				tire.CollisionsCount += 1;
 				// Ќачисление очков
 				const double durabilityChange = min(0.35 * collisionDeltaSpeed / 60.0, car.Durability);
 				if (durabilityChange > 0.01) {
@@ -924,7 +958,7 @@ void CWorldSimulator::collideCarWithTires(int carId, CMyCar& car, CMyWorld& worl
 						}
 					}
 				}
-				if (tire.Speed.Length() < minTireSpeed) {
+				if (badSelfCollision || tire.Speed.Length() < minTireSpeed) {
 					tire.Invalidate();
 					shouldRemoveInvalidTires = true;
 				}

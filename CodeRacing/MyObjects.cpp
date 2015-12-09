@@ -47,6 +47,8 @@ const double CMyTire::AngularMass = 1.0 / 2 * Mass * Radius * Radius;
 const double CMyTire::InvertedAngularMass = 1.0 / AngularMass;
 const double CMyTire::TireToWallMomentumTransferFactor = 0.5;
 const double CMyTire::TireToWallSurfaceFrictionFactor = 0.25;
+const double CMyTire::TireToTireMomentumTransferFactor = 1; // TODO: Проверить
+const double CMyTire::TireToTireSurfaceFrictionFactor = 1;
 CMyTire::CMyTire()
 {
 }
@@ -54,7 +56,8 @@ CMyTire::CMyTire(const model::Projectile& projectile, int carId) :
 	CarId(carId),
 	Position(projectile.getX(), projectile.getY()),
 	Speed(projectile.getSpeedX(), projectile.getSpeedY()),
-	AngularSpeed(projectile.getAngularSpeed())
+	AngularSpeed(projectile.getAngularSpeed()),
+	CollisionsCount(0)
 {
 	assert(projectile.getType() == model::TIRE);
 }
