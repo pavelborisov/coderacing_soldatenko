@@ -42,6 +42,10 @@ void MyStrategy::move(const Car& _self, const World& _world, const Game& _game, 
 		srand(static_cast<unsigned int>(randomSeed));
 	}
 
+	if (self->isFinishedTrack()) {
+		return;
+	}
+
 	CDrawPluginSwitcher drawSwitcher(draw); 
 	currentTick = world->getTick();
 
