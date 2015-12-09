@@ -47,7 +47,7 @@ const double CMyTire::AngularMass = 1.0 / 2 * Mass * Radius * Radius;
 const double CMyTire::InvertedAngularMass = 1.0 / AngularMass;
 const double CMyTire::TireToWallMomentumTransferFactor = 0.5;
 const double CMyTire::TireToWallSurfaceFrictionFactor = 0.25;
-const double CMyTire::TireToTireMomentumTransferFactor = 1; // TODO: Проверить
+const double CMyTire::TireToTireMomentumTransferFactor = 1;
 const double CMyTire::TireToTireSurfaceFrictionFactor = 1;
 CMyTire::CMyTire()
 {

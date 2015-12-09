@@ -14,9 +14,16 @@ CMyOil CMyWorld::Oils[MaxOils];
 int CMyWorld::PlayersCount = 0;
 map<long long, int> CMyWorld::PlayerIdMap;
 map<long long, int> CMyWorld::CarIdMap;
+vector<CMyTile> CMyWorld::WaypointTiles;
 
 CMyWorld::CMyWorld(const World& world, const Car& self)
 {
+	WaypointTiles.clear();
+	auto waypoints = world.getWaypoints();
+	for (const auto& w : waypoints) {
+		WaypointTiles.push_back(CMyTile(w[0], w[1]));
+	}
+
 	PlayerIdMap.clear();
 	auto players = world.getPlayers();
 	PlayersCount = players.size();

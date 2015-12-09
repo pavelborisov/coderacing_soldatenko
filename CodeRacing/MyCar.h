@@ -38,6 +38,7 @@ struct CMyCar {
 	int CollisionsDetected;
 	double CollisionDeltaSpeed;
 	bool IsFinished;
+	bool IsStartWPCrossed;
 	bool Initialized;
 
 	static const double Width;

@@ -71,6 +71,7 @@ CMyCar::CMyCar() :
 	PlayerId(0),
 	CollisionsDetected(0),
 	CollisionDeltaSpeed(0),
+	IsStartWPCrossed(false),
 	IsFinished(false),
 	Initialized(false)
 {
@@ -101,6 +102,7 @@ CMyCar::CMyCar(const CMyCar& car) :
 	PlayerId(car.PlayerId),
 	CollisionsDetected(car.CollisionsDetected),
 	CollisionDeltaSpeed(car.CollisionDeltaSpeed),
+	IsStartWPCrossed(car.IsStartWPCrossed),
 	IsFinished(car.IsFinished),
 	Initialized(car.Initialized)
 {
@@ -135,6 +137,7 @@ CMyCar::CMyCar(const model::Car& car, int playerId) :
 	PlayerId(playerId),
 	CollisionsDetected(0),
 	CollisionDeltaSpeed(0),
+	IsStartWPCrossed(false),
 	IsFinished(car.isFinishedTrack()),
 	Initialized(true)
 {

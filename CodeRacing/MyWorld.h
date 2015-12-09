@@ -1,10 +1,12 @@
 #pragma once
 
 #include <map>
+#include <vector>
 #include "model\car.h"
 #include "model\world.h"
 #include "MyCar.h"
 #include "MyObjects.h"
+#include "MyTile.h"
 
 struct CMyWorld {
 	static const int MaxPlayers = 4;
@@ -13,6 +15,8 @@ struct CMyWorld {
 	static const int MaxTires = 4 * 2;
 	static const int MaxBonuses = 20;
 	static const int MaxOils = 10;
+
+	static std::vector<CMyTile> WaypointTiles;
 
 	static std::map<long long, int> PlayerIdMap;
 	static int PlayersCount;
