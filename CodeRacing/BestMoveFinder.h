@@ -69,7 +69,6 @@ private:
 	void processPreviousMoveList();
 	void processMoveIndex(size_t moveIndex, const std::vector<CMoveWithDuration>& prevMoveList);
 	void processRouteScore(CState& state, bool firstTickBrake);
-	void processBonus(CState& state);
 	double evaluate(const CState& state) const;
 	void postProcess(CResult& result);
 	void postProcessShooting(const CState& before, CResult& result);

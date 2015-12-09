@@ -233,15 +233,32 @@ void MyStrategy::predict()
 
 void MyStrategy::doLog()
 {
+#ifdef LOGGING
 	log.LogMyCar(predictedWorld.Cars[0], "Prediction         ");
 
 	if (currentTick > 180) {
 		previousPredictedWorld.LogDifference(currentWorld);
 	}
+#endif
 }
 
 void MyStrategy::doDraw()
 {
+#ifdef LOGGING
 	CVec2D nextWaypoint = waypointTiles[nextWaypointIndex].ToVec();
 	draw.FillCircle(nextWaypoint.X, nextWaypoint.Y, 50, 0xFF0000);
+
+	//const double angle = currentCar.Angle;
+	//const int nwp = currentCar.NextWaypointIndex;
+	//for (int xs = 0; xs < 2 * CMyTile::SizeX(); xs++) {
+	//	for (int ys = 0; ys < 2 * CMyTile::SizeY(); ys++) {
+	//		const double x = xs * 400 + 200;
+	//		const double y = ys * 400 + 200;
+	//		const double dist = CWaypointDistanceMap::Instance().Query(x, y, angle, nwp);
+	//		CDrawPlugin::Instance().Text(x, y, to_string(dist).c_str(), 0x000000);
+	//	}
+	//}
+	CWaypointDistanceMap::Instance().Query(currentCar.Position.X, currentCar.Position.Y, currentCar.Angle, currentCar.NextWaypointIndex, true);
+	//CWaypointDistanceMap::Instance().Query(currentCar.Position.X, currentCar.Position.Y, currentCar.Speed.GetAngle(), currentCar.NextWaypointIndex, true);
+#endif
 }

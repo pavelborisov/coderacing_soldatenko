@@ -1,7 +1,13 @@
 #include "WaypointsDistanceMap.h"
 
+#ifdef LOGGING
+#undef NDEBUG
+#endif
+
 #include <cstdlib>
+#include <string>
 #include <assert.h>
+#include "DrawPlugin.h"
 
 using namespace std;
 
@@ -25,8 +31,19 @@ bool operator != (const CWaypointDistanceMap::CLowResTile& a, const CWaypointDis
 
 bool operator > (const CWaypointDistanceMap::CLowResTileWithScore& a, const CWaypointDistanceMap::CLowResTileWithScore& b)
 {
-	// TODO: Для стабильности - добавить сравнение по X и Y в случае равенства.
-	return a.Score > b.Score;
+	if (a.Score != b.Score) {
+		return a.Score > b.Score;
+	}
+	if (a.LRTile.X != b.LRTile.X) {
+		return a.LRTile.X > b.LRTile.X;
+	}
+	if (a.LRTile.Y != b.LRTile.Y) {
+		return a.LRTile.Y > b.LRTile.Y;
+	}
+	if (a.LRTile.Direction != b.LRTile.Direction) {
+		return a.LRTile.Direction > b.LRTile.Direction;
+	}
+	return false;
 }
 
 static bool checkOpen(
@@ -225,9 +242,11 @@ static double smartDistance(
 	} else {
 		assert(dx == -1);
 		if (dy == 0) {
-			return 8;
+			//return 8;
+			return 40;
 		} else {
-			return 8 * sqrt(2);
+			//return 8 * sqrt(2);
+			return 40 * sqrt(2);
 		}
 	}
 	//assert(false);
@@ -235,22 +254,32 @@ static double smartDistance(
 	//return -1;
 }
 
-CWaypointDistanceMap::CData::CData(int sizeX, int sizeY, const CMyTile& wpTile, const vector<vector<CLowResTile>>& lrTiles)
+CWaypointDistanceMap::CData::CData(int sizeX, int sizeY, int waypointIndex, CWaypointDistanceMap& wpDistanceMap)
 {
 	ClosedSet.assign(sizeX, vector<vector<bool>>(sizeY, vector<bool>(D_EnumSize, false)));
 	OpenSet.assign(sizeX, vector<vector<bool>>(sizeY, vector<bool>(D_EnumSize, false)));
 	CameFrom.assign(sizeX, vector<vector<CLowResTile>>(sizeY, vector<CLowResTile>(D_EnumSize)));
 	Distance.assign(sizeX, vector<vector<double>>(sizeY, vector<double>(D_EnumSize, undefinedDistance)));
 
-	// Расстояния внутри клетки с вейпоинтом будем считать равными 0.
+	const vector<vector<CLowResTile>>& lrTiles = wpDistanceMap.lowResTiles;
+	const CMyTile& wpTile = wpDistanceMap.waypoints[waypointIndex];
 	const int startX = wpTile.X * tileSize / step;
 	const int endX = (wpTile.X + 1) * tileSize / step;
 	const int startY = wpTile.Y * tileSize / step;
 	const int endY = (wpTile.Y + 1) * tileSize / step;
+	// Расстояния внутри клетки с 0-м вейпоинтом будем считать равными 0.
+	// А с остальными - будем считать расстояниями до следующих вейпоинтов.
 	for (int x = startX; x < endX; x++) {
 		for (int y = startY; y < endY; y++) {
 			for (int d = 0; d < D_EnumSize; d++) {
-				Distance[x][y][d] = 0;
+				if (waypointIndex == 0) {
+					Distance[x][y][d] = 0;
+				} else {
+					const int nextWaypointIndex = (waypointIndex + 1) % wpDistanceMap.waypoints.size();
+					CData& nextData = wpDistanceMap.dataByWp[nextWaypointIndex];
+					const double distance = wpDistanceMap.findDistance(x, y, static_cast<TDirection>(d), nextData);
+					Distance[x][y][d] = distance;
+				}
 				OpenSet[x][y][d] = true;
 				Queue.push(CLowResTileWithScore(CLowResTile(x, y, static_cast<TDirection>(d), lrTiles[x][y].GatesMask), 0));
 			}
@@ -317,10 +346,13 @@ void CWaypointDistanceMap::Initialize(const std::vector<CMyTile>& _waypoints)
 	}
 
 	dataByWp.clear();
-	dataByWp.reserve(wpCount);
-	for (int i = 0; i < wpCount; i++) {
-		dataByWp.emplace_back(CData(sizeX, sizeY, waypoints[i], lowResTiles));
+	dataByWp.assign(wpCount, CData());
+	// Заполняем с конца (когда следующий вп = 0) и продолжаем до самого начала (когда следующий вп = 1)
+	for (int i = wpCount; i > 0; i--) {
+		int wpi = i % wpCount;
+		dataByWp[wpi] = CData(sizeX, sizeY, wpi, *this);
 	}
+	// TODO: сохранять "длину всей трассы" с учётом стартового направления
 }
 
 static TDirection angleToDirection(double angle)
@@ -372,7 +404,7 @@ static TDirection reverseDirection( TDirection dir )
 	}
 }
 
-double CWaypointDistanceMap::Query(double x, double y, double angle, int waypointIndex)
+double CWaypointDistanceMap::Query(double x, double y, double angle, int waypointIndex, bool draw)
 {
 	const double xLowRes = x / step;
 	const double yLowRes = y / step;
@@ -400,23 +432,32 @@ double CWaypointDistanceMap::Query(double x, double y, double angle, int waypoin
 	} else if (dir == D_RightTop) {
 		offset = sqrt2 * ((yLowRes - yLowResInt) + ((xLowResInt + 1) - xLowRes));
 	}
-	return dist == undefinedDistance ? undefinedDistance : step * (dist + offset);
-}
 
-
-double CWaypointDistanceMap::QueryBestDirection(double x, double y, int waypointIndex)
-{
-	const int xLowRes = static_cast<int>(x / step);
-	const int yLowRes = static_cast<int>(y / step);
-	double bestDistance = undefinedDistance;
-	for (int d = 0; d < D_EnumSize; d++) {
-		const double dist = findDistance(xLowRes, yLowRes, static_cast<TDirection>(d), dataByWp[waypointIndex]);
-		if (bestDistance == undefinedDistance || (dist != undefinedDistance && dist < bestDistance)) {
-			bestDistance = dist;
+	if (draw) {
+		CLowResTile lr;
+		lr.Direction = reverseDirection(dir);
+		lr.X = xLowResInt;
+		lr.Y = yLowResInt;
+		int wpi = waypointIndex;
+		for (int i = 0; i < 10; i++) {
+			const CData& data = dataByWp[wpi];
+			double d = data.Distance[lr.X][lr.Y][lr.Direction];
+			int dx = MaskDX[lr.Direction];
+			int dy = MaskDY[lr.Direction];
+			CDrawPlugin::Instance().Rect(lr.X * 400, lr.Y * 400, (lr.X + 1) * 400, (lr.Y + 1) * 400, 0xFF0000);
+			CDrawPlugin::Instance().Text(lr.X * 400 + 200, lr.Y * 400 + 200, to_string(d).c_str(), 0xFF0000);
+			CDrawPlugin::Instance().Line(lr.X * 400 + 200, lr.Y * 400 + 200, lr.X * 400 - dx * 200 + 200, lr.Y * 400 - dy * 200 + 200, 0xFF0000);
+			
+			lr = data.CameFrom[lr.X][lr.Y][lr.Direction];
+			if (lr == CLowResTile()) break;
+			int nwpi = (wpi + 1) % waypoints.size();
+			if (lr.X / 2 == waypoints[wpi].X && lr.Y / 2 == waypoints[wpi].Y) {
+				wpi = nwpi;
+			}
 		}
 	}
-	//assert(bestDistance != undefinedDistance);
-	return bestDistance == undefinedDistance ? undefinedDistance : step * bestDistance;
+
+	return dist == undefinedDistance ? undefinedDistance : step * (dist + offset);
 }
 
 double CWaypointDistanceMap::findDistance(int xt, int yt, TDirection dirt, CData& data)
@@ -431,6 +472,11 @@ double CWaypointDistanceMap::findDistance(int xt, int yt, TDirection dirt, CData
 		const int y = lrTile.Y;
 		const TDirection dir = lrTile.Direction;
 		data.Queue.pop();
+		if (data.ClosedSet[x][y][dir]) {
+			// Мы эту клетку обработали уже ранее.
+			assert(!data.OpenSet[x][y][dir]);
+			continue;
+		}
 		data.OpenSet[x][y][dir] = false;
 		data.ClosedSet[x][y][dir] = true;
 
@@ -464,28 +510,32 @@ void CWaypointDistanceMap::processNeighbor(const CLowResTile& from, const CLowRe
 		// Функция не улучшилась - пропускаем.
 		return;
 	} else {
-		// Есть и в openSet и функция улучшилась. Надо перебрать очередь с приоритетом в поисках
-		// данного элемента, чтобы изменить ему приоритет.
-		CPriorityQueue queueCopy;
-		CLowResTileWithScore lrTileWithScore = data.Queue.top();
-		// Перекидываем элементы из одной очереди в другую, пока не найдём нужный.
-		while (lrTileWithScore.LRTile != to) {
-			data.Queue.pop();
-			queueCopy.push(lrTileWithScore);
-			lrTileWithScore = data.Queue.top();
-		}
-		// Не перекидываем нужный элемент.
-		data.Queue.pop();
-		// Перекидываем остатки меньшей очереди в большую. Так, чтобы большая оказалась исходной очередью
-		if (data.Queue.size() < queueCopy.size()) {
-			swap(data.Queue, queueCopy);
-		}
-		while (!queueCopy.empty()) {
-			data.Queue.push(queueCopy.top());
-			queueCopy.pop();
-		}
-		// Добавляем обновлённый нужный элемент.
+		// Есть и в openSet и функция улучшилась. Перебирать очередь в поисках элемента и заменять его - дорого.
+		// Поэтому просто добавим новый.
 		data.Queue.push(CLowResTileWithScore(to, dist));
+
+		//// Есть и в openSet и функция улучшилась. Надо перебрать очередь с приоритетом в поисках
+		//// данного элемента, чтобы изменить ему приоритет.
+		//CPriorityQueue queueCopy;
+		//CLowResTileWithScore lrTileWithScore = data.Queue.top();
+		//// Перекидываем элементы из одной очереди в другую, пока не найдём нужный.
+		//while (lrTileWithScore.LRTile != to) {
+		//	data.Queue.pop();
+		//	queueCopy.push(lrTileWithScore);
+		//	lrTileWithScore = data.Queue.top();
+		//}
+		//// Не перекидываем нужный элемент.
+		//data.Queue.pop();
+		//// Перекидываем остатки меньшей очереди в большую. Так, чтобы большая оказалась исходной очередью
+		//if (data.Queue.size() < queueCopy.size()) {
+		//	swap(data.Queue, queueCopy);
+		//}
+		//while (!queueCopy.empty()) {
+		//	data.Queue.push(queueCopy.top());
+		//	queueCopy.pop();
+		//}
+		//// Добавляем обновлённый нужный элемент.
+		//data.Queue.push(CLowResTileWithScore(to, dist));
 	}
 	data.CameFrom[to.X][to.Y][to.Direction] = from;
 	data.Distance[to.X][to.Y][to.Direction] = dist;
