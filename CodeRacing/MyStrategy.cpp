@@ -181,11 +181,12 @@ void MyStrategy::makeMove()
 	} else if (rear > 0) {
 		resultMove->setBrake(false);
 		CDrawPlugin::Instance().FillCircle(currentCar.Position.X, currentCar.Position.Y, 50, 0x880088);
-		if (rear < 30) {
+		if (rear < 40) {
 			resultMove->setEnginePower(0);
 			resultMove->setBrake(true);
 			resultMove->setWheelTurn(0);
 		} else {
+			if (currentCar.EnginePower > 0) resultMove->setBrake(true);
 			resultMove->setEnginePower(-1.0);
 			resultMove->setWheelTurn(angle > 0 ? -1 : 1);
 		}
