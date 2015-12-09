@@ -48,3 +48,6 @@ ReleaseNoLogging
 /local-runner/game.log
 /local-runner/result.txt
 /CodeRacing/compilation.log
+/scripts/*.log
+/scripts/*.properties
+/scripts/*.result

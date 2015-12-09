@@ -1,0 +1,12 @@
+Map:  default
+Time:  24.1156713204
+Player scores:  [5004, 5]
+Car finish ticks:  [2095, 2027, -1, -1]
+Player crashed ticks:  [-1, -1]
+------
+Map:  map01
+Time:  24.0960330728
+Player scores:  [5031, 133]
+Car finish ticks:  [2120, 2174, -1, -1]
+Player crashed ticks:  [-1, -1]
+------
