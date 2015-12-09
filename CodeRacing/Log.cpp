@@ -17,7 +17,7 @@ CLog::CLog()
 	logfile.open(logpath.c_str());
 
 	logfile.setf(ios::fixed, ios::floatfield);
-	logfile.precision(5);
+	logfile.precision(10);
 }
 
 CLog::~CLog()

@@ -10,7 +10,7 @@
 #include "Log.h"
 #include "MyCar.h"
 #include "MyTile.h"
-#include "Simulator.h"
+#include "MyWorld.h"
 #include "TileRouteFinder.h"
 #include "Vec2D.h"
 #include "WaypointsDistanceMap.h"
@@ -30,6 +30,7 @@ private:
 	const model::Game* game;
 	model::Move* resultMove;
 	int currentTick;
+	static long long randomSeed;
 
 	CTileRouteFinder tileRouteFinder;
 	std::vector<CMyTile> waypointTiles;
@@ -37,11 +38,15 @@ private:
 	std::vector<CMyTile> tileRoute;
 	int nextWaypointIndex;
 
-	CSimulator simulator;
-	CMyCar prevPrediction;
-	CMyCar car;
-	CMyCar prediction;
+	CMyWorld previousPredictedWorld;
+	CMyWorld currentWorld;
+	CMyCar currentCar;
+	CMyWorld predictedWorld;;
 	CBestMoveFinder::CResult previousResult;
+	static CBestMoveFinder::CResult allyResult[2];
+	static int allyResultTick[2];
+	
+	int rear;
 
 	int rear = 0;
 
@@ -49,7 +54,6 @@ private:
 
 	void updateWaypoints();
 	void findTileRoute();
-	void firstTick();
 	void makeMove();
 	void predictObjects();
 	void processShooting();

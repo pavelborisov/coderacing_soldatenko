@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <Windows.h>
+#include <tchar.h>
 
 #include "MyStrategy.h"
 
@@ -10,10 +11,12 @@ using namespace std;
 
 static void startServer()
 {
-	const wchar_t* const localRunnerDirectory = L"..\\local-runner";
-	const wchar_t* const localRunnerBat = L"local-runner-debug.bat";
+#ifndef MANUALSTART
+	LPCTSTR localRunnerDirectory = _T("..\\local-runner");
+	LPCTSTR localRunnerBat = _T("local-runner-debug.bat");
 	ShellExecute(NULL, NULL, localRunnerBat, NULL, localRunnerDirectory, SW_HIDE);
 	Sleep(500);
+#endif
 }
 
 int main(int argc, char* argv[]) {

@@ -1,0 +1,1 @@
+python test.py > test_log.txt 2>&1

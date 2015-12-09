@@ -7,26 +7,25 @@
 #include <set>
 #include <string>
 #include <assert.h>
-#include "GlobalPredictions.h"
+#include "MyWorld.h"
 #include "Tools.h"
 #include "WaypointsDistanceMap.h"
+#include "WorldSimulator.h"
+#include <Windows.h>
 
 using namespace model;
 using namespace std;
 
-template<typename T>
-static const void logIfDiffers(const T& a, const T&b, const char* name, CLog& log)
-{
-	if (abs(a - b) >= 1e-5) {
-		log.Log(a - b, (std::string("Prediction error: ") + name).c_str());
-	}
-}
+long long MyStrategy::randomSeed = 0;
+CBestMoveFinder::CResult MyStrategy::allyResult[2];
+int MyStrategy::allyResultTick[2] = { -1, -1 };
 
 MyStrategy::MyStrategy() :
 	log(CLog::Instance()),
 	draw(CDrawPlugin::Instance()),
 	currentTick(0),
-	nextWaypointIndex(0)
+	nextWaypointIndex(0),
+	rear(0)
 {
 }
 
@@ -37,27 +36,39 @@ void MyStrategy::move(const Car& _self, const World& _world, const Game& _game, 
 	game = &_game;
 	resultMove = &_resultMove;
 
+	if (randomSeed == 0) {
+		randomSeed = game->getRandomSeed();
+		CLog::Instance().Stream() << "getRandomSeed() == " << randomSeed << endl;
+		srand(static_cast<unsigned int>(randomSeed));
+	}
+
+	if (self->isFinishedTrack()) {
+		return;
+	}
+
 	CDrawPluginSwitcher drawSwitcher(draw); 
 	currentTick = world->getTick();
 
-	car = CMyCar(*self);
-	firstTick();
+	CWorldSimulator::Instance().SetGame(*game);
+
+	currentWorld = CMyWorld(*world, *self);
+	currentCar = currentWorld.Cars[0];
+	log.LogTick(currentTick);
+	log.LogMyCar(currentWorld.Cars[0], "Current            ");
+
 	updateWaypoints();
 	findTileRoute();
 	makeMove();
-	experiment();
 	predict();
 	doLog();
 	doDraw();
 
-	prevPrediction = prediction;
-	prediction.SaveHistory();
-}
-
-void MyStrategy::firstTick()
-{
-	if (currentTick == 0) {
-		simulator.Initialize(*game);
+	previousPredictedWorld = predictedWorld;
+	for (auto& c : predictedWorld.Cars) {
+		if (!c.IsValid()) {
+			continue;
+		}
+		c.SaveHistory();
 	}
 }
 
@@ -88,6 +99,7 @@ void MyStrategy::updateWaypoints()
 	}
 
 	if (flush) {
+		CMyTile::FillWalls();
 		CWaypointDistanceMap::Instance().Initialize(waypointTiles);
 	}
 
@@ -102,13 +114,13 @@ void MyStrategy::findTileRoute()
 
 	int dx = 0;
 	int dy = 0;
-	if (abs(car.Angle) < PI / 4) {
+	if (abs(currentCar.Angle) < PI / 4) {
 		dx = 1;
-	} else if (abs(car.Angle) > 3 * PI / 4) {
+	} else if (abs(currentCar.Angle) > 3 * PI / 4) {
 		dx = -1;
-	} else if (car.Angle > 0) {
+	} else if (currentCar.Angle > 0) {
 		dy = 1;
-	} else if (car.Angle < 0) {
+	} else if (currentCar.Angle < 0) {
 		dy = -1;
 	}
 	tileRoute = tileRouteFinder.FindRoute(waypointTiles, nextWaypointIndex, currentTile, dx, dy);
@@ -131,42 +143,52 @@ void MyStrategy::makeMove()
 		return;
 	}
 
-	// Заполняем предсказания
-	predictObjects();
-
-	CBestMoveFinder bestMoveFinder(car, nextWaypointIndex, *self, *world, *game, waypointTiles, simulator, previousResult);
-	CBestMoveFinder::CResult result = bestMoveFinder.Process();
-	previousResult = result;
-	*resultMove = result.CurrentMove.Convert();
-	processShooting();
-	processOil();
+	CBestMoveFinder::CResult result;
+	if (world->getPlayers().size() == 2) {
+		const int allyType = 1 - currentCar.Type;
+		CBestMoveFinder bestMoveFinder(currentWorld, waypointTiles, previousResult,
+			allyResult[allyType], allyResultTick[allyType] != currentTick);
+		result = bestMoveFinder.Process();
+		previousResult = result;
+		allyResult[currentCar.Type] = result;
+		allyResultTick[currentCar.Type] = currentTick;
+		*resultMove = result.CurrentMove.Convert();
+	} else {
+		CBestMoveFinder bestMoveFinder(currentWorld, waypointTiles, previousResult);
+		result = bestMoveFinder.Process();
+		previousResult = result;
+		*resultMove = result.CurrentMove.Convert();
+	}
 
 	// Тупой задний ход
-	double angleToTarget = (tileRoute[1].ToVec() - car.Position).GetAngle();
-	double angle = angleToTarget - car.Angle;
+	double angleToTarget = (tileRoute[1].ToVec() - currentCar.Position).GetAngle();
+	double angle = angleToTarget - currentCar.Angle;
 	normalizeAngle(angle);
 	// Когда симулятор хз что делать.
 	if (!result.Success || result.MoveList.back().End < 10) {
-		CDrawPlugin::Instance().FillCircle(car.Position.X, car.Position.Y, 50, 0x888888);
+		CDrawPlugin::Instance().FillCircle(currentCar.Position.X, currentCar.Position.Y, 50, 0x888888);
 		resultMove->setEnginePower(1.0);
 		resultMove->setWheelTurn(angle * 32 / PI);
 	}
 	if (rear == 0) {
+		bool badResult = !result.Success || result.CurrentMove.Brake == 1;
 		if (self->getDurability() == 0) {
 			rear = -game->getCarReactivationTimeTicks() - 50;
-		} else if (world->getTick() > 200 && car.Speed.Length() < 1) {
+		} else if (world->getTick() > 200 && currentCar.Speed.Length() < 1 && badResult) {
 			rear = 120 + static_cast<int>(self->getEnginePower() / game->getCarEnginePowerChangePerTick());
 		}
 	} else if (rear < 0) {
 		rear++;
 	} else if (rear > 0) {
+		resultMove->setUseNitro(false);
 		resultMove->setBrake(false);
-		CDrawPlugin::Instance().FillCircle(car.Position.X, car.Position.Y, 50, 0x880088);
-		if (rear < 30) {
+		CDrawPlugin::Instance().FillCircle(currentCar.Position.X, currentCar.Position.Y, 50, 0x880088);
+		if (rear < 40) {
 			resultMove->setEnginePower(0);
 			resultMove->setBrake(true);
 			resultMove->setWheelTurn(0);
 		} else {
+			if (currentCar.EnginePower > 0) resultMove->setBrake(true);
 			resultMove->setEnginePower(-1.0);
 			resultMove->setWheelTurn(angle > 0 ? -1 : 1);
 		}
@@ -174,251 +196,72 @@ void MyStrategy::makeMove()
 		if (rear == 0) rear = -120;
 	}
 
-	// Тупое нитро.
-	if (result.Success) {
-		// Сколько тиков поворачиваем.
-		int turnTicks = 0;
-		for (const auto& moveWithDuration : result.MoveList) {
-			if (moveWithDuration.Move.Turn != 0) {
-				turnTicks += moveWithDuration.End - moveWithDuration.Start;
-			}
-		}
-		int totalTicks = result.MoveList.back().End;
-		if (self->getNitroChargeCount() > 0 && self->getRemainingNitroCooldownTicks() == 0 && self->getRemainingNitroTicks() == 0
-			&& turnTicks <= 15 && totalTicks > 120)
-		{
-			resultMove->setUseNitro(true);
-		}
-	}
-}
-
-void MyStrategy::predictObjects()
-{
-	CGlobalPredictions::Clear();
-
-	auto bonuses = world->getBonuses();
-	for (const auto& b : bonuses) {
-		CGlobalPredictions::Bonuses.push_back({ CVec2D(b.getX(), b.getY()), b.getType(), INT_MAX });
-	}
-
-	auto oils = world->getOilSlicks();
-	for (const auto& o : oils) {
-		CGlobalPredictions::Oils.push_back({ CVec2D(o.getX(), o.getY()), o.getRemainingLifetime() });
-	}
-
-	auto projectiles = world->getProjectiles();
-	auto cars = world->getCars();
-	const int depth = CGlobalPredictions::PredictionDepth;
-	model::Move defaultEnemyMove;
-	defaultEnemyMove.setEnginePower(1.0);
-	for (const auto& c : cars) {
-		if (c.getPlayerId() == self->getPlayerId() || c.isFinishedTrack()) continue;
-		CGlobalPredictions::EnemyCarsPerTick.push_back(vector<CMyCar>(depth + 1));
-		CGlobalPredictions::EnemyCarsPerTick.back()[0] = CMyCar(c);
-	}
-	for (const auto& p : projectiles) {
-		if (p.getType() == WASHER) {
-			CWasherPrediction washer = { CVec2D(p.getX(), p.getY()), CVec2D(p.getSpeedX(), p.getSpeedY()) };
-			CGlobalPredictions::WashersPerTick.push_back(vector<CWasherPrediction>(depth + 1));
-			CGlobalPredictions::WashersPerTick.back()[0] = washer;
-		} else {
-			CTirePrediction tire = { CVec2D(p.getX(), p.getY()), CVec2D(p.getSpeedX(), p.getSpeedY()), p.getAngularSpeed() };
-			CGlobalPredictions::TiresPerTick.push_back(vector<CTirePrediction>(depth + 1));
-			CGlobalPredictions::TiresPerTick.back()[0] = tire;
-		}
-	}
-	for (int tick = 1; tick <= depth; tick++) {
-		for (size_t i = 0; i < CGlobalPredictions::EnemyCarsPerTick.size(); i++) {
-			CMyCar enemyCar = CGlobalPredictions::EnemyCarsPerTick[i][tick - 1];
-			enemyCar = simulator.Predict(enemyCar, *world, defaultEnemyMove, tick);
-			CGlobalPredictions::EnemyCarsPerTick[i][tick] = enemyCar;
-		}
-	}
-}
-
-void MyStrategy::processShooting()
-{
-	if (self->getProjectileCount() == 0) {
-		return;
-	}
-
-	static const int predictionLength = 40;
-	double dmgScore = 0;
-	//CDrawPlugin::Instance().SetColor(255, 0, 0);
-
-	vector<double> enemyDurabilities(CGlobalPredictions::EnemyCarsPerTick.size(), 0);
-	for (size_t enemyIndex = 0; enemyIndex < CGlobalPredictions::EnemyCarsPerTick.size(); enemyIndex++) {
-		enemyDurabilities[enemyIndex] = CGlobalPredictions::EnemyCarsPerTick[enemyIndex][0].Durability;
-	}
-
-	int bulletsHit = 0;
-	for (int offsetIndex = -1; offsetIndex <= 1; offsetIndex++) {
-		double projectileAngle = car.Angle + offsetIndex * game->getSideWasherAngle();
-		normalizeAngle(projectileAngle);
-		CVec2D projectilePos = car.Position;
-		CVec2D projectileSpeed(game->getWasherInitialSpeed(), 0);
-		projectileSpeed.Rotate(projectileAngle);
-		double projectileRadiusSqr = pow(game->getWasherRadius(), 2);
-		//double projectileRadiusSqr = 0; // для повышенной точности
-		double projectileDmg = game->getWasherDamage();
-
-		const double carEffectiveRadiusSqr = pow((game->getCarHeight()) / 2, 2);
-		
-		bool hit = false;
-		for (int tick = 1; tick <= predictionLength; tick++) {
-			projectilePos += projectileSpeed;
-			// TODO: Нормальная проверка коллизий.
-			for (size_t enemyIndex = 0; enemyIndex < CGlobalPredictions::EnemyCarsPerTick.size(); enemyIndex++) {
-				double& enemyDurability = enemyDurabilities[enemyIndex];
-				if (enemyDurability <= 1e-5) {
-					continue;
-				}
-				const CVec2D& enemyPos = CGlobalPredictions::EnemyCarsPerTick[enemyIndex][tick].Position;
-				const double distSqr = (enemyPos - projectilePos).LengthSquared();
-				if (distSqr < projectileRadiusSqr + carEffectiveRadiusSqr) {
-					if (enemyDurability > 1e-5) {
-						if (enemyDurability < projectileDmg) {
-							dmgScore += enemyDurability * game->getCarDamageScoreFactor();
-							dmgScore += game->getCarEliminationScore();
-							enemyDurability = 0;
-						} else {
-							dmgScore += projectileDmg * game->getCarDamageScoreFactor();
-							enemyDurability -= projectileDmg;
-						}
-					}
-					//CDrawPlugin::Instance().FillCircle(enemyPos, game->getWasherRadius());
-					hit = true;
-					bulletsHit++;
-					break;
-				}
-			}
-			if (hit) break;
-			//CDrawPlugin::Instance().FillCircle(projectilePos, game->getWasherRadius());
-		}
-	}
-
-	if (dmgScore > 0) {
-		log.Stream() << "ApproxDmg: " << dmgScore << "; Bullets hit: " << bulletsHit << endl;
-		log.Stream() << enemyDurabilities[0] << " " << enemyDurabilities[1] << " " << enemyDurabilities[2] << endl;
-	}
-
-	// Стреляем, если предполагаем, что наберём какой-то минимум очков.
-	if (self->getProjectileCount() == 1) {
-		if (dmgScore >= 100) {
-			resultMove->setThrowProjectile(true);
-		}
-	} else if (self->getProjectileCount() > 1) {
-		if (dmgScore >= 40) {
-			resultMove->setThrowProjectile(true);
-		}
-	}
-}
-
-void MyStrategy::processOil()
-{
-	if (self->getOilCanisterCount() == 0) {
-		return;
-	}
-
-	static const int predictionLength = 50;
-	static const double minEnemySpeed = 5;
-	static const double minEnemyAngularSpeed = PI / 90;
-	static const double minEnemyDrift = PI / 20;
-	double speedRelAngle = car.Speed.GetAngle() - car.Angle;
-	normalizeAngle(speedRelAngle);
-	if (abs(speedRelAngle) > PI / 2) {
-		// Мы сбросим лужу себе под колёса.
-		return;
-	}
-
-	const double oilRadius = game->getOilSlickRadius();
-	CVec2D oilOffset(game->getOilSlickInitialRange() + game->getCarWidth() / 2 + oilRadius, 0);
-	oilOffset.Rotate(car.Angle);
-	const CVec2D oilPos = car.Position - oilOffset;
-	//CDrawPlugin::Instance().SetColor(196, 196, 196);
-	//CDrawPlugin::Instance().FillCircle(oilPos, oilRadius);
-
-	// Выбрасываем лужу только, когда мы уверены, что в неё попадёт какой-либо враг сзади.
-	// Попадание в мазут считается если центр машины попал внутрь окружности мазута.
-	const double oilRadiusSqr = pow(oilRadius, 2);
-	for (size_t enemyIndex = 0; enemyIndex < CGlobalPredictions::EnemyCarsPerTick.size(); enemyIndex++) {
-		for (int tick = 1; tick <= predictionLength; tick++) {
-			const CMyCar& enemy = CGlobalPredictions::EnemyCarsPerTick[enemyIndex][tick];
-			// Проверка, что автомобиль попал.
-			if ((enemy.Position - oilPos).LengthSquared() < oilRadiusSqr) {
-				double enemySpeedRelAngle = enemy.Speed.GetAngle() - enemy.Angle;
-				normalizeAngle(enemySpeedRelAngle);
-				double enemyDrift = abs(enemySpeedRelAngle);
-				enemyDrift = enemyDrift > PI / 2 ? PI - enemyDrift : enemyDrift;
-				if (enemy.Speed.Length() > minEnemySpeed && 
-					(enemyDrift > minEnemyDrift || abs(enemy.AngularSpeed > minEnemyAngularSpeed)))
-				{
-					resultMove->setSpillOil(true);
-					break;
-				}
-			}
-		}
-	}
-}
-void MyStrategy::experiment()
-{
-	//double dist = CWaypointDistanceMap::Instance().Query(car.Position.X, car.Position.Y, car.Angle, nextWaypointIndex);
-	//log.Stream() << dist;
-	//for (int tileX = 0; tileX < CMyTile::SizeX(); tileX++) {
-	//	const int startX = tileX * CWaypointDistanceMap::tileSize / CWaypointDistanceMap::step;
-	//	const int endX = (tileX + 1) * CWaypointDistanceMap::tileSize / CWaypointDistanceMap::step;
-	//	for (int tileY = 0; tileY < CMyTile::SizeY(); tileY++) {
-	//		const int startY = tileY * CWaypointDistanceMap::tileSize / CWaypointDistanceMap::step;
-	//		const int endY = (tileY + 1) * CWaypointDistanceMap::tileSize / CWaypointDistanceMap::step;
-	//		for (int x = startX; x < endX; x++) {
-	//			for (int y = startY; y < endY; y++) {
-	//				const double worldX = (x + 0.5) * CWaypointDistanceMap::step;
-	//				const double worldY = (y + 0.5) * CWaypointDistanceMap::step;
-	//				//dist = CWaypointDistanceMap::Instance().QueryBestDirection(worldX, worldY, nextWaypointIndex);
-	//				dist = CWaypointDistanceMap::Instance().Query(worldX, worldY, car.Angle, nextWaypointIndex);
-	//				//dist;
-	//				CDrawPlugin::Instance().Text(worldX, worldY, to_string((int)dist).c_str(), 0x000000);
-	//			}
+	//// Тупое нитро.
+	//if (result.Success) {
+	//	// Сколько тиков поворачиваем.
+	//	int turnTicks = 0;
+	//	int rearTicks = 0;
+	//	int brakeTicks = 0;
+	//	for (const auto& moveWithDuration : result.MoveList) {
+	//		if (moveWithDuration.Move.Turn != 0) {
+	//			turnTicks += moveWithDuration.End - moveWithDuration.Start;
 	//		}
+	//		if (moveWithDuration.Move.Engine < 0) {
+	//			rearTicks += moveWithDuration.End - moveWithDuration.Start;
+	//		}
+	//		if (moveWithDuration.Move.Brake != 0) {
+	//			brakeTicks += moveWithDuration.End - moveWithDuration.Start;
+	//		}
+	//	}
+	//	int totalTicks = result.MoveList.back().End;
+	//	if (self->getNitroChargeCount() > 0 && self->getRemainingNitroCooldownTicks() == 0 && self->getRemainingNitroTicks() == 0
+	//		&& brakeTicks == 0 && rearTicks == 0 && turnTicks <= 15 && totalTicks > 120)
+	//	{
+	//		resultMove->setUseNitro(true);
 	//	}
 	//}
 }
 
 void MyStrategy::predict()
 {
-	prediction = simulator.Predict(car, *world, *resultMove, 1);
+	CMyMove moves[4];
+	moves[0] = CMyMove(*resultMove);
+	moves[1].Engine = 0;
+	moves[2].Engine = 0;
+	moves[3].Engine = 0;
+	CWorldSimulator::Instance().SetPrecision(10);
+	CWorldSimulator::Instance().SetOptions(false, false, false);
+	predictedWorld = CWorldSimulator::Instance().Simulate(currentWorld, moves);
 }
 
 void MyStrategy::doLog()
 {
-	log.LogTick(currentTick);
-	log.LogMyCar(car,        "Current            ");
-	log.LogMyCar(prediction, "Prediction         ");
+#ifdef LOGGING
+	log.LogMyCar(predictedWorld.Cars[0], "Prediction         ");
 
-	logIfDiffers(car.Angle, prevPrediction.Angle, "Angle", log);
-	logIfDiffers(car.AngularSpeed, prevPrediction.AngularSpeed, "AngularSpeed", log);
-	logIfDiffers(car.EnginePower, prevPrediction.EnginePower, "EnginePower", log);
-	logIfDiffers(car.WheelTurn, prevPrediction.WheelTurn, "WheelTurn", log);
-	logIfDiffers(car.Durability, prevPrediction.Durability, "Durability", log);
-	logIfDiffers(car.NitroCooldown, prevPrediction.NitroCooldown, "NitroCooldown", log);
-	logIfDiffers(car.NitroCount, prevPrediction.NitroCount, "NitroCount", log);
-	logIfDiffers(car.NitroTicks, prevPrediction.NitroTicks, "NitroTicks", log);
-	logIfDiffers(car.OiledTicks, prevPrediction.OiledTicks, "OiledTicks", log);
-	logIfDiffers(car.Position.X, prevPrediction.Position.X, "Position.X", log);
-	logIfDiffers(car.Position.Y, prevPrediction.Position.Y, "Position.Y", log);
-	logIfDiffers(car.Speed.X, prevPrediction.Speed.X, "Speed.X", log);
-	logIfDiffers(car.Speed.Y, prevPrediction.Speed.Y, "Speed.Y", log);
-	logIfDiffers(car.Type, prevPrediction.Type, "Type", log);
+	if (currentTick > 180) {
+		previousPredictedWorld.LogDifference(currentWorld);
+	}
+#endif
 }
 
 void MyStrategy::doDraw()
 {
+#ifdef LOGGING
 	CVec2D nextWaypoint = waypointTiles[nextWaypointIndex].ToVec();
 	draw.FillCircle(nextWaypoint.X, nextWaypoint.Y, 50, 0xFF0000);
 
-	//for (size_t i = 1; i < min(10U, tileRoute.size()); i++) {
-	//	CVec2D from = tileRoute[i - 1].ToVec();
-	//	CVec2D to = tileRoute[i].ToVec();
-	//	draw.Line(from.X, from.Y, to.X, to.Y, 0x00FF00);
+	//const double angle = currentCar.Angle;
+	//const int nwp = currentCar.NextWaypointIndex;
+	//for (int xs = 0; xs < 2 * CMyTile::SizeX(); xs++) {
+	//	for (int ys = 0; ys < 2 * CMyTile::SizeY(); ys++) {
+	//		const double x = xs * 400 + 200;
+	//		const double y = ys * 400 + 200;
+	//		const double dist = CWaypointDistanceMap::Instance().Query(x, y, angle, nwp);
+	//		CDrawPlugin::Instance().Text(x, y, to_string(dist).c_str(), 0x000000);
+	//	}
 	//}
+	CWaypointDistanceMap::Instance().Query(currentCar.Position.X, currentCar.Position.Y, currentCar.Angle, currentCar.NextWaypointIndex, true);
+	//CWaypointDistanceMap::Instance().Query(currentCar.Position.X, currentCar.Position.Y, currentCar.Speed.GetAngle(), currentCar.NextWaypointIndex, true);
+#endif
 }

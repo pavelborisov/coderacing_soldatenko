@@ -35,6 +35,7 @@ public:
 
 		CLowResTileWithScore() : Score(undefinedScore) {}
 		CLowResTileWithScore(const CLowResTile& LRTile, double Score) : LRTile(LRTile), Score(Score) {}
+		bool operator > (const CLowResTileWithScore& other) const;
 	};
 
 	///////////////////////
@@ -45,8 +46,8 @@ public:
 	}
 
 	void Initialize(const std::vector<CMyTile>& waypoints);
-	double Query(double x, double y, double angle, int waypointIndex);
-	double QueryBestDirection(double x, double y, int waypointIndex);
+	double Query(double x, double y, double angle, int waypointIndex, bool draw = false);
+	double LapScore();
 
 private:
 	///////////////////////
@@ -62,7 +63,8 @@ private:
 		std::vector<std::vector<std::vector<CLowResTile>>> CameFrom;
 		std::vector<std::vector<std::vector<double>>> Distance;
 
-		CData(int sizeX, int sizeY, const CMyTile& wpTile, const std::vector<std::vector<CLowResTile>>& lrTiles);
+		CData() {}
+		CData(int sizeX, int sizeY, int waypointIndex, CWaypointDistanceMap& wpDistanceMap);
 	};
 
 	///////////////////////

@@ -24,7 +24,15 @@ public:
 	void LogMyCar(const CMyCar& car, const char* name);
 	void LogVec2D(const CVec2D& position, const char* name);
 	template<typename T>
-	void Log(const T& value, const char* name) { logfile << name << ": " << value << endl; }
+	void Log(const T& value, const char* name) { logfile << name << ": " << value << std::endl; }
+	template<typename T>
+	void LogIfDifferent(const T& a, const T& b, const char* name)
+	{
+		if (abs(a - b) > 1e-5) {
+			CLog::Instance().Stream() << "Warning! Different " << name << ": "
+				<< a << " " << b << " " << a - b << std::endl;
+		}
+	}
 	std::basic_ostream< char, std::char_traits<char> >& Stream() { return logfile; }
 
 private:
@@ -50,6 +58,8 @@ public:
 	void LogVec2D(const CVec2D& /*position*/, const char* /*name*/) {}
 	template<typename T>
 	void Log(const T& /*value*/, const char* /*name*/) {}
+	template<typename T>
+	void LogIfDifferent(const T& /*a*/, const T& /*b*/, const char* /*name*/) {}
 	std::basic_ostream< char, std::char_traits<char> >& Stream() { return logfile; }
 
 private:

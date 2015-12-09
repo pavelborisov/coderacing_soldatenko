@@ -126,10 +126,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Arc2D.cpp" />
     <ClCompile Include="BestMoveFinder.cpp" />
     <ClCompile Include="Debug.cpp" />
     <ClCompile Include="DrawPlugin.cpp" />
-    <ClCompile Include="GlobalPredictions.cpp" />
+    <ClCompile Include="Line2D.cpp" />
     <ClCompile Include="Log.cpp" />
     <ClCompile Include="model\Bonus.cpp" />
     <ClCompile Include="model\Car.cpp" />
@@ -144,11 +145,12 @@
     <ClCompile Include="model\Unit.cpp" />
     <ClCompile Include="model\World.cpp" />
     <ClCompile Include="MyCar.cpp" />
+    <ClCompile Include="MyObjects.cpp" />
     <ClCompile Include="MyStrategy.cpp" />
     <ClCompile Include="MyTile.cpp" />
+    <ClCompile Include="MyWorld.cpp" />
     <ClCompile Include="RemoteProcessClient.cpp" />
     <ClCompile Include="Runner.cpp" />
-    <ClCompile Include="Simulator.cpp" />
     <ClCompile Include="Strategy.cpp" />
     <ClCompile Include="csimplesocket\ActiveSocket.cpp" />
     <ClCompile Include="csimplesocket\HTTPActiveSocket.cpp" />
@@ -156,15 +158,17 @@
     <ClCompile Include="csimplesocket\SimpleSocket.cpp" />
     <ClCompile Include="TileRouteFinder.cpp" />
     <ClCompile Include="Vec2D.cpp" />
+    <ClCompile Include="Vec3D.cpp" />
     <ClCompile Include="WaypointsDistanceMap.cpp" />
+    <ClCompile Include="WorldSimulator.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Arc2D.h" />
     <ClInclude Include="BestMoveFinder.h" />
     <ClInclude Include="Debug.h" />
     <ClInclude Include="DrawPlugin.h" />
-    <ClInclude Include="GlobalPredictions.h" />
+    <ClInclude Include="Line2D.h" />
     <ClInclude Include="Log.h" />
-    <ClInclude Include="LowResMap.h" />
     <ClInclude Include="model\Bonus.h" />
     <ClInclude Include="model\BonusType.h" />
     <ClInclude Include="model\Car.h" />
@@ -184,11 +188,12 @@
     <ClInclude Include="model\World.h" />
     <ClInclude Include="MyCar.h" />
     <ClInclude Include="MyMove.h" />
+    <ClInclude Include="MyObjects.h" />
     <ClInclude Include="MyStrategy.h" />
     <ClInclude Include="MyTile.h" />
+    <ClInclude Include="MyWorld.h" />
     <ClInclude Include="RemoteProcessClient.h" />
     <ClInclude Include="Runner.h" />
-    <ClInclude Include="Simulator.h" />
     <ClInclude Include="Strategy.h" />
     <ClInclude Include="csimplesocket\ActiveSocket.h" />
     <ClInclude Include="csimplesocket\Host.h" />
@@ -199,7 +204,9 @@
     <ClInclude Include="TileRouteFinder.h" />
     <ClInclude Include="Tools.h" />
     <ClInclude Include="Vec2D.h" />
+    <ClInclude Include="Vec3D.h" />
     <ClInclude Include="WaypointsDistanceMap.h" />
+    <ClInclude Include="WorldSimulator.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

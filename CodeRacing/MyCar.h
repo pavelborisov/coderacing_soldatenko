@@ -5,11 +5,14 @@
 
 const double UndefinedMedianAngularSpeed = -123456;
 
-struct CMyCar {
-	struct CRotatedRect {
-		CVec2D Corners[4];
-	};
+struct CRotatedRect {
+	CVec2D Corners[4];
 
+	CRotatedRect() {};
+	CRotatedRect(const CVec2D& center, double width, double height, double angle);
+};
+
+struct CMyCar {
 	CVec2D Position;
 	double Angle;
 	CRotatedRect RotatedRect;
@@ -19,19 +22,52 @@ struct CMyCar {
 	double EnginePower;
 	double WheelTurn;
 	double Durability;
+	int NextWaypointIndex;
 	int NitroCount;
 	int NitroTicks;
 	int NitroCooldown;
+	int ProjectilesCount;
+	int ProjectileCooldown;
+	int OilCount;
+	int OilCooldown;
 	int OiledTicks;
+	int MoneyCount;
 	int DeadTicks;
 	int Type;
 	int PlayerId;
-	bool CollisionDetected;
+	int CollisionsDetected;
+	double CollisionDeltaSpeed;
+	bool IsFinished;
+	bool IsStartWPCrossed;
+	bool Initialized;
+
+	static const double Width;
+	static const double Height;
+	static const double HalfWidth;
+	static const double HalfHeight;
+	static const double CircumcircleRadius;
+	static const double CarToWallMomentumTransferFactor;
+	static const double CarToWallSurfaceFrictionFactor;
+	static const double CarToTireMomentumTransferFactor;
+	static const double CarToTireSurfaceFrictionFactor;
+	static const double CarToCarMomentumTransferFactor;
+	static const double CarToCarSurfaceFrictionFactor;
+	static const double BaseAngularMass;
 
 	CMyCar();
 	CMyCar(const CMyCar& car);
 	explicit CMyCar(const model::Car& car);
+	CMyCar(const model::Car& car, int playerId);
 
-	void UpdateRotatedRect();
+	bool IsValid() const { return Initialized; }
+	void Invalidate() { Initialized = false; }
+
+	double GetMass() const;
+	double GetInvertedMass() const;
+	double GetAngularMass() const;
+	double GetInvertedAngularMass() const;
+
 	void SaveHistory();
+
+	void LogDifference(const CMyCar& car) const;
 };

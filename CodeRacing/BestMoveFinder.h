@@ -3,10 +3,9 @@
 #include <vector>
 #include "model\Game.h"
 #include "model\World.h"
-#include "MyCar.h"
 #include "MyMove.h"
 #include "MyTile.h"
-#include "Simulator.h"
+#include "MyWorld.h"
 
 class CBestMoveFinder {
 public:
@@ -30,52 +29,50 @@ public:
 	};
 
 	CBestMoveFinder(
-		const CMyCar& car,
-		int nextWaypointIndex,
-		const model::Car& self,
-		const model::World& world,
-		const model::Game& game,
+		const CMyWorld& startWorld,
 		const std::vector<CMyTile>& waypointTiles,
-		const CSimulator& simulator,
 		const CBestMoveFinder::CResult& previousResult);
+	CBestMoveFinder(
+		const CMyWorld& startWorld,
+		const std::vector<CMyTile>& waypointTiles,
+		const CBestMoveFinder::CResult& previousResult,
+		const CBestMoveFinder::CResult& allyResult,
+		bool correctAllyResult);
 	
 	CResult Process();
 
 private:
 	struct CState {
-		CMyCar Car;
+		CMyWorld World;
 		int Tick = 0;
-		int NextWaypointIndex = -1;
 		double RouteScore = 0;
-		std::vector<bool> PickedBonuses;
-		CState(const CMyCar& Car, int Tick, int NextWaypointIndex, double RouteScore, size_t BonusesSize) :
-			Car(Car), Tick(Tick), NextWaypointIndex(NextWaypointIndex), RouteScore(RouteScore)
-		{
-			PickedBonuses.assign(BonusesSize, false);
-		}
+		CState() {}
+		CState(const CMyWorld& World, int Tick, double RouteScore) :
+			World(World), Tick(Tick), RouteScore(RouteScore) {}
 	};
 
-	const CMyCar& car;
-	int nextWaypointIndex;
-	const model::Car& self;
-	const model::World& world;
-	const model::Game& game;
+	const CMyWorld& startWorld;
 	const std::vector<CMyTile>& waypointTiles;
-	const CSimulator& simulator;
 	std::vector<CMoveWithDuration> correctedPreviousMoveList;
+	std::vector<CMoveWithDuration> allyMoveList;
+	bool hasAlly;
 
 	int simulationTicks = 0;
+	double startScore = INT_MIN;
 	double bestScore = INT_MIN;
 	std::vector<CMoveWithDuration> bestMoveList;
 	std::vector<CState> stateCache;
 
 	static const std::vector<std::pair<std::vector<CMyMove>, std::vector<int>>> allMovesWithLengths;
-	static const int maxTick = 150;
+	static const int maxTick = 140;
 
 	void processPreviousMoveList();
 	void processMoveIndex(size_t moveIndex, const std::vector<CMoveWithDuration>& prevMoveList);
 	void processRouteScore(CState& state, bool firstTickBrake);
-	void processBonus(CState& state);
 	double evaluate(const CState& state) const;
+	void postProcess(CResult& result);
+	void postProcessShooting(const CState& before, CResult& result);
+	void postProcessOil(const CState& before, CResult& result);
+	void postProcessNitro(const CState& before, CResult& result);
 
 };

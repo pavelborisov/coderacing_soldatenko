@@ -7,7 +7,7 @@
 # include <Ws2tcpip.h>
 
 #include <BaseTsd.h>
-typedef SSIZE_T ssize_t;
+typedef int ssize_t;
 
 namespace {
 
