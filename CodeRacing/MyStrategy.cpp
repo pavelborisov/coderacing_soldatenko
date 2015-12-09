@@ -180,6 +180,7 @@ void MyStrategy::makeMove()
 	} else if (rear < 0) {
 		rear++;
 	} else if (rear > 0) {
+		resultMove->setUseNitro(false);
 		resultMove->setBrake(false);
 		CDrawPlugin::Instance().FillCircle(currentCar.Position.X, currentCar.Position.Y, 50, 0x880088);
 		if (rear < 40) {
@@ -195,30 +196,30 @@ void MyStrategy::makeMove()
 		if (rear == 0) rear = -120;
 	}
 
-	// Тупое нитро.
-	if (result.Success) {
-		// Сколько тиков поворачиваем.
-		int turnTicks = 0;
-		int rearTicks = 0;
-		int brakeTicks = 0;
-		for (const auto& moveWithDuration : result.MoveList) {
-			if (moveWithDuration.Move.Turn != 0) {
-				turnTicks += moveWithDuration.End - moveWithDuration.Start;
-			}
-			if (moveWithDuration.Move.Engine < 0) {
-				rearTicks += moveWithDuration.End - moveWithDuration.Start;
-			}
-			if (moveWithDuration.Move.Brake != 0) {
-				brakeTicks += moveWithDuration.End - moveWithDuration.Start;
-			}
-		}
-		int totalTicks = result.MoveList.back().End;
-		if (self->getNitroChargeCount() > 0 && self->getRemainingNitroCooldownTicks() == 0 && self->getRemainingNitroTicks() == 0
-			&& brakeTicks == 0 && rearTicks == 0 && turnTicks <= 15 && totalTicks > 120)
-		{
-			resultMove->setUseNitro(true);
-		}
-	}
+	//// Тупое нитро.
+	//if (result.Success) {
+	//	// Сколько тиков поворачиваем.
+	//	int turnTicks = 0;
+	//	int rearTicks = 0;
+	//	int brakeTicks = 0;
+	//	for (const auto& moveWithDuration : result.MoveList) {
+	//		if (moveWithDuration.Move.Turn != 0) {
+	//			turnTicks += moveWithDuration.End - moveWithDuration.Start;
+	//		}
+	//		if (moveWithDuration.Move.Engine < 0) {
+	//			rearTicks += moveWithDuration.End - moveWithDuration.Start;
+	//		}
+	//		if (moveWithDuration.Move.Brake != 0) {
+	//			brakeTicks += moveWithDuration.End - moveWithDuration.Start;
+	//		}
+	//	}
+	//	int totalTicks = result.MoveList.back().End;
+	//	if (self->getNitroChargeCount() > 0 && self->getRemainingNitroCooldownTicks() == 0 && self->getRemainingNitroTicks() == 0
+	//		&& brakeTicks == 0 && rearTicks == 0 && turnTicks <= 15 && totalTicks > 120)
+	//	{
+	//		resultMove->setUseNitro(true);
+	//	}
+	//}
 }
 
 void MyStrategy::predict()

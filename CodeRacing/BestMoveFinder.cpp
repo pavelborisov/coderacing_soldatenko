@@ -9,7 +9,7 @@
 
 using namespace std;
 
-static const int maxCollisionsDetected = 20;
+static const int maxCollisionsDetected = 5;
 //static const double veryBadScoreDif = -10000;
 static const double veryBadScoreDif = -1000000;
 //static const int carSimulationSubticksCount = 2;
@@ -400,17 +400,27 @@ void CBestMoveFinder::postProcess(CResult& result)
 	CWorldSimulator::Instance().SetOptions(false, false, false);
 	CWorldSimulator::Instance().SetPrecision(2);
 	CState current(startWorld, 0, 0);
-	const int simulationEnd = 40;
-	for (current.Tick = 0; current.Tick < simulationEnd; current.Tick++) {
+	const int simulationEndShort = 40;
+	const int simulationEndLong = 80;
+	CState beforeShort;
+	CState beforeLong;
+	for (current.Tick = 0; current.Tick < simulationEndLong; current.Tick++) {
 		CMyMove moves[4];
 		moves[0] = findMove(current.Tick, bestMoveList);
 		if (hasAlly) moves[1] = findMove(current.Tick, allyMoveList);
 		current.World = CWorldSimulator::Instance().Simulate(current.World, moves);
+		if (current.Tick == simulationEndShort - 1) {
+			beforeShort = current;
+		}
+		if (current.Tick == simulationEndLong - 1) {
+			beforeLong = current;
+		}
 		simulationTicks++;
 	}
 
-	postProcessShooting(current, result);
-	postProcessOil(current, result);
+	postProcessShooting(beforeShort, result);
+	postProcessOil(beforeShort, result);
+	postProcessNitro(beforeLong, result);
 }
 
 void CBestMoveFinder::postProcessShooting(const CState& before, CResult& result)
@@ -535,5 +545,45 @@ void CBestMoveFinder::postProcessOil(const CState& before, CResult& result)
 
 	if(enemyDurabilityDif > 0.1 || enemyMaxOiledSpeedDif > 20) {
 		result.CurrentMove.Oil = true;
+	}
+}
+
+void CBestMoveFinder::postProcessNitro(const CState& before, CResult& result)
+{
+	const auto& car = startWorld.Cars[0];
+	if (car.NitroCount == 0 || car.NitroCooldown > 0 || result.CurrentMove.Brake == true) {
+		return;
+	}
+
+	double scoreBefore = evaluate(before);
+
+	CState current(startWorld, 0, 0);
+	const int simulationEnd = before.Tick;
+	int brakeTicks = 0;
+	for (current.Tick = 0; current.Tick < simulationEnd; current.Tick++) {
+		CMyMove moves[4];
+		moves[0] = findMove(current.Tick, bestMoveList);
+		if (hasAlly) moves[1] = findMove(current.Tick, allyMoveList);
+		if (current.Tick == 0) {
+			moves[0].Nitro = true;
+		}
+		if (moves[0].Brake) {
+			brakeTicks++;
+		}
+		current.World = CWorldSimulator::Instance().Simulate(current.World, moves);
+		simulationTicks++;
+	}
+
+	if (brakeTicks > 0) {
+		return;
+	}
+
+
+	// TODO: Нитро на старте лучше почти всегда нажимать. Но в середине игры, наверное, надо как-то оставлять его на обгоны...
+	double scoreAfter = evaluate(current);
+
+	static const double nitroScoreDifThreshold = 200;
+	if (scoreAfter - scoreBefore > nitroScoreDifThreshold) {
+		result.CurrentMove.Nitro = true;
 	}
 }

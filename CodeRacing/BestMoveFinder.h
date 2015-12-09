@@ -73,5 +73,6 @@ private:
 	void postProcess(CResult& result);
 	void postProcessShooting(const CState& before, CResult& result);
 	void postProcessOil(const CState& before, CResult& result);
+	void postProcessNitro(const CState& before, CResult& result);
 
 };
