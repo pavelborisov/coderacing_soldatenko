@@ -15,6 +15,7 @@ int CMyWorld::PlayersCount = 0;
 map<long long, int> CMyWorld::PlayerIdMap;
 map<long long, int> CMyWorld::CarIdMap;
 vector<CMyTile> CMyWorld::WaypointTiles;
+TDirection CMyWorld::StartDirection;
 
 CMyWorld::CMyWorld(const World& world, const Car& self)
 {
@@ -22,6 +23,23 @@ CMyWorld::CMyWorld(const World& world, const Car& self)
 	auto waypoints = world.getWaypoints();
 	for (const auto& w : waypoints) {
 		WaypointTiles.push_back(CMyTile(w[0], w[1]));
+	}
+
+	switch (world.getStartingDirection()) {
+	case LEFT:
+		StartDirection = D_Left;
+		break;
+	case RIGHT:
+		StartDirection = D_Right;
+		break;
+	case UP:
+		StartDirection = D_Top;
+		break;
+	case DOWN:
+		StartDirection = D_Bot;
+		break;
+	default:
+		assert(false);
 	}
 
 	PlayerIdMap.clear();

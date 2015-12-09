@@ -8,6 +8,7 @@
 #include <string>
 #include <assert.h>
 #include "DrawPlugin.h"
+#include "MyWorld.h"
 
 using namespace std;
 
@@ -458,6 +459,28 @@ double CWaypointDistanceMap::Query(double x, double y, double angle, int waypoin
 	}
 
 	return dist == undefinedDistance ? undefinedDistance : step * (dist + offset);
+}
+
+double CWaypointDistanceMap::LapScore()
+{
+	double angle = 0;
+	switch (CMyWorld::StartDirection) {
+	case D_Right:
+		angle = 0;
+		break;
+	case D_Bot:
+		angle = PI / 2;
+		break;
+	case D_Left:
+		angle = PI;
+		break;
+	case D_Top:
+		angle = -PI / 2;
+		break;
+	default:
+		assert(false);
+	}
+	return Query(waypoints[0].X * 800 + 400, waypoints[0].Y * 800 + 400, angle, 1) + 400;
 }
 
 double CWaypointDistanceMap::findDistance(int xt, int yt, TDirection dirt, CData& data)

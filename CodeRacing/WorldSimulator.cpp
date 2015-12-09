@@ -170,19 +170,19 @@ CMyWorld CWorldSimulator::Simulate(const CMyWorld& startWorld, const CMyMove mov
 		}
 	}
 
-	//// NextWaypointIndex и новый круг.
-	//// TODO: Вынести в отдельный метод
-	//for (auto& car : world.Cars) {
-	//	const int carTileX = static_cast<int>(car.Position.X / CMyTile::TileSize);
-	//	const int carTileY = static_cast<int>(car.Position.Y / CMyTile::TileSize);
-	//	const CMyTile& nextWPTile = CMyWorld::WaypointTiles[car.NextWaypointIndex];
-	//	if (carTileX == nextWPTile.X && carTileY == nextWPTile.Y) {
-	//		car.NextWaypointIndex = (car.NextWaypointIndex + 1) % CMyWorld::WaypointTiles.size();
-	//		if (car.NextWaypointIndex == 1) {
-	//			car.IsStartWPCrossed = true;
-	//		}
-	//	}
-	//}
+	// NextWaypointIndex и новый круг.
+	// TODO: Вынести в отдельный метод
+	for (auto& car : world.Cars) {
+		const int carTileX = static_cast<int>(car.Position.X / CMyTile::TileSize);
+		const int carTileY = static_cast<int>(car.Position.Y / CMyTile::TileSize);
+		const CMyTile& nextWPTile = CMyWorld::WaypointTiles[car.NextWaypointIndex];
+		if (carTileX == nextWPTile.X && carTileY == nextWPTile.Y) {
+			car.NextWaypointIndex = (car.NextWaypointIndex + 1) % CMyWorld::WaypointTiles.size();
+			if (car.NextWaypointIndex == 1) {
+				car.IsStartWPCrossed = true;
+			}
+		}
+	}
 
 	return world;
 }

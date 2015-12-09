@@ -171,9 +171,10 @@ void MyStrategy::makeMove()
 		resultMove->setWheelTurn(angle * 32 / PI);
 	}
 	if (rear == 0) {
+		bool badResult = !result.Success || result.CurrentMove.Brake == 1;
 		if (self->getDurability() == 0) {
 			rear = -game->getCarReactivationTimeTicks() - 50;
-		} else if (world->getTick() > 200 && currentCar.Speed.Length() < 1) {
+		} else if (world->getTick() > 200 && currentCar.Speed.Length() < 1 && badResult) {
 			rear = 120 + static_cast<int>(self->getEnginePower() / game->getCarEnginePowerChangePerTick());
 		}
 	} else if (rear < 0) {

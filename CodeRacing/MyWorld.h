@@ -7,6 +7,7 @@
 #include "MyCar.h"
 #include "MyObjects.h"
 #include "MyTile.h"
+#include "Tools.h"
 
 struct CMyWorld {
 	static const int MaxPlayers = 4;
@@ -17,6 +18,7 @@ struct CMyWorld {
 	static const int MaxOils = 10;
 
 	static std::vector<CMyTile> WaypointTiles;
+	static TDirection StartDirection;
 
 	static std::map<long long, int> PlayerIdMap;
 	static int PlayersCount;

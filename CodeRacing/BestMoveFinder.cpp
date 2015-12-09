@@ -9,7 +9,7 @@
 
 using namespace std;
 
-static const int maxCollisionsDetected = 5;
+static const int maxCollisionsDetected = 20;
 //static const double veryBadScoreDif = -10000;
 static const double veryBadScoreDif = -1000000;
 //static const int carSimulationSubticksCount = 2;
@@ -336,23 +336,10 @@ void CBestMoveFinder::processRouteScore(CState& state, bool firstTickBrake)
 {
 	// Подсчёт очков за пройденную клетку маршрута.
 	CMyCar& car = state.World.Cars[0];
-	const CMyTile& nextWaypointTile = waypointTiles[car.NextWaypointIndex];
-	if (CMyTile(car.Position) == nextWaypointTile) {
-		// TODO: Перенести подсчёт nextWaypoint в симулятор.
-		// TODO: Бонус за полностью пройденный круг.
-		// TODO: Бонус за пройденный вейпоинт?
-		const int afterNextWaypointIndex = (car.NextWaypointIndex + 1) % waypointTiles.size();
-		if (afterNextWaypointIndex == 1) {
-			state.RouteScore += CWaypointDistanceMap::Instance().Query(car.Position.X, car.Position.Y, car.Angle, afterNextWaypointIndex);
-			//state.RouteScore += CWaypointDistanceMap::Instance().Query(car.Position.X, car.Position.Y, car.Speed.GetAngle(), afterNextWaypointIndex);
-		}
-		//state.RouteScore += 400;
-		car.NextWaypointIndex = afterNextWaypointIndex;
-	}
 
 	// Штраф за торможение в самом начале.
 	if (firstTickBrake) {
-		state.RouteScore -= 200;
+		state.RouteScore -= 400;
 	}
 
 	// Штраф за въезд в лужу. Растёт от скорости.
@@ -374,6 +361,10 @@ double CBestMoveFinder::evaluate(const CState& state) const
 	} else {
 		//assert(false);
 		score += -1000000;
+	}
+
+	if (car.IsStartWPCrossed) {
+		score += CWaypointDistanceMap::Instance().LapScore();
 	}
 
 	// Штраф за потерю хп.
