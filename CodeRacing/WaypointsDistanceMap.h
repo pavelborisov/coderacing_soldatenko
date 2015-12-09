@@ -35,6 +35,7 @@ public:
 
 		CLowResTileWithScore() : Score(undefinedScore) {}
 		CLowResTileWithScore(const CLowResTile& LRTile, double Score) : LRTile(LRTile), Score(Score) {}
+		bool operator > (const CLowResTileWithScore& other) const;
 	};
 
 	///////////////////////

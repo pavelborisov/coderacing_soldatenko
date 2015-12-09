@@ -136,7 +136,7 @@ CMyWorld::CMyWorld(const World& world, const Car& self)
 	assert(nextCarIndex == MaxCars);
 
 	auto projectiles = world.getProjectiles();
-	sort(projectiles.begin(), projectiles.end(), [](const auto& a, const auto& b) {return a.getId() < b.getId(); });
+	sort(projectiles.begin(), projectiles.end(), [](const model::Projectile& a, const model::Projectile& b) {return a.getId() < b.getId(); });
 	int nextWasherId = 0;
 	int nextTireId = 0;
 	for (const auto& p : projectiles) {
@@ -192,7 +192,7 @@ CMyWorld::CMyWorld(const World& world, const Car& self)
 	}
 
 	auto oils = world.getOilSlicks();
-	sort(oils.begin(), oils.end(), [](const auto& a, const auto& b) { return a.getId() < b.getId(); });
+	sort(oils.begin(), oils.end(), [](const model::OilSlick& a, const model::OilSlick& b) { return a.getId() < b.getId(); });
 	int nextOilId = 0;
 	for (int i = 0; i < MaxOils; i++) {
 		OilTicks[i] = 0;

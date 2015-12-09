@@ -30,19 +30,36 @@ bool operator != (const CWaypointDistanceMap::CLowResTile& a, const CWaypointDis
 	return a.X != b.X || a.Y != b.Y || a.Direction != b.Direction;
 }
 
-bool operator > (const CWaypointDistanceMap::CLowResTileWithScore& a, const CWaypointDistanceMap::CLowResTileWithScore& b)
+//bool operator > (const CWaypointDistanceMap::CLowResTileWithScore& a, const CWaypointDistanceMap::CLowResTileWithScore& b)
+//{
+//	if (a.Score != b.Score) {
+//		return a.Score > b.Score;
+//	}
+//	if (a.LRTile.X != b.LRTile.X) {
+//		return a.LRTile.X > b.LRTile.X;
+//	}
+//	if (a.LRTile.Y != b.LRTile.Y) {
+//		return a.LRTile.Y > b.LRTile.Y;
+//	}
+//	if (a.LRTile.Direction != b.LRTile.Direction) {
+//		return a.LRTile.Direction > b.LRTile.Direction;
+//	}
+//	return false;
+//}
+
+bool CWaypointDistanceMap::CLowResTileWithScore::operator > (const CWaypointDistanceMap::CLowResTileWithScore& b) const
 {
-	if (a.Score != b.Score) {
-		return a.Score > b.Score;
+	if (Score != b.Score) {
+		return Score > b.Score;
 	}
-	if (a.LRTile.X != b.LRTile.X) {
-		return a.LRTile.X > b.LRTile.X;
+	if (LRTile.X != b.LRTile.X) {
+		return LRTile.X > b.LRTile.X;
 	}
-	if (a.LRTile.Y != b.LRTile.Y) {
-		return a.LRTile.Y > b.LRTile.Y;
+	if (LRTile.Y != b.LRTile.Y) {
+		return LRTile.Y > b.LRTile.Y;
 	}
-	if (a.LRTile.Direction != b.LRTile.Direction) {
-		return a.LRTile.Direction > b.LRTile.Direction;
+	if (LRTile.Direction != b.LRTile.Direction) {
+		return LRTile.Direction > b.LRTile.Direction;
 	}
 	return false;
 }
