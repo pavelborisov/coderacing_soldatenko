@@ -229,6 +229,7 @@ void CBestMoveFinder::processMoveIndex(size_t moveIndex, const std::vector<CMove
 
 	if (moveIndex == 0) {
 		moveArray.push_back({ 0, 0 });
+		lengthsArray.push_back(0);
 		if (chance(50)) {
 			moveArray.push_back({ 1, 0 });
 			if (chance(50)) moveArray.push_back({ 1, 1 });
@@ -236,13 +237,29 @@ void CBestMoveFinder::processMoveIndex(size_t moveIndex, const std::vector<CMove
 			moveArray.push_back({ -1, 0 });
 			if (chance(50)) moveArray.push_back({ -1, 1 });
 		}
-		lengthsArray.push_back(0);
 		lengthsArray.push_back(uniform(4, 12));
 		lengthsArray.push_back(uniform(12, 30));
 		lengthsArray.push_back(uniform(30, 50));
+		//moveArray.push_back({ 0, 1 });
+		//moveArray.push_back({ 0, 0, -1 });
+		//if (chance(50)) {
+		//	moveArray.push_back({ 1, 0 });
+		//	moveArray.push_back({ 1, 1 });
+		//	moveArray.push_back({ 1, 0, -1 });
+		//	moveArray.push_back({ 1, 1, -1 });
+		//} else {
+		//	moveArray.push_back({ -1, 0 });
+		//	moveArray.push_back({ -1, 1 });
+		//	moveArray.push_back({ -1, 0, -1 });
+		//	moveArray.push_back({ -1, 1, -1 });
+		//}
+		//lengthsArray.push_back(uniform(15, 25));
+		//lengthsArray.push_back(uniform(35, 45));
+		//lengthsArray.push_back(uniform(55, 65));
 		sort(lengthsArray.begin(), lengthsArray.end());
 	} else if (moveIndex == 1) {
 		moveArray.push_back({ 0, 0 });
+		lengthsArray.push_back(0);
 		if (chance(50)) {
 			moveArray.push_back({ 1, 0 });
 			if (chance(50)) moveArray.push_back({ 1, 1 });
@@ -250,17 +267,32 @@ void CBestMoveFinder::processMoveIndex(size_t moveIndex, const std::vector<CMove
 			moveArray.push_back({ -1, 0 });
 			if (chance(50)) moveArray.push_back({ -1, 1 });
 		}
-		lengthsArray.push_back(0);
 		lengthsArray.push_back(uniform(30, 50));
+		//moveArray.push_back({ 0, 1 });
+		//moveArray.push_back({ 0, 0, -1 });
+		//if (chance(50)) {
+		//	moveArray.push_back({ 1, 0 });
+		//	moveArray.push_back({ 1, 1 });
+		//	moveArray.push_back({ 1, 0, -1 });
+		//	moveArray.push_back({ 1, 1, -1 });
+		//} else {
+		//	moveArray.push_back({ -1, 0 });
+		//	moveArray.push_back({ -1, 1 });
+		//	moveArray.push_back({ -1, 0, -1 });
+		//	moveArray.push_back({ -1, 1, -1 });
+		//}
+		//lengthsArray.push_back(uniform(15, 25));
+		//lengthsArray.push_back(uniform(35, 45));
+		//lengthsArray.push_back(uniform(55, 65));
 		sort(lengthsArray.begin(), lengthsArray.end());
 	} else if (moveIndex == 2) {
 		moveArray.push_back({ 0, 0 });
+		lengthsArray.push_back(0);
 		if (chance(50)) {
 			moveArray.push_back({ 1, 0 });
 		} else {
 			moveArray.push_back({ -1, 0 });
 		}
-		lengthsArray.push_back(0);
 		lengthsArray.push_back(uniform(30, 50));
 		sort(lengthsArray.begin(), lengthsArray.end());
 	} else if (moveIndex == 3) {

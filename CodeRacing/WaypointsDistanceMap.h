@@ -12,7 +12,7 @@ public:
 	static const int tileSize = 800;
 	static const int step = 400;
 	static const int undefinedCoordinate = -1;
-	static const int undefinedDistance = -1;
+	static const double undefinedDistance;
 	static const int undefinedScore = -1;
 
 	///////////////////////
@@ -75,6 +75,6 @@ private:
 	CWaypointDistanceMap() {}
 
 	double findDistance(int xt, int yt, TDirection dirt, CData& data);
-	void processNeighbor(const CLowResTile& from, const CLowResTile& to, CData& data);
+	void processNeighbor(const CLowResTile& from, const std::pair<CLowResTile, double>& toD, CData& data);
 
 };

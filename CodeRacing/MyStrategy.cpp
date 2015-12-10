@@ -160,41 +160,41 @@ void MyStrategy::makeMove()
 		*resultMove = result.CurrentMove.Convert();
 	}
 
-	// Тупой задний ход
-	double angleToTarget = (tileRoute[1].ToVec() - currentCar.Position).GetAngle();
-	double angle = angleToTarget - currentCar.Angle;
-	normalizeAngle(angle);
-	// Когда симулятор хз что делать.
-	if (!result.Success || result.MoveList.back().End < 10) {
-		CDrawPlugin::Instance().FillCircle(currentCar.Position.X, currentCar.Position.Y, 50, 0x888888);
-		resultMove->setEnginePower(1.0);
-		resultMove->setWheelTurn(angle * 32 / PI);
-	}
-	if (rear == 0) {
-		bool badResult = !result.Success || result.CurrentMove.Brake == 1;
-		if (self->getDurability() == 0) {
-			rear = -game->getCarReactivationTimeTicks() - 50;
-		} else if (world->getTick() > 200 && currentCar.Speed.Length() < 1 && badResult) {
-			rear = 120 + static_cast<int>(self->getEnginePower() / game->getCarEnginePowerChangePerTick());
-		}
-	} else if (rear < 0) {
-		rear++;
-	} else if (rear > 0) {
-		resultMove->setUseNitro(false);
-		resultMove->setBrake(false);
-		CDrawPlugin::Instance().FillCircle(currentCar.Position.X, currentCar.Position.Y, 50, 0x880088);
-		if (rear < 40) {
-			resultMove->setEnginePower(0);
-			resultMove->setBrake(true);
-			resultMove->setWheelTurn(0);
-		} else {
-			if (currentCar.EnginePower > 0) resultMove->setBrake(true);
-			resultMove->setEnginePower(-1.0);
-			resultMove->setWheelTurn(angle > 0 ? -1 : 1);
-		}
-		rear--;
-		if (rear == 0) rear = -120;
-	}
+	//// Тупой задний ход
+	//double angleToTarget = (tileRoute[1].ToVec() - currentCar.Position).GetAngle();
+	//double angle = angleToTarget - currentCar.Angle;
+	//normalizeAngle(angle);
+	//// Когда симулятор хз что делать.
+	//if (!result.Success || result.MoveList.back().End < 10) {
+	//	CDrawPlugin::Instance().FillCircle(currentCar.Position.X, currentCar.Position.Y, 50, 0x888888);
+	//	resultMove->setEnginePower(1.0);
+	//	resultMove->setWheelTurn(angle * 32 / PI);
+	//}
+	//if (rear == 0) {
+	//	bool badResult = !result.Success || result.CurrentMove.Brake == 1;
+	//	if (self->getDurability() == 0) {
+	//		rear = -game->getCarReactivationTimeTicks() - 50;
+	//	} else if (world->getTick() > 200 && currentCar.Speed.Length() < 1 && badResult) {
+	//		rear = 120 + static_cast<int>(self->getEnginePower() / game->getCarEnginePowerChangePerTick());
+	//	}
+	//} else if (rear < 0) {
+	//	rear++;
+	//} else if (rear > 0) {
+	//	resultMove->setUseNitro(false);
+	//	resultMove->setBrake(false);
+	//	CDrawPlugin::Instance().FillCircle(currentCar.Position.X, currentCar.Position.Y, 50, 0x880088);
+	//	if (rear < 40) {
+	//		resultMove->setEnginePower(0);
+	//		resultMove->setBrake(true);
+	//		resultMove->setWheelTurn(0);
+	//	} else {
+	//		if (currentCar.EnginePower > 0) resultMove->setBrake(true);
+	//		resultMove->setEnginePower(-1.0);
+	//		resultMove->setWheelTurn(angle > 0 ? -1 : 1);
+	//	}
+	//	rear--;
+	//	if (rear == 0) rear = -120;
+	//}
 
 	//// Тупое нитро.
 	//if (result.Success) {
