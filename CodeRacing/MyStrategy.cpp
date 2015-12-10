@@ -19,13 +19,16 @@ using namespace std;
 long long MyStrategy::randomSeed = 0;
 CBestMoveFinder::CResult MyStrategy::allyResult[2];
 int MyStrategy::allyResultTick[2] = { -1, -1 };
+const double MyStrategy::stoppedLengthThreshold = 10;
+const int MyStrategy::stoppedTicksThreshold = 40;
 
 MyStrategy::MyStrategy() :
 	log(CLog::Instance()),
 	draw(CDrawPlugin::Instance()),
 	currentTick(0),
 	nextWaypointIndex(0),
-	rear(0)
+	rear(0),
+	stoppedTicks(0)
 {
 }
 
@@ -163,6 +166,15 @@ void MyStrategy::makeMove()
 		*resultMove = result.CurrentMove.Convert();
 	}
 
+	// Считаем, сколько тиков мы были "на месте"
+	double stoppedLength = (currentCar.Position - stoppedPosition).Length();
+	if (stoppedLength > stoppedLengthThreshold) {
+		stoppedTicks = 0;
+		stoppedPosition = currentCar.Position;
+	} else {
+		stoppedTicks += 1;
+	}
+
 	// Тупой задний ход
 	double angleToTarget = (tileRoute[1].ToVec() - currentCar.Position).GetAngle();
 	double angle = angleToTarget - currentCar.Angle;
@@ -174,10 +186,9 @@ void MyStrategy::makeMove()
 		resultMove->setWheelTurn(angle * 32 / PI);
 	}
 	if (rear == 0) {
-		bool badResult = !result.Success || result.CurrentMove.Brake == 1;
 		if (self->getDurability() == 0) {
 			rear = -game->getCarReactivationTimeTicks() - 50;
-		} else if (world->getTick() > 200 && currentCar.Speed.Length() < 1 && badResult) {
+		} else if (world->getTick() > 200 && currentCar.Speed.Length() < 1 && stoppedTicks > stoppedTicksThreshold) {
 			rear = 120 + static_cast<int>(self->getEnginePower() / game->getCarEnginePowerChangePerTick());
 		}
 	} else if (rear < 0) {
@@ -197,32 +208,8 @@ void MyStrategy::makeMove()
 		}
 		rear--;
 		if (rear == 0) rear = -120;
+		stoppedTicks = 0;
 	}
-
-	//// Тупое нитро.
-	//if (result.Success) {
-	//	// Сколько тиков поворачиваем.
-	//	int turnTicks = 0;
-	//	int rearTicks = 0;
-	//	int brakeTicks = 0;
-	//	for (const auto& moveWithDuration : result.MoveList) {
-	//		if (moveWithDuration.Move.Turn != 0) {
-	//			turnTicks += moveWithDuration.End - moveWithDuration.Start;
-	//		}
-	//		if (moveWithDuration.Move.Engine < 0) {
-	//			rearTicks += moveWithDuration.End - moveWithDuration.Start;
-	//		}
-	//		if (moveWithDuration.Move.Brake != 0) {
-	//			brakeTicks += moveWithDuration.End - moveWithDuration.Start;
-	//		}
-	//	}
-	//	int totalTicks = result.MoveList.back().End;
-	//	if (self->getNitroChargeCount() > 0 && self->getRemainingNitroCooldownTicks() == 0 && self->getRemainingNitroTicks() == 0
-	//		&& brakeTicks == 0 && rearTicks == 0 && turnTicks <= 15 && totalTicks > 120)
-	//	{
-	//		resultMove->setUseNitro(true);
-	//	}
-	//}
 }
 
 void MyStrategy::predict()

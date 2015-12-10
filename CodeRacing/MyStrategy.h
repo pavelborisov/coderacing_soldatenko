@@ -47,6 +47,10 @@ private:
 	static int allyResultTick[2];
 	
 	int rear;
+	CVec2D stoppedPosition;
+	int stoppedTicks;
+	static const double stoppedLengthThreshold;
+	static const int stoppedTicksThreshold;
 
 	MyStrategy& operator = (const MyStrategy&) { return *this; }
 
