@@ -9,7 +9,7 @@ maps = ['default', 'map01', 'map02', 'map03', 'map04', 'map05', 'map06', 'map07'
 #maps = ['default', 'map01']
 players = [
     ['current', '..\\CodeRacing\\ReleaseNoLogging\\cpp-cgdk_vs12.exe'],
-    #['previous', '..\\ReleaseNoLogging\\cpp-cgdk_vs12.exe']
+    ['previous', '..\\ReleaseNoLogging\\cpp-cgdk_vs12.exe']
 ]
 local_runner_path = '..\\local-runner\\local-runner.jar'
 
@@ -89,9 +89,9 @@ def run_game_single(mapname, p1name, p1exec):
     print('------')
 
 def run_game_duel(mapname, p1name, p1exec, p2name, p2exec):
-    result_filename = '{}_{}_{}.result'.format(mapname)
-    log_filename = '{}_{}_{}.log'.format(mapname)
-    properties_filename = create_properties(mapname, p1name, p2name, 'Local')
+    result_filename = '{}_{}_{}.result'.format(mapname, p1name, p2name)
+    log_filename = '{}_{}_{}.log'.format(mapname, p1name, p2name)
+    properties_filename = create_properties(mapname, p1name, p2name, 'Local', result_filename, log_filename)
     print('Map, P1Name, P2Name: ', mapname, p1name, p2name)
     local_runner_p = subprocess.Popen(['javaw', '-jar', local_runner_path, properties_filename], shell=True)
     time.sleep(1)
