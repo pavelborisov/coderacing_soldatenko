@@ -8,6 +8,7 @@
 #include <string>
 #include <assert.h>
 #include "DrawPlugin.h"
+#include "Log.h"
 #include "MyWorld.h"
 
 using namespace std;
@@ -342,7 +343,7 @@ static TDirection angleToDirection(double angle)
 	return D_Undefined;
 }
 
-double CWaypointDistanceMap::Query(double x, double y, double angle, int waypointIndex, bool draw)
+double CWaypointDistanceMap::Query(double x, double y, double angle, int waypointIndex, bool& rearIsBetter, bool draw)
 {
 	const double xLowRes = x / step;
 	const double yLowRes = y / step;
@@ -351,24 +352,39 @@ double CWaypointDistanceMap::Query(double x, double y, double angle, int waypoin
 	normalizeAngle(angle);
 	const TDirection dir = angleToDirection(angle);
 	const double dist = findDistance(xLowResInt, yLowResInt, dir, dataByWp[waypointIndex]);
+	const CLowResTile& next = dataByWp[waypointIndex].CameFrom[xLowResInt][yLowResInt][dir];
+	{
+		const int dx = MaskDX[next.Direction];
+		const int dy = MaskDY[next.Direction];
+		rearIsBetter = (next.X + dx) == xLowResInt && (next.Y + dy) == yLowResInt;
+	}
+
 	double offset = 0;
 	static const double sqrt2 = sqrt(2);
 	if (dir == D_Right) {
 		offset = (xLowResInt + 1) - xLowRes;
+		if (rearIsBetter) offset = 1 - offset;
 	} else if (dir == D_Bot) {
 		offset = (yLowResInt + 1) - yLowRes;
+		if (rearIsBetter) offset = 1 - offset;
 	} else if (dir == D_Left) {
 		offset = xLowRes - xLowResInt;
+		if (rearIsBetter) offset = 1 - offset;
 	} else if (dir == D_Top) {
 		offset = yLowRes - yLowResInt;
+		if (rearIsBetter) offset = 1 - offset;
 	} else if (dir == D_RightBot) {
 		offset = sqrt2 * (((xLowResInt + 1) - xLowRes) + ((yLowResInt + 1) - yLowRes));
+		if (rearIsBetter) offset = sqrt2 - offset;
 	} else if (dir == D_LeftBot) {
 		offset = sqrt2 * (((yLowResInt + 1) - yLowRes) + (xLowRes - xLowResInt));
+		if (rearIsBetter) offset = sqrt2 - offset;
 	} else if (dir == D_LeftTop) {
 		offset = sqrt2 * ((xLowRes - xLowResInt) + (yLowRes - yLowResInt));
+		if (rearIsBetter) offset = sqrt2 - offset;
 	} else if (dir == D_RightTop) {
 		offset = sqrt2 * ((yLowRes - yLowResInt) + ((xLowResInt + 1) - xLowRes));
+		if (rearIsBetter) offset = sqrt2 - offset;
 	}
 
 	if (draw) {
@@ -382,9 +398,10 @@ double CWaypointDistanceMap::Query(double x, double y, double angle, int waypoin
 			double d = data.Distance[lr.X][lr.Y][lr.Direction];
 			int dx = MaskDX[lr.Direction];
 			int dy = MaskDY[lr.Direction];
-			CDrawPlugin::Instance().Rect(lr.X * 400, lr.Y * 400, (lr.X + 1) * 400, (lr.Y + 1) * 400, 0xFF0000);
-			CDrawPlugin::Instance().Text(lr.X * 400 + 200, lr.Y * 400 + 200, to_string(d).c_str(), 0xFF0000);
-			CDrawPlugin::Instance().Line(lr.X * 400 + 200, lr.Y * 400 + 200, lr.X * 400 + dx * 200 + 200, lr.Y * 400 + dy * 200 + 200, 0xFF0000);
+			bool rear = (data.CameFrom[lr.X][lr.Y][lr.Direction].X + dx) == lr.X && (data.CameFrom[lr.X][lr.Y][lr.Direction].Y + dy) == lr.Y;
+			CDrawPlugin::Instance().Rect(lr.X * 400, lr.Y * 400, (lr.X + 1) * 400, (lr.Y + 1) * 400, rear ? 0xFFFF00 : 0xFF0000);
+			CDrawPlugin::Instance().Text(lr.X * 400 + 200, lr.Y * 400 + 200, to_string(d).c_str(), rear ? 0xFFFF00 : 0xFF0000);
+			CDrawPlugin::Instance().Line(lr.X * 400 + 200, lr.Y * 400 + 200, lr.X * 400 + dx * 200 + 200, lr.Y * 400 + dy * 200 + 200, rear ? 0xFFFF00 : 0xFF0000);
 			
 			lr = data.CameFrom[lr.X][lr.Y][lr.Direction];
 			if (lr == CLowResTile()) break;
@@ -417,7 +434,8 @@ double CWaypointDistanceMap::LapScore()
 	default:
 		assert(false);
 	}
-	return Query(waypoints[0].X * 800 + 400, waypoints[0].Y * 800 + 400, angle, 1) + 400;
+	bool rearIsBetterNotUsed;
+	return Query(waypoints[0].X * 800 + 400, waypoints[0].Y * 800 + 400, angle, 1, rearIsBetterNotUsed) + 400;
 }
 
 double CWaypointDistanceMap::findDistance(int xt, int yt, TDirection dirt, CData& data)

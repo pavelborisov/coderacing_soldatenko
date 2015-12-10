@@ -46,7 +46,7 @@ public:
 	}
 
 	void Initialize(const std::vector<CMyTile>& waypoints);
-	double Query(double x, double y, double angle, int waypointIndex, bool draw = false);
+	double Query(double x, double y, double angle, int waypointIndex, bool& rearIsBetter, bool draw = false);
 	double LapScore();
 
 private:

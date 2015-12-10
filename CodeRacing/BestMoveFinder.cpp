@@ -39,29 +39,6 @@ static CMyMove findMove(int tick, const vector<CBestMoveFinder::CMoveWithDuratio
 	return CMyMove();
 }
 
-const vector<pair<vector<CMyMove>, vector<int>>> CBestMoveFinder::allMovesWithLengths = {
-	// Первое множество действий
-	{
-		{ { 0, 0 },{ 1, 0 },{ -1, 0 },{ 1, 1 },{ -1, 1 } },
-		{ 0, 5, 10, 20, 40 }
-	},
-	// Второе множество действий
-	{
-		{ { 0, 0 },{ 1, 0 },{ -1, 0 },{ 1, 1 },{ -1, 1 } },
-		{ 0, 40 }
-	},
-	// Третье множество действий
-	{
-		{ { 1, 0 },{ -1, 0 } },
-		{ 0, 40 }
-	},
-	// Четвёртое действие - просто ехать по прямой (пока не упрёмся в maxTick)
-	{
-		{ { 0, 0 } },
-		{ 1000 }
-	}
-};
-
 CBestMoveFinder::CBestMoveFinder(
 	const CMyWorld& startWorld,
 	const std::vector<CMyTile>& waypointTiles,
@@ -107,7 +84,7 @@ CBestMoveFinder::CBestMoveFinder(
 	}
 }
 
-CBestMoveFinder::CResult CBestMoveFinder::Process()
+CBestMoveFinder::CResult CBestMoveFinder::Process(bool /*checkRear*/)
 {
 	simulationTicks = 0;
 	bestScore = INT_MIN;
@@ -118,7 +95,9 @@ CBestMoveFinder::CResult CBestMoveFinder::Process()
 
 	CResult result;
 	processPreviousMoveList();
-	processMoveIndex(0, vector<CMoveWithDuration>());
+	processMoveIndex(0, vector<CMoveWithDuration>(), false);
+	//if (checkRear) processMoveIndex(0, vector<CMoveWithDuration>(), true);
+	//processMoveIndex(0, vector<CMoveWithDuration>(), checkRear);
 	if (bestMoveList.size() == 0) {
 		result.Success = false;
 		return result;
@@ -218,85 +197,52 @@ void CBestMoveFinder::processPreviousMoveList()
 	}
 }
 
-void CBestMoveFinder::processMoveIndex(size_t moveIndex, const std::vector<CMoveWithDuration>& prevMoveList)
+void CBestMoveFinder::processMoveIndex(size_t moveIndex, const std::vector<CMoveWithDuration>& prevMoveList, bool checkRear)
 {
-	//bool lastMove = moveIndex == allMovesWithLengths.size() - 1;
-	//const vector<CMyMove>& moveArray = allMovesWithLengths[moveIndex].first;
-	//const vector<int>& lengthsArray = allMovesWithLengths[moveIndex].second;
 	vector<CMyMove> moveArray;
 	vector<int> lengthsArray;
-	bool lastMove = moveIndex == 3;
+	bool lastMove;
 
+	lastMove = moveIndex == 3;
+	double engine = checkRear ? -1 : 1;
 	if (moveIndex == 0) {
-		moveArray.push_back({ 0, 0 });
+		moveArray.push_back({ 0, 0, engine });
 		lengthsArray.push_back(0);
 		if (chance(50)) {
-			moveArray.push_back({ 1, 0 });
-			if (chance(50)) moveArray.push_back({ 1, 1 });
+			moveArray.push_back({ 1, 0, engine });
+			if (chance(50)) moveArray.push_back({ 1, 1, engine });
 		} else {
-			moveArray.push_back({ -1, 0 });
-			if (chance(50)) moveArray.push_back({ -1, 1 });
+			moveArray.push_back({ -1, 0, engine });
+			if (chance(50)) moveArray.push_back({ -1, 1, engine });
 		}
 		lengthsArray.push_back(uniform(4, 12));
 		lengthsArray.push_back(uniform(12, 30));
 		lengthsArray.push_back(uniform(30, 50));
-		//moveArray.push_back({ 0, 1 });
-		//moveArray.push_back({ 0, 0, -1 });
-		//if (chance(50)) {
-		//	moveArray.push_back({ 1, 0 });
-		//	moveArray.push_back({ 1, 1 });
-		//	moveArray.push_back({ 1, 0, -1 });
-		//	moveArray.push_back({ 1, 1, -1 });
-		//} else {
-		//	moveArray.push_back({ -1, 0 });
-		//	moveArray.push_back({ -1, 1 });
-		//	moveArray.push_back({ -1, 0, -1 });
-		//	moveArray.push_back({ -1, 1, -1 });
-		//}
-		//lengthsArray.push_back(uniform(15, 25));
-		//lengthsArray.push_back(uniform(35, 45));
-		//lengthsArray.push_back(uniform(55, 65));
 		sort(lengthsArray.begin(), lengthsArray.end());
 	} else if (moveIndex == 1) {
-		moveArray.push_back({ 0, 0 });
+		moveArray.push_back({ 0, 0, engine });
 		lengthsArray.push_back(0);
 		if (chance(50)) {
-			moveArray.push_back({ 1, 0 });
-			if (chance(50)) moveArray.push_back({ 1, 1 });
+			moveArray.push_back({ 1, 0, engine });
+			if (chance(50)) moveArray.push_back({ 1, 1, engine });
 		} else {
-			moveArray.push_back({ -1, 0 });
-			if (chance(50)) moveArray.push_back({ -1, 1 });
+			moveArray.push_back({ -1, 0, engine });
+			if (chance(50)) moveArray.push_back({ -1, 1, engine });
 		}
 		lengthsArray.push_back(uniform(30, 50));
-		//moveArray.push_back({ 0, 1 });
-		//moveArray.push_back({ 0, 0, -1 });
-		//if (chance(50)) {
-		//	moveArray.push_back({ 1, 0 });
-		//	moveArray.push_back({ 1, 1 });
-		//	moveArray.push_back({ 1, 0, -1 });
-		//	moveArray.push_back({ 1, 1, -1 });
-		//} else {
-		//	moveArray.push_back({ -1, 0 });
-		//	moveArray.push_back({ -1, 1 });
-		//	moveArray.push_back({ -1, 0, -1 });
-		//	moveArray.push_back({ -1, 1, -1 });
-		//}
-		//lengthsArray.push_back(uniform(15, 25));
-		//lengthsArray.push_back(uniform(35, 45));
-		//lengthsArray.push_back(uniform(55, 65));
 		sort(lengthsArray.begin(), lengthsArray.end());
 	} else if (moveIndex == 2) {
-		moveArray.push_back({ 0, 0 });
+		moveArray.push_back({ 0, 0, engine });
 		lengthsArray.push_back(0);
 		if (chance(50)) {
-			moveArray.push_back({ 1, 0 });
+			moveArray.push_back({ 1, 0, engine });
 		} else {
-			moveArray.push_back({ -1, 0 });
+			moveArray.push_back({ -1, 0, engine });
 		}
 		lengthsArray.push_back(uniform(30, 50));
 		sort(lengthsArray.begin(), lengthsArray.end());
 	} else if (moveIndex == 3) {
-		moveArray.push_back({ 0, 0 });
+		moveArray.push_back({ 0, 0, engine });
 		lengthsArray.push_back(1000);
 		sort(lengthsArray.begin(), lengthsArray.end());
 	}
@@ -352,7 +298,7 @@ void CBestMoveFinder::processMoveIndex(size_t moveIndex, const std::vector<CMove
 				vector<CMoveWithDuration> moveList = prevMoveList;
 				moveList.push_back({ move, start, end });
 				stateCache.push_back(current);
-				processMoveIndex(moveIndex + 1, moveList);
+				processMoveIndex(moveIndex + 1, moveList, checkRear);
 				stateCache.pop_back();
 			}
 
@@ -384,8 +330,9 @@ double CBestMoveFinder::evaluate(const CState& state) const
 {
 	const CMyCar& startCar = startWorld.Cars[0];
 	const CMyCar& car = state.World.Cars[0];
+	bool rearIsBetterNotUsed = false;
 	const double dist = CWaypointDistanceMap::Instance().Query(
-		car.Position.X, car.Position.Y, car.Angle, car.NextWaypointIndex);
+		car.Position.X, car.Position.Y, car.Angle, car.NextWaypointIndex, rearIsBetterNotUsed);
 		//car.Position.X, car.Position.Y, car.Speed.GetAngle(), car.NextWaypointIndex);
 	double score = state.RouteScore;
 	if (dist >= 0) {
@@ -405,8 +352,8 @@ double CBestMoveFinder::evaluate(const CState& state) const
 		if (car.Durability < 1e-7) {
 			score += -1000000;
 		} else {
-			// == -20000 при durability == 1 и == -200000 при durability == 0.01
-			score += -20000 * sqrt(1 / car.Durability);
+			// == -5000 при durability == 1 и == -50000 при durability == 0.01
+			score += -5000 * sqrt(1 / car.Durability);
 		}
 	}
 
@@ -583,7 +530,7 @@ void CBestMoveFinder::postProcessOil(const CState& before, CResult& result)
 void CBestMoveFinder::postProcessNitro(const CState& before, CResult& result)
 {
 	const auto& car = startWorld.Cars[0];
-	if (car.NitroCount == 0 || car.NitroCooldown > 0 || result.CurrentMove.Brake == true) {
+	if (car.NitroCount == 0 || car.NitroCooldown > 0 || result.CurrentMove.Brake == true || result.CurrentMove.Engine < 0) {
 		return;
 	}
 

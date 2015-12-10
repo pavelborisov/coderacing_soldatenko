@@ -39,7 +39,7 @@ public:
 		const CBestMoveFinder::CResult& allyResult,
 		bool correctAllyResult);
 	
-	CResult Process();
+	CResult Process(bool checkRear);
 
 private:
 	struct CState {
@@ -63,11 +63,10 @@ private:
 	std::vector<CMoveWithDuration> bestMoveList;
 	std::vector<CState> stateCache;
 
-	static const std::vector<std::pair<std::vector<CMyMove>, std::vector<int>>> allMovesWithLengths;
 	static const int maxTick = 140;
 
 	void processPreviousMoveList();
-	void processMoveIndex(size_t moveIndex, const std::vector<CMoveWithDuration>& prevMoveList);
+	void processMoveIndex(size_t moveIndex, const std::vector<CMoveWithDuration>& prevMoveList, bool checkRear);
 	void processRouteScore(CState& state, bool firstTickBrake);
 	double evaluate(const CState& state) const;
 	void postProcess(CResult& result);
