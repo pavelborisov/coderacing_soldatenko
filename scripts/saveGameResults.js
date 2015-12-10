@@ -48,4 +48,4 @@ for(var i = 1, row; row = t.rows[i]; i++) {
         data.push(res);
     }
 }
-console.save(data, 'data.txt');
+console.save(data, 'gameresults.txt');
