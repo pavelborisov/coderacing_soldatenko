@@ -60,7 +60,6 @@ void MyStrategy::move(const Car& _self, const World& _world, const Game& _game, 
 	log.LogMyCar(currentWorld.Cars[0], "Current            ");
 
 	updateWaypoints();
-	findTileRoute();
 	makeMove();
 	predict();
 	doLog();
@@ -107,26 +106,6 @@ void MyStrategy::updateWaypoints()
 	}
 
 	nextWaypointIndex = self->getNextWaypointIndex();
-}
-
-void MyStrategy::findTileRoute()
-{
-	const int currentX = static_cast<int>(self->getX() / game->getTrackTileSize());
-	const int currentY = static_cast<int>(self->getY() / game->getTrackTileSize());
-	currentTile = CMyTile(currentX, currentY);
-
-	int dx = 0;
-	int dy = 0;
-	if (abs(currentCar.Angle) < PI / 4) {
-		dx = 1;
-	} else if (abs(currentCar.Angle) > 3 * PI / 4) {
-		dx = -1;
-	} else if (currentCar.Angle > 0) {
-		dy = 1;
-	} else if (currentCar.Angle < 0) {
-		dy = -1;
-	}
-	tileRoute = tileRouteFinder.FindRoute(waypointTiles, nextWaypointIndex, currentTile, dx, dy);
 }
 
 template<class MAP>

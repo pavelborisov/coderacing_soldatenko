@@ -156,7 +156,6 @@
     <ClCompile Include="csimplesocket\HTTPActiveSocket.cpp" />
     <ClCompile Include="csimplesocket\PassiveSocket.cpp" />
     <ClCompile Include="csimplesocket\SimpleSocket.cpp" />
-    <ClCompile Include="TileRouteFinder.cpp" />
     <ClCompile Include="Vec2D.cpp" />
     <ClCompile Include="Vec3D.cpp" />
     <ClCompile Include="WaypointsDistanceMap.cpp" />
@@ -201,7 +200,6 @@
     <ClInclude Include="csimplesocket\PassiveSocket.h" />
     <ClInclude Include="csimplesocket\SimpleSocket.h" />
     <ClInclude Include="csimplesocket\StatTimer.h" />
-    <ClInclude Include="TileRouteFinder.h" />
     <ClInclude Include="Tools.h" />
     <ClInclude Include="Vec2D.h" />
     <ClInclude Include="Vec3D.h" />
