@@ -64,6 +64,7 @@ private:
 	void predict();
 	void doLog();
 	void doDraw();
+	void saveMap();
 };
 
 #endif

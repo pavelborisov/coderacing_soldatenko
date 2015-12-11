@@ -51,3 +51,5 @@ ReleaseNoLogging
 /scripts/*.log
 /scripts/*.properties
 /scripts/*.result
+/CodeRacing/dump.map
+/ReleaseNoLogging_v26
