@@ -13,6 +13,7 @@ function fillGame() {
     var enemyPosition = 3 - myPosition;
     document.getElementById("participant".concat(myPosition)).value = myName;
     document.getElementById("participant".concat(enemyPosition)).value = enemyName;
+    document.getElementById("map").value = "generated.map";
 }
 
 function submitGame() {

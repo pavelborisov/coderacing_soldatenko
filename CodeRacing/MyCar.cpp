@@ -14,6 +14,8 @@ static double MedianAngularSpeedHistory[10] =
 };
 
 static int DeadTicksHistory[10] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+static int LapsCountHistory[10] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+static int PrevNextWaypointIndexHistory[10] = { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 };
 
 static int HistoryId(int PlayerId, int Type)
 {
@@ -57,6 +59,7 @@ CMyCar::CMyCar() :
 	WheelTurn(0),
 	Durability(0),
 	NextWaypointIndex(0),
+	PrevNextWaypointIndex(0),
 	NitroCount(0),
 	NitroTicks(0),
 	NitroCooldown(0),
@@ -71,16 +74,16 @@ CMyCar::CMyCar() :
 	PlayerId(0),
 	CollisionsDetected(0),
 	CollisionDeltaSpeed(0),
-	IsStartWPCrossed(false),
 	IsFinished(false),
+	LapsCount(0),
 	Initialized(false)
 {
 }
 
 CMyCar::CMyCar(const CMyCar& car) :
 	Position(car.Position),
-	RotatedRect(car.RotatedRect),
 	Angle(car.Angle),
+	RotatedRect(car.RotatedRect),
 	Speed(car.Speed),
 	AngularSpeed(car.AngularSpeed),
 	MedianAngularSpeed(car.MedianAngularSpeed),
@@ -88,6 +91,7 @@ CMyCar::CMyCar(const CMyCar& car) :
 	WheelTurn(car.WheelTurn),
 	Durability(car.Durability),
 	NextWaypointIndex(car.NextWaypointIndex),
+	PrevNextWaypointIndex(car.PrevNextWaypointIndex),
 	NitroCount(car.NitroCount),
 	NitroTicks(car.NitroTicks),
 	NitroCooldown(car.NitroCooldown),
@@ -102,8 +106,8 @@ CMyCar::CMyCar(const CMyCar& car) :
 	PlayerId(car.PlayerId),
 	CollisionsDetected(car.CollisionsDetected),
 	CollisionDeltaSpeed(car.CollisionDeltaSpeed),
-	IsStartWPCrossed(car.IsStartWPCrossed),
 	IsFinished(car.IsFinished),
+	LapsCount(car.LapsCount),
 	Initialized(car.Initialized)
 {
 }
@@ -115,14 +119,15 @@ CMyCar::CMyCar(const model::Car& car) :
 
 CMyCar::CMyCar(const model::Car& car, int playerId) :
 	Position(car.getX(), car.getY()),
-	Speed(car.getSpeedX(), car.getSpeedY()),
 	Angle(car.getAngle()),
+	Speed(car.getSpeedX(), car.getSpeedY()),
 	AngularSpeed(car.getAngularSpeed()),
 	MedianAngularSpeed(UndefinedMedianAngularSpeed), // »гра не даЄт таких данных
 	EnginePower(car.getEnginePower()),
 	WheelTurn(car.getWheelTurn()),
 	Durability(car.getDurability()),
 	NextWaypointIndex(car.getNextWaypointIndex()),
+	PrevNextWaypointIndex(-1),
 	NitroCount(car.getNitroChargeCount()),
 	NitroTicks(car.getRemainingNitroTicks()),
 	NitroCooldown(car.getRemainingNitroCooldownTicks()),
@@ -137,12 +142,20 @@ CMyCar::CMyCar(const model::Car& car, int playerId) :
 	PlayerId(playerId),
 	CollisionsDetected(0),
 	CollisionDeltaSpeed(0),
-	IsStartWPCrossed(false),
 	IsFinished(car.isFinishedTrack()),
+	LapsCount(0),
 	Initialized(true)
 {
-	MedianAngularSpeed = MedianAngularSpeedHistory[HistoryId(PlayerId, Type)];
-	DeadTicks = Durability > 1e-5 ? 0 : DeadTicksHistory[HistoryId(PlayerId, Type)];
+	const int historyId = HistoryId(PlayerId, Type);
+	MedianAngularSpeed = MedianAngularSpeedHistory[historyId];
+	DeadTicks = Durability > 1e-5 ? 0 : DeadTicksHistory[historyId];
+	LapsCount = LapsCountHistory[historyId];
+	PrevNextWaypointIndex = PrevNextWaypointIndexHistory[historyId];
+	if (NextWaypointIndex == 1 && PrevNextWaypointIndex == 0) {
+		LapsCount += 1;
+	}
+	LapsCountHistory[historyId] = LapsCount;
+	PrevNextWaypointIndexHistory[historyId] = NextWaypointIndex;
 	RotatedRect = CRotatedRect(Position, 210, 140, Angle);
 }
 
@@ -168,8 +181,9 @@ double CMyCar::GetInvertedAngularMass() const
 
 void CMyCar::SaveHistory()
 {
-	MedianAngularSpeedHistory[HistoryId(PlayerId, Type)] = MedianAngularSpeed;
-	DeadTicksHistory[HistoryId(PlayerId, Type)] = DeadTicks;
+	const int historyId = HistoryId(PlayerId, Type);
+	MedianAngularSpeedHistory[historyId] = MedianAngularSpeed;
+	DeadTicksHistory[historyId] = DeadTicks;
 }
 
 void CMyCar::LogDifference(const CMyCar& car) const
@@ -187,6 +201,7 @@ void CMyCar::LogDifference(const CMyCar& car) const
 	CLog::Instance().LogIfDifferent(WheelTurn, car.WheelTurn, "WheelTurn");
 	CLog::Instance().LogIfDifferent(Durability, car.Durability, "Durability");
 	CLog::Instance().LogIfDifferent(NextWaypointIndex, car.NextWaypointIndex, "NextWaypointIndex");
+	CLog::Instance().LogIfDifferent(LapsCount, car.LapsCount, "LapsCount");
 	CLog::Instance().LogIfDifferent(NitroCount, car.NitroCount, "NitroCount");
 	CLog::Instance().LogIfDifferent(NitroTicks, car.NitroTicks, "NitroTicks");
 	CLog::Instance().LogIfDifferent(NitroCooldown, car.NitroCooldown, "NitroCooldown");

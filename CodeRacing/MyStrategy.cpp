@@ -1,4 +1,4 @@
-#include "MyStrategy.h"
+п»ї#include "MyStrategy.h"
 
 #include <algorithm>
 #include <cmath>
@@ -19,13 +19,16 @@ using namespace std;
 long long MyStrategy::randomSeed = 0;
 CBestMoveFinder::CResult MyStrategy::allyResult[2];
 int MyStrategy::allyResultTick[2] = { -1, -1 };
+const double MyStrategy::stoppedLengthThreshold = 10;
+const int MyStrategy::stoppedTicksThreshold = 60;
 
 MyStrategy::MyStrategy() :
 	log(CLog::Instance()),
 	draw(CDrawPlugin::Instance()),
 	currentTick(0),
 	nextWaypointIndex(0),
-	rear(0)
+	rear(0),
+	stoppedTicks(0)
 {
 }
 
@@ -57,7 +60,6 @@ void MyStrategy::move(const Car& _self, const World& _world, const Game& _game, 
 	log.LogMyCar(currentWorld.Cars[0], "Current            ");
 
 	updateWaypoints();
-	findTileRoute();
 	makeMove();
 	predict();
 	doLog();
@@ -106,26 +108,6 @@ void MyStrategy::updateWaypoints()
 	nextWaypointIndex = self->getNextWaypointIndex();
 }
 
-void MyStrategy::findTileRoute()
-{
-	const int currentX = static_cast<int>(self->getX() / game->getTrackTileSize());
-	const int currentY = static_cast<int>(self->getY() / game->getTrackTileSize());
-	currentTile = CMyTile(currentX, currentY);
-
-	int dx = 0;
-	int dy = 0;
-	if (abs(currentCar.Angle) < PI / 4) {
-		dx = 1;
-	} else if (abs(currentCar.Angle) > 3 * PI / 4) {
-		dx = -1;
-	} else if (currentCar.Angle > 0) {
-		dy = 1;
-	} else if (currentCar.Angle < 0) {
-		dy = -1;
-	}
-	tileRoute = tileRouteFinder.FindRoute(waypointTiles, nextWaypointIndex, currentTile, dx, dy);
-}
-
 template<class MAP>
 void logStats(const MAP& m, const char* name, std::basic_ostream< char, std::char_traits<char> >& stream)
 {
@@ -138,8 +120,18 @@ void logStats(const MAP& m, const char* name, std::basic_ostream< char, std::cha
 
 void MyStrategy::makeMove()
 {
+	bool rearIsBetter = false;
+	CWaypointDistanceMap::Instance().Query(currentCar, rearIsBetter, false);
+	CWaypointDistanceMap::CLowResTile lrTileCur;
+	CWaypointDistanceMap::CLowResTile lrTileNext;
+	bool risb = false;
+	CWaypointDistanceMap::Instance().GetLRTiles(currentCar, lrTileCur, lrTileNext, risb);
+	CLog::Instance().Stream() << "lrTileCur :" << lrTileCur.X << " " << lrTileCur.Y << " " << lrTileCur.Direction << endl;
+	CLog::Instance().Stream() << "lrTileNext :" << lrTileNext.X << " " << lrTileNext.Y << " " << lrTileNext.Direction << endl;
+	CLog::Instance().Stream() << "rearIsBetter :" << rearIsBetter << endl;
+
 	if (currentTick < game->getInitialFreezeDurationTicks()) {
-		resultMove->setEnginePower(1.0);
+		resultMove->setEnginePower(rearIsBetter ? -1.0 : 1.0);
 		return;
 	}
 
@@ -148,34 +140,42 @@ void MyStrategy::makeMove()
 		const int allyType = 1 - currentCar.Type;
 		CBestMoveFinder bestMoveFinder(currentWorld, waypointTiles, previousResult,
 			allyResult[allyType], allyResultTick[allyType] != currentTick);
-		result = bestMoveFinder.Process();
+		result = bestMoveFinder.Process(rearIsBetter);
 		previousResult = result;
 		allyResult[currentCar.Type] = result;
 		allyResultTick[currentCar.Type] = currentTick;
 		*resultMove = result.CurrentMove.Convert();
 	} else {
 		CBestMoveFinder bestMoveFinder(currentWorld, waypointTiles, previousResult);
-		result = bestMoveFinder.Process();
+		result = bestMoveFinder.Process(rearIsBetter);
 		previousResult = result;
 		*resultMove = result.CurrentMove.Convert();
 	}
 
-	// Тупой задний ход
-	double angleToTarget = (tileRoute[1].ToVec() - currentCar.Position).GetAngle();
+	// РЎС‡РёС‚Р°РµРј, СЃРєРѕР»СЊРєРѕ С‚РёРєРѕРІ РјС‹ Р±С‹Р»Рё "РЅР° РјРµСЃС‚Рµ"
+	double stoppedLength = (currentCar.Position - stoppedPosition).Length();
+	if (stoppedLength > stoppedLengthThreshold) {
+		stoppedTicks = 0;
+		stoppedPosition = currentCar.Position;
+	} else {
+		stoppedTicks += 1;
+	}
+
+	// РўСѓРїРѕР№ Р·Р°РґРЅРёР№ С…РѕРґ
+	double angleToTarget = lrTileCur.Direction * PI / 4;
 	double angle = angleToTarget - currentCar.Angle;
 	normalizeAngle(angle);
-	// Когда симулятор хз что делать.
+	// РљРѕРіРґР° СЃРёРјСѓР»СЏС‚РѕСЂ С…Р· С‡С‚Рѕ РґРµР»Р°С‚СЊ.
 	if (!result.Success || result.MoveList.back().End < 10) {
 		CDrawPlugin::Instance().FillCircle(currentCar.Position.X, currentCar.Position.Y, 50, 0x888888);
 		resultMove->setEnginePower(1.0);
 		resultMove->setWheelTurn(angle * 32 / PI);
 	}
 	if (rear == 0) {
-		bool badResult = !result.Success || result.CurrentMove.Brake == 1;
 		if (self->getDurability() == 0) {
 			rear = -game->getCarReactivationTimeTicks() - 50;
-		} else if (world->getTick() > 200 && currentCar.Speed.Length() < 1 && badResult) {
-			rear = 120 + static_cast<int>(self->getEnginePower() / game->getCarEnginePowerChangePerTick());
+		} else if (world->getTick() > 200 && currentCar.Speed.Length() < 1 && stoppedTicks > stoppedTicksThreshold) {
+			rear = 80 + static_cast<int>(self->getEnginePower() / game->getCarEnginePowerChangePerTick());
 		}
 	} else if (rear < 0) {
 		rear++;
@@ -183,43 +183,13 @@ void MyStrategy::makeMove()
 		resultMove->setUseNitro(false);
 		resultMove->setBrake(false);
 		CDrawPlugin::Instance().FillCircle(currentCar.Position.X, currentCar.Position.Y, 50, 0x880088);
-		if (rear < 40) {
-			resultMove->setEnginePower(0);
-			resultMove->setBrake(true);
-			resultMove->setWheelTurn(0);
-		} else {
-			if (currentCar.EnginePower > 0) resultMove->setBrake(true);
-			resultMove->setEnginePower(-1.0);
-			resultMove->setWheelTurn(angle > 0 ? -1 : 1);
-		}
+		if (currentCar.EnginePower > 0) resultMove->setBrake(true);
+		resultMove->setEnginePower(-1.0);
+		resultMove->setWheelTurn(angle > 0 ? -1 : 1);
 		rear--;
 		if (rear == 0) rear = -120;
+		stoppedTicks = 0;
 	}
-
-	//// Тупое нитро.
-	//if (result.Success) {
-	//	// Сколько тиков поворачиваем.
-	//	int turnTicks = 0;
-	//	int rearTicks = 0;
-	//	int brakeTicks = 0;
-	//	for (const auto& moveWithDuration : result.MoveList) {
-	//		if (moveWithDuration.Move.Turn != 0) {
-	//			turnTicks += moveWithDuration.End - moveWithDuration.Start;
-	//		}
-	//		if (moveWithDuration.Move.Engine < 0) {
-	//			rearTicks += moveWithDuration.End - moveWithDuration.Start;
-	//		}
-	//		if (moveWithDuration.Move.Brake != 0) {
-	//			brakeTicks += moveWithDuration.End - moveWithDuration.Start;
-	//		}
-	//	}
-	//	int totalTicks = result.MoveList.back().End;
-	//	if (self->getNitroChargeCount() > 0 && self->getRemainingNitroCooldownTicks() == 0 && self->getRemainingNitroTicks() == 0
-	//		&& brakeTicks == 0 && rearTicks == 0 && turnTicks <= 15 && totalTicks > 120)
-	//	{
-	//		resultMove->setUseNitro(true);
-	//	}
-	//}
 }
 
 void MyStrategy::predict()
@@ -242,6 +212,7 @@ void MyStrategy::doLog()
 	if (currentTick > 180) {
 		previousPredictedWorld.LogDifference(currentWorld);
 	}
+	saveMap();
 #endif
 }
 
@@ -251,17 +222,86 @@ void MyStrategy::doDraw()
 	CVec2D nextWaypoint = waypointTiles[nextWaypointIndex].ToVec();
 	draw.FillCircle(nextWaypoint.X, nextWaypoint.Y, 50, 0xFF0000);
 
-	//const double angle = currentCar.Angle;
-	//const int nwp = currentCar.NextWaypointIndex;
-	//for (int xs = 0; xs < 2 * CMyTile::SizeX(); xs++) {
-	//	for (int ys = 0; ys < 2 * CMyTile::SizeY(); ys++) {
-	//		const double x = xs * 400 + 200;
-	//		const double y = ys * 400 + 200;
-	//		const double dist = CWaypointDistanceMap::Instance().Query(x, y, angle, nwp);
-	//		CDrawPlugin::Instance().Text(x, y, to_string(dist).c_str(), 0x000000);
-	//	}
-	//}
-	CWaypointDistanceMap::Instance().Query(currentCar.Position.X, currentCar.Position.Y, currentCar.Angle, currentCar.NextWaypointIndex, true);
-	//CWaypointDistanceMap::Instance().Query(currentCar.Position.X, currentCar.Position.Y, currentCar.Speed.GetAngle(), currentCar.NextWaypointIndex, true);
+	bool rearIsBetter = false;
+	CWaypointDistanceMap::Instance().Query(currentCar, rearIsBetter, true);
+#endif
+}
+
+#ifdef LOGGING
+#include <fstream>
+#include <codecvt>
+#include <locale>
+wstring getTileSymbol(model::TileType tileType)
+{
+	switch (tileType) {
+	case EMPTY:
+		return L"в–€";
+	case VERTICAL:
+		return L"в•‘";
+	case HORIZONTAL:
+		return L"в•ђ";
+	case LEFT_TOP_CORNER:
+		return L"в•”";
+	case RIGHT_TOP_CORNER:
+		return L"в•—";
+	case LEFT_BOTTOM_CORNER:
+		return L"в•љ";
+	case RIGHT_BOTTOM_CORNER:
+		return L"в•ќ";
+	case LEFT_HEADED_T:
+		return L"в•Ј";
+	case RIGHT_HEADED_T:
+		return L"в• ";
+	case TOP_HEADED_T:
+		return L"в•©";
+	case BOTTOM_HEADED_T:
+		return L"в•¦";
+	case CROSSROADS:
+		return L"в•¬";
+	case UNKNOWN:
+		return L"?";
+	default:
+		return L"E";
+	}
+}
+#endif
+
+void MyStrategy::saveMap()
+{
+#ifdef LOGGING
+	
+	wofstream out;
+	out.open("dump.map");
+	locale utf8_locale(locale(), new codecvt_utf8<wchar_t>);
+	out.imbue(utf8_locale);
+
+	out << CMyTile::SizeX() << L" " << CMyTile::SizeY() << L"\n";
+	for (int y = 0; y < CMyTile::SizeY(); y++) {
+		for (int x = 0; x < CMyTile::SizeX(); x++) {
+			out << getTileSymbol(CMyTile::TileTypesXY[x][y]);
+		}
+		out << L"\n";
+	}
+	out << currentWorld.WaypointTiles.size() << L"\n";
+	for (const auto& w : currentWorld.WaypointTiles) {
+		out << w.X << L" " << w.Y << L"\n";
+	}
+	switch (currentWorld.StartDirection) {
+	case D_Right:
+		out << L"RIGHT\n";
+		break;
+	case D_Left:
+		out << L"LEFT\n";
+		break;
+	case D_Top:
+		out << L"UP\n";
+		break;
+	case D_Bot:
+		out << L"DOWN\n";
+		break;
+	default:
+		assert(false);
+	}
+	out.close();
 #endif
 }

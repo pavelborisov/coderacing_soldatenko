@@ -23,6 +23,7 @@ struct CMyCar {
 	double WheelTurn;
 	double Durability;
 	int NextWaypointIndex;
+	int PrevNextWaypointIndex;
 	int NitroCount;
 	int NitroTicks;
 	int NitroCooldown;
@@ -38,7 +39,7 @@ struct CMyCar {
 	int CollisionsDetected;
 	double CollisionDeltaSpeed;
 	bool IsFinished;
-	bool IsStartWPCrossed;
+	int LapsCount;
 	bool Initialized;
 
 	static const double Width;

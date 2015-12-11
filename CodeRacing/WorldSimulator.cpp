@@ -179,7 +179,7 @@ CMyWorld CWorldSimulator::Simulate(const CMyWorld& startWorld, const CMyMove mov
 		if (carTileX == nextWPTile.X && carTileY == nextWPTile.Y) {
 			car.NextWaypointIndex = (car.NextWaypointIndex + 1) % CMyWorld::WaypointTiles.size();
 			if (car.NextWaypointIndex == 1) {
-				car.IsStartWPCrossed = true;
+				car.LapsCount += 1;
 			}
 		}
 	}
@@ -815,7 +815,7 @@ void CWorldSimulator::collideCarWithWalls(CMyCar& car) const
 	const double durabilityChange = durabilityFactor * collisionDeltaSpeed;
 	if (collisionDeltaSpeed > 0) {
 		car.CollisionDeltaSpeed += collisionDeltaSpeed;
-		car.CollisionsDetected += 1;
+		if(stopCollisions) car.CollisionsDetected += 1;
 	}
 	if (durabilityChange >= durabilityEps) {
 		car.Durability = max(0.0, car.Durability - durabilityChange);

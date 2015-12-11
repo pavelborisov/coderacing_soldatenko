@@ -8,6 +8,7 @@
 #include <string>
 #include <assert.h>
 #include "DrawPlugin.h"
+#include "Log.h"
 #include "MyWorld.h"
 
 using namespace std;
@@ -20,6 +21,8 @@ const unsigned int Bottom = 1 << 3;
 const int MaskDX[] = { 1, 1, 0, -1, -1, -1, 0, 1 };
 const int MaskDY[] = { 0, 1, 1, 1, 0, -1, -1, -1 };
 
+const double CWaypointDistanceMap::undefinedDistance = INT_MAX;
+
 bool operator == (const CWaypointDistanceMap::CLowResTile& a, const CWaypointDistanceMap::CLowResTile& b)
 {
 	return a.X == b.X && a.Y == b.Y && a.Direction == b.Direction;
@@ -29,23 +32,6 @@ bool operator != (const CWaypointDistanceMap::CLowResTile& a, const CWaypointDis
 {
 	return a.X != b.X || a.Y != b.Y || a.Direction != b.Direction;
 }
-
-//bool operator > (const CWaypointDistanceMap::CLowResTileWithScore& a, const CWaypointDistanceMap::CLowResTileWithScore& b)
-//{
-//	if (a.Score != b.Score) {
-//		return a.Score > b.Score;
-//	}
-//	if (a.LRTile.X != b.LRTile.X) {
-//		return a.LRTile.X > b.LRTile.X;
-//	}
-//	if (a.LRTile.Y != b.LRTile.Y) {
-//		return a.LRTile.Y > b.LRTile.Y;
-//	}
-//	if (a.LRTile.Direction != b.LRTile.Direction) {
-//		return a.LRTile.Direction > b.LRTile.Direction;
-//	}
-//	return false;
-//}
 
 bool CWaypointDistanceMap::CLowResTileWithScore::operator > (const CWaypointDistanceMap::CLowResTileWithScore& b) const
 {
@@ -78,17 +64,6 @@ static bool checkOpen(
 	assert(abs(ndx) <= 1 && abs(ndy) <= 1);
 
 	const CWaypointDistanceMap::CLowResTile& nlrTile = lrTiles[nx][ny];
-	//if (ndx == 1) {
-	//	if ((lrTile.GatesMask & Right) == 0 || (nlrTile.GatesMask & Left) == 0) return false;
-	//} else if (ndx == -1) {
-	//	if ((lrTile.GatesMask & Left) == 0 || (nlrTile.GatesMask & Right) == 0) return false;
-	//}
-	//if (ndy == 1) {
-	//	if ((lrTile.GatesMask & Bottom) == 0 || (nlrTile.GatesMask & Top) == 0) return false;
-	//} else if(ndy == -1) {
-	//	if ((lrTile.GatesMask & Top) == 0 || (nlrTile.GatesMask & Bottom) == 0) return false;
-	//}
-	//return true;
 
 	if (ndx == 1 && ndy == 0) {
 		return (lrTile.GatesMask & Right) != 0 && (nlrTile.GatesMask & Left) != 0;
@@ -115,161 +90,128 @@ static bool checkOpen(
 	return false;
 }
 
-static TDirection toDirection(int dx, int dy)
+static void pushN(const CWaypointDistanceMap::CLowResTile& lrTile, int nx, int ny, TDirection d,
+	const vector<vector<CWaypointDistanceMap::CLowResTile>>& lrTiles, vector<pair<CWaypointDistanceMap::CLowResTile, double>>& n,
+	double dist)
 {
-	if (dx == 1) {
-		if (dy == 0) return D_Right;
-		if (dy == 1) return D_RightBot;
-		if (dy == -1) return D_RightTop;
-	} else if (dx == -1) {
-		if (dy == 0) return D_Left;
-		if (dy == 1) return D_LeftBot;
-		if (dy == -1) return D_LeftTop;
-	} else {
-		if (dy == 1) return D_Bot;
-		if (dy == -1) return D_Top;
+	if (checkOpen(lrTile, nx - lrTile.X, ny - lrTile.Y, lrTiles)) {
+		n.emplace_back(make_pair(CWaypointDistanceMap::CLowResTile(nx, ny, d, lrTiles[nx][ny].GatesMask), dist));
 	}
-	assert(false);
-	return D_Undefined;
 }
 
-static vector<CWaypointDistanceMap::CLowResTile> findNeighbors(
+static vector<pair<CWaypointDistanceMap::CLowResTile, double>> findNeighbors(
 	const CWaypointDistanceMap::CLowResTile& lrTile,
 	const vector<vector<CWaypointDistanceMap::CLowResTile>>& lrTiles)
 {
 	int x = lrTile.X;
 	int y = lrTile.Y;
-	int dx = MaskDX[lrTile.Direction];
-	int dy = MaskDY[lrTile.Direction];
-	int angle = getRotationAngle(dx, dy);
-	simpleRotate(dx, dy, (4 - angle));
-	assert(dx == 1 && (dy == 0 || dy == 1));
-	vector<CWaypointDistanceMap::CLowResTile> neighbors;
-	if (dy == 0) {
-		// straight
-		int ndx = 1, ndx1 = 1, ndx2 = 1;
-		int ndy = 0, ndy1 = 1, ndy2 = -1;
-		simpleRotate(ndx, ndy, angle);
-		simpleRotate(ndx1, ndy1, angle);
-		simpleRotate(ndx2, ndy2, angle);
-		if (checkOpen(lrTile, ndx, ndy, lrTiles)) {
-			neighbors.emplace_back(CWaypointDistanceMap::CLowResTile(x + ndx, y + ndy, toDirection(ndx, ndy), lrTiles[x + ndx][y + ndy].GatesMask));
-			neighbors.emplace_back(CWaypointDistanceMap::CLowResTile(x + ndx, y + ndy, toDirection(ndx1, ndy1), lrTiles[x + ndx][y + ndy].GatesMask));
-			neighbors.emplace_back(CWaypointDistanceMap::CLowResTile(x + ndx, y + ndy, toDirection(ndx2, ndy2), lrTiles[x + ndx][y + ndy].GatesMask));
-		}
-		// rear
-		ndx = -1, ndx1 = -1, ndx2 = -1;
-		ndy = 0, ndy1 = 1, ndy2 = -1;
-		simpleRotate(ndx, ndy, angle);
-		simpleRotate(ndx1, ndy1, angle);
-		simpleRotate(ndx2, ndy2, angle);
-		if (checkOpen(lrTile, ndx, ndy, lrTiles)) {
-			neighbors.emplace_back(CWaypointDistanceMap::CLowResTile(x + ndx, y + ndy, toDirection(-ndx, ndy), lrTiles[x + ndx][y + ndy].GatesMask));
-			neighbors.emplace_back(CWaypointDistanceMap::CLowResTile(x + ndx, y + ndy, toDirection(-ndx1, ndy1), lrTiles[x + ndx][y + ndy].GatesMask));
-			neighbors.emplace_back(CWaypointDistanceMap::CLowResTile(x + ndx, y + ndy, toDirection(-ndx2, ndy2), lrTiles[x + ndx][y + ndy].GatesMask));
-		}
-		//// turns
-		//if (checkOpen(lrTile, ndx1, ndy1, lrTiles)) {
-		//	neighbors.emplace_back(CWaypointDistanceMap::CLowResTile(x + ndx1, y + ndy1, toDirection(ndx1, ndy1), lrTiles[x + ndx1][y + ndy1].GatesMask));
-		//}
-		//if (checkOpen(lrTile, ndx2, ndy2, lrTiles)) {
-		//	neighbors.emplace_back(CWaypointDistanceMap::CLowResTile(x + ndx2, y + ndy2, toDirection(ndx2, ndy2), lrTiles[x + ndx2][y + ndy2].GatesMask));
-		//}
-	} else if (dy == 1) {
-		// diagonal
-		int ndx = 1, ndx1 = 1, ndx2 = 0;
-		int ndy = 1, ndy1 = 0, ndy2 = 1;
-		simpleRotate(ndx, ndy, angle);
-		simpleRotate(ndx1, ndy1, angle);
-		simpleRotate(ndx2, ndy2, angle);
-		if (checkOpen(lrTile, ndx, ndy, lrTiles)) {
-			neighbors.emplace_back(CWaypointDistanceMap::CLowResTile(x + ndx, y + ndy, toDirection(ndx, ndy), lrTiles[x + ndx][y + ndy].GatesMask));
-			neighbors.emplace_back(CWaypointDistanceMap::CLowResTile(x + ndx, y + ndy, toDirection(ndx1, ndy1), lrTiles[x + ndx][y + ndy].GatesMask));
-			neighbors.emplace_back(CWaypointDistanceMap::CLowResTile(x + ndx, y + ndy, toDirection(ndx2, ndy2), lrTiles[x + ndx][y + ndy].GatesMask));
-		}
-		// rear
-		ndx = -1, ndx1 = -1, ndx2 = 0;
-		ndy = -1, ndy1 = 0, ndy2 = -1;
-		simpleRotate(ndx, ndy, angle);
-		simpleRotate(ndx1, ndy1, angle);
-		simpleRotate(ndx2, ndy2, angle);
-		if (checkOpen(lrTile, ndx, ndy, lrTiles)) {
-			neighbors.emplace_back(CWaypointDistanceMap::CLowResTile(x + ndx, y + ndy, toDirection(-ndx, -ndy), lrTiles[x + ndx][y + ndy].GatesMask));
-			neighbors.emplace_back(CWaypointDistanceMap::CLowResTile(x + ndx, y + ndy, toDirection(-ndx1, -ndy1), lrTiles[x + ndx][y + ndy].GatesMask));
-			neighbors.emplace_back(CWaypointDistanceMap::CLowResTile(x + ndx, y + ndy, toDirection(-ndx2, -ndy2), lrTiles[x + ndx][y + ndy].GatesMask));
-		}
-		//// turns
-		//if (checkOpen(lrTile, ndx1, ndy1, lrTiles)) {
-		//	neighbors.emplace_back(CWaypointDistanceMap::CLowResTile(x + ndx1, y + ndy1, toDirection(ndx1, ndy1), lrTiles[x + ndx1][y + ndy1].GatesMask));
-		//}
-		//if (checkOpen(lrTile, ndx2, ndy2, lrTiles)) {
-		//	neighbors.emplace_back(CWaypointDistanceMap::CLowResTile(x + ndx2, y + ndy2, toDirection(ndx2, ndy2), lrTiles[x + ndx2][y + ndy2].GatesMask));
-		//}
-	} else {
-		assert(false);
-	}
-	return neighbors;
-}
+	vector<pair<CWaypointDistanceMap::CLowResTile, double>> neighbors;
 
-static void notSoSimpleRotate(int& dx, int& dy, TDirection dir)
-{
-	int temp = 0;
-	switch (dir) {
+	static const double forwardStraight = 1;
+	static const double forwardDiag = 1 * sqrt(2);
+	static const double rearStraight = 2;
+	static const double rearDiag = 2 * sqrt(2);
+	switch(lrTile.Direction) {
 	case D_Right:
-	case D_RightBot:
-		break;
-	case D_Bot:
-	case D_LeftBot:
-		temp = dx;
-		dx = dy;
-		dy = -temp;
+		// forward
+		pushN(lrTile, x - 1, y, D_Right, lrTiles, neighbors, forwardStraight);
+		// turns
+		pushN(lrTile, x - 1, y - 1, D_RightBot, lrTiles, neighbors, forwardDiag);
+		pushN(lrTile, x - 1, y + 1, D_RightTop, lrTiles, neighbors, forwardDiag);
+		// rear
+		pushN(lrTile, x + 1, y, D_Right, lrTiles, neighbors, rearStraight);
+		// rear turns
+		pushN(lrTile, x + 1, y + 1, D_RightBot, lrTiles, neighbors, rearDiag);
+		pushN(lrTile, x + 1, y - 1, D_RightTop, lrTiles, neighbors, rearDiag);
 		break;
 	case D_Left:
-	case D_LeftTop:
-		dx = -dx;
-		dy = -dy;
+		// forward
+		pushN(lrTile, x + 1, y, D_Left, lrTiles, neighbors, forwardStraight);
+		// turns
+		pushN(lrTile, x + 1, y - 1, D_LeftBot, lrTiles, neighbors, forwardDiag);
+		pushN(lrTile, x + 1, y + 1, D_LeftTop, lrTiles, neighbors, forwardDiag);
+		// rear
+		pushN(lrTile, x - 1, y, D_Left, lrTiles, neighbors, rearStraight);
+		// rear turns
+		pushN(lrTile, x - 1, y + 1, D_LeftBot, lrTiles, neighbors, rearDiag);
+		pushN(lrTile, x - 1, y - 1, D_LeftTop, lrTiles, neighbors, rearDiag);
+		break;
+	case D_Bot:
+		// forward
+		pushN(lrTile, x, y - 1, D_Bot, lrTiles, neighbors, forwardStraight);
+		// turns
+		pushN(lrTile, x - 1, y - 1, D_RightBot, lrTiles, neighbors, forwardDiag);
+		pushN(lrTile, x + 1, y - 1, D_LeftBot, lrTiles, neighbors, forwardDiag);
+		// rear
+		pushN(lrTile, x, y + 1, D_Bot, lrTiles, neighbors, rearStraight);
+		// rear turns
+		pushN(lrTile, x + 1, y + 1, D_RightBot, lrTiles, neighbors, rearDiag);
+		pushN(lrTile, x - 1, y + 1, D_LeftBot, lrTiles, neighbors, rearDiag);
 		break;
 	case D_Top:
+		// forward
+		pushN(lrTile, x, y + 1, D_Top, lrTiles, neighbors, forwardStraight);
+		// turns
+		pushN(lrTile, x - 1, y + 1, D_RightTop, lrTiles, neighbors, forwardDiag);
+		pushN(lrTile, x + 1, y + 1, D_LeftTop, lrTiles, neighbors, forwardDiag);
+		// rear
+		pushN(lrTile, x, y - 1, D_Top, lrTiles, neighbors, rearStraight);
+		// rear turns
+		pushN(lrTile, x + 1, y - 1, D_RightTop, lrTiles, neighbors, rearDiag);
+		pushN(lrTile, x - 1, y - 1, D_LeftTop, lrTiles, neighbors, rearDiag);
+		break;
+	case D_RightBot:
+		// forward
+		pushN(lrTile, x - 1, y - 1, D_RightBot, lrTiles, neighbors, forwardDiag);
+		// turns
+		pushN(lrTile, x - 1, y, D_Right, lrTiles, neighbors, forwardStraight);
+		pushN(lrTile, x, y - 1, D_Bot, lrTiles, neighbors, forwardStraight);
+		// rear
+		pushN(lrTile, x + 1, y + 1, D_RightBot, lrTiles, neighbors, rearDiag);
+		// rear turns
+		pushN(lrTile, x + 1, y, D_Right, lrTiles, neighbors, rearStraight);
+		pushN(lrTile, x, y + 1, D_Bot, lrTiles, neighbors, rearStraight);
+		break;
 	case D_RightTop:
-		temp = dx;
-		dx = -dy;
-		dy = temp;
+		// forward
+		pushN(lrTile, x - 1, y + 1, D_RightTop, lrTiles, neighbors, forwardDiag);
+		// turns
+		pushN(lrTile, x - 1, y, D_Right, lrTiles, neighbors, forwardStraight);
+		pushN(lrTile, x, y + 1, D_Top, lrTiles, neighbors, forwardStraight);
+		// rear
+		pushN(lrTile, x + 1, y - 1, D_RightTop, lrTiles, neighbors, rearDiag);
+		// rear turns
+		pushN(lrTile, x + 1, y, D_Right, lrTiles, neighbors, rearStraight);
+		pushN(lrTile, x, y - 1, D_Top, lrTiles, neighbors, rearStraight);
+		break;
+	case D_LeftBot:
+		// forward
+		pushN(lrTile, x + 1, y - 1, D_LeftBot, lrTiles, neighbors, forwardDiag);
+		// turns
+		pushN(lrTile, x + 1, y, D_Left, lrTiles, neighbors, forwardStraight);
+		pushN(lrTile, x, y - 1, D_Bot, lrTiles, neighbors, forwardStraight);
+		// rear
+		pushN(lrTile, x - 1, y + 1, D_LeftBot, lrTiles, neighbors, rearDiag);
+		// rear turns
+		pushN(lrTile, x - 1, y, D_Left, lrTiles, neighbors, rearStraight);
+		pushN(lrTile, x, y + 1, D_Bot, lrTiles, neighbors, rearStraight);
+		break;
+	case D_LeftTop:
+		// forward
+		pushN(lrTile, x + 1, y + 1, D_LeftTop, lrTiles, neighbors, forwardDiag);
+		// turns
+		pushN(lrTile, x + 1, y, D_Left, lrTiles, neighbors, forwardStraight);
+		pushN(lrTile, x, y + 1, D_Top, lrTiles, neighbors, forwardStraight);
+		// rear
+		pushN(lrTile, x - 1, y - 1, D_LeftTop, lrTiles, neighbors, rearDiag);
+		// rear turns
+		pushN(lrTile, x - 1, y, D_Left, lrTiles, neighbors, rearStraight);
+		pushN(lrTile, x, y - 1, D_Top, lrTiles, neighbors, rearStraight);
 		break;
 	default:
 		assert(false);
-		break;
 	}
-}
-
-static double smartDistance(
-	const CWaypointDistanceMap::CLowResTile& from,
-	const CWaypointDistanceMap::CLowResTile& to)
-{
-	static double sqrt2 = sqrt(2);
-	int dx = to.X - from.X;
-	int dy = to.Y - from.Y;
-	//int angle = getRotationAngle(dx, dy);
-	//simpleRotate(dx, dy, (4 - angle) % 4);
-	notSoSimpleRotate(dx, dy, from.Direction);
-	if (dx == 1) {
-		if (dy == 0) {
-			return 1;
-		} else {
-			return sqrt2;
-		}
-	} else {
-		assert(dx == -1);
-		if (dy == 0) {
-			//return 8;
-			return 40;
-		} else {
-			//return 8 * sqrt(2);
-			return 40 * sqrt(2);
-		}
-	}
-	//assert(false);
-	//assert(false);
-	//return -1;
+	return neighbors;
 }
 
 CWaypointDistanceMap::CData::CData(int sizeX, int sizeY, int waypointIndex, CWaypointDistanceMap& wpDistanceMap)
@@ -296,6 +238,10 @@ CWaypointDistanceMap::CData::CData(int sizeX, int sizeY, int waypointIndex, CWay
 					const int nextWaypointIndex = (waypointIndex + 1) % wpDistanceMap.waypoints.size();
 					CData& nextData = wpDistanceMap.dataByWp[nextWaypointIndex];
 					const double distance = wpDistanceMap.findDistance(x, y, static_cast<TDirection>(d), nextData);
+					if (distance == undefinedDistance) {
+						ClosedSet[x][y][d] = true;
+						continue;
+					}
 					Distance[x][y][d] = distance;
 				}
 				OpenSet[x][y][d] = true;
@@ -397,32 +343,32 @@ static TDirection angleToDirection(double angle)
 	return D_Undefined;
 }
 
-static TDirection reverseDirection( TDirection dir )
+double CWaypointDistanceMap::Query(const CMyCar& car, bool& rearIsBetter, bool draw)
 {
-	switch (dir) {
-	case D_Right:
-		return D_Left;
-	case D_RightBot:
-		return D_LeftTop;
-	case D_Bot:
-		return D_Top;
-	case D_LeftBot:
-		return D_RightTop;
-	case D_Left:
-		return D_Right;
-	case D_LeftTop:
-		return D_RightBot;
-	case D_Top:
-		return D_Bot;
-	case D_RightTop:
-		return D_LeftBot;
-	default:
-		assert(false);
-		return D_Undefined;
+	double dist = query(car.Position.X, car.Position.Y, car.Angle, car.NextWaypointIndex, rearIsBetter, draw);
+	if (car.LapsCount > 0) dist -= car.LapsCount * lapScore();
+	return dist;
+}
+
+
+void CWaypointDistanceMap::GetLRTiles(const CMyCar& car, CLowResTile& current, CLowResTile& next, bool& rearIsBetter)
+{
+	const double xLowRes = car.Position.X / step;
+	const double yLowRes = car.Position.Y / step;
+	const int xLowResInt = static_cast<int>(xLowRes);
+	const int yLowResInt = static_cast<int>(yLowRes);
+	const TDirection dir = angleToDirection(car.Angle);
+	current = CLowResTile(xLowResInt, yLowResInt, dir, 0U);
+	CLowResTile n = dataByWp[car.NextWaypointIndex].CameFrom[xLowResInt][yLowResInt][dir];
+	next = n;
+	{
+		const int dx = MaskDX[dir];
+		const int dy = MaskDY[dir];
+		rearIsBetter = (xLowResInt - dx) == next.X && (yLowResInt - dy) == next.Y;
 	}
 }
 
-double CWaypointDistanceMap::Query(double x, double y, double angle, int waypointIndex, bool draw)
+double CWaypointDistanceMap::query(double x, double y, double angle, int waypointIndex, bool& rearIsBetter, bool draw)
 {
 	const double xLowRes = x / step;
 	const double yLowRes = y / step;
@@ -430,30 +376,45 @@ double CWaypointDistanceMap::Query(double x, double y, double angle, int waypoin
 	const int yLowResInt = static_cast<int>(yLowRes);
 	normalizeAngle(angle);
 	const TDirection dir = angleToDirection(angle);
-	const double dist = findDistance(xLowResInt, yLowResInt, reverseDirection(dir), dataByWp[waypointIndex]);
+	const double dist = findDistance(xLowResInt, yLowResInt, dir, dataByWp[waypointIndex]);
+	const CLowResTile& next = dataByWp[waypointIndex].CameFrom[xLowResInt][yLowResInt][dir];
+	{
+		const int dx = MaskDX[dir];
+		const int dy = MaskDY[dir];
+		rearIsBetter = (xLowResInt - dx) == next.X && (yLowResInt - dy) == next.Y;
+	}
+
 	double offset = 0;
 	static const double sqrt2 = sqrt(2);
 	if (dir == D_Right) {
 		offset = (xLowResInt + 1) - xLowRes;
+		if (rearIsBetter) offset = 1 - offset;
 	} else if (dir == D_Bot) {
 		offset = (yLowResInt + 1) - yLowRes;
+		if (rearIsBetter) offset = 1 - offset;
 	} else if (dir == D_Left) {
 		offset = xLowRes - xLowResInt;
+		if (rearIsBetter) offset = 1 - offset;
 	} else if (dir == D_Top) {
 		offset = yLowRes - yLowResInt;
+		if (rearIsBetter) offset = 1 - offset;
 	} else if (dir == D_RightBot) {
 		offset = sqrt2 * (((xLowResInt + 1) - xLowRes) + ((yLowResInt + 1) - yLowRes));
+		if (rearIsBetter) offset = sqrt2 - offset;
 	} else if (dir == D_LeftBot) {
 		offset = sqrt2 * (((yLowResInt + 1) - yLowRes) + (xLowRes - xLowResInt));
+		if (rearIsBetter) offset = sqrt2 - offset;
 	} else if (dir == D_LeftTop) {
 		offset = sqrt2 * ((xLowRes - xLowResInt) + (yLowRes - yLowResInt));
+		if (rearIsBetter) offset = sqrt2 - offset;
 	} else if (dir == D_RightTop) {
 		offset = sqrt2 * ((yLowRes - yLowResInt) + ((xLowResInt + 1) - xLowRes));
+		if (rearIsBetter) offset = sqrt2 - offset;
 	}
 
 	if (draw) {
 		CLowResTile lr;
-		lr.Direction = reverseDirection(dir);
+		lr.Direction = dir;
 		lr.X = xLowResInt;
 		lr.Y = yLowResInt;
 		int wpi = waypointIndex;
@@ -462,10 +423,11 @@ double CWaypointDistanceMap::Query(double x, double y, double angle, int waypoin
 			double d = data.Distance[lr.X][lr.Y][lr.Direction];
 			int dx = MaskDX[lr.Direction];
 			int dy = MaskDY[lr.Direction];
-			CDrawPlugin::Instance().Rect(lr.X * 400, lr.Y * 400, (lr.X + 1) * 400, (lr.Y + 1) * 400, 0xFF0000);
-			CDrawPlugin::Instance().Text(lr.X * 400 + 200, lr.Y * 400 + 200, to_string(d).c_str(), 0xFF0000);
-			CDrawPlugin::Instance().Line(lr.X * 400 + 200, lr.Y * 400 + 200, lr.X * 400 - dx * 200 + 200, lr.Y * 400 - dy * 200 + 200, 0xFF0000);
-			
+			bool rear = (data.CameFrom[lr.X][lr.Y][lr.Direction].X + dx) == lr.X && (data.CameFrom[lr.X][lr.Y][lr.Direction].Y + dy) == lr.Y;
+			CDrawPlugin::Instance().Rect(lr.X * 400, lr.Y * 400, (lr.X + 1) * 400, (lr.Y + 1) * 400, rear ? 0x808000 : 0xFF0000);
+			CDrawPlugin::Instance().Text(lr.X * 400 + 200, lr.Y * 400 + 200, to_string(d).c_str(), rear ? 0x808000 : 0xFF0000);
+			CDrawPlugin::Instance().Line(lr.X * 400 + 200, lr.Y * 400 + 200, lr.X * 400 + dx * 200 + 200, lr.Y * 400 + dy * 200 + 200, rear ? 0x808000 : 0xFF0000);
+
 			lr = data.CameFrom[lr.X][lr.Y][lr.Direction];
 			if (lr == CLowResTile()) break;
 			int nwpi = (wpi + 1) % waypoints.size();
@@ -478,7 +440,7 @@ double CWaypointDistanceMap::Query(double x, double y, double angle, int waypoin
 	return dist == undefinedDistance ? undefinedDistance : step * (dist + offset);
 }
 
-double CWaypointDistanceMap::LapScore()
+double CWaypointDistanceMap::lapScore()
 {
 	double angle = 0;
 	switch (CMyWorld::StartDirection) {
@@ -497,7 +459,8 @@ double CWaypointDistanceMap::LapScore()
 	default:
 		assert(false);
 	}
-	return Query(waypoints[0].X * 800 + 400, waypoints[0].Y * 800 + 400, angle, 1) + 400;
+	bool rearIsBetterNotUsed;
+	return query(waypoints[0].X * 800 + 400, waypoints[0].Y * 800 + 400, angle, 1, rearIsBetterNotUsed) + 400;
 }
 
 double CWaypointDistanceMap::findDistance(int xt, int yt, TDirection dirt, CData& data)
@@ -533,13 +496,17 @@ double CWaypointDistanceMap::findDistance(int xt, int yt, TDirection dirt, CData
 	return undefinedDistance;
 }
 
-void CWaypointDistanceMap::processNeighbor(const CLowResTile& from, const CLowResTile& to, CData& data)
+void CWaypointDistanceMap::processNeighbor(const CLowResTile& from, const pair<CLowResTile, double>& toD, CData& data)
 {
+	const CLowResTile& to = toD.first;
 	if (data.ClosedSet[to.X][to.Y][to.Direction]) {
 		return;
 	}
 
-	const double dist = data.Distance[from.X][from.Y][from.Direction] + smartDistance(from, to);
+	const double dist = data.Distance[from.X][from.Y][from.Direction] + toD.second;
+	if (dist < 0) {
+		assert(false);
+	}
 
 	if (!data.OpenSet[to.X][to.Y][to.Direction]) {
 		// Соседа нет в openSet - добавляем.
@@ -553,29 +520,6 @@ void CWaypointDistanceMap::processNeighbor(const CLowResTile& from, const CLowRe
 		// Есть и в openSet и функция улучшилась. Перебирать очередь в поисках элемента и заменять его - дорого.
 		// Поэтому просто добавим новый.
 		data.Queue.push(CLowResTileWithScore(to, dist));
-
-		//// Есть и в openSet и функция улучшилась. Надо перебрать очередь с приоритетом в поисках
-		//// данного элемента, чтобы изменить ему приоритет.
-		//CPriorityQueue queueCopy;
-		//CLowResTileWithScore lrTileWithScore = data.Queue.top();
-		//// Перекидываем элементы из одной очереди в другую, пока не найдём нужный.
-		//while (lrTileWithScore.LRTile != to) {
-		//	data.Queue.pop();
-		//	queueCopy.push(lrTileWithScore);
-		//	lrTileWithScore = data.Queue.top();
-		//}
-		//// Не перекидываем нужный элемент.
-		//data.Queue.pop();
-		//// Перекидываем остатки меньшей очереди в большую. Так, чтобы большая оказалась исходной очередью
-		//if (data.Queue.size() < queueCopy.size()) {
-		//	swap(data.Queue, queueCopy);
-		//}
-		//while (!queueCopy.empty()) {
-		//	data.Queue.push(queueCopy.top());
-		//	queueCopy.pop();
-		//}
-		//// Добавляем обновлённый нужный элемент.
-		//data.Queue.push(CLowResTileWithScore(to, dist));
 	}
 	data.CameFrom[to.X][to.Y][to.Direction] = from;
 	data.Distance[to.X][to.Y][to.Direction] = dist;

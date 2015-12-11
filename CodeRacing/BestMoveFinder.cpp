@@ -9,12 +9,12 @@
 
 using namespace std;
 
-static const int maxCollisionsDetected = 5;
+static const int maxCollisionsDetected = 1;
 //static const double veryBadScoreDif = -10000;
 static const double veryBadScoreDif = -1000000;
 //static const int carSimulationSubticksCount = 2;
 static const int preciseSimulationMaxTick = 40;
-static const int minEvaluateTick = 80;
+static const int minEvaluateTick = 40;
 
 static void setSimulatorMode(int tick)
 {
@@ -39,28 +39,13 @@ static CMyMove findMove(int tick, const vector<CBestMoveFinder::CMoveWithDuratio
 	return CMyMove();
 }
 
-const vector<pair<vector<CMyMove>, vector<int>>> CBestMoveFinder::allMovesWithLengths = {
-	// Первое множество действий
-	{
-		{ { 0, 0 },{ 1, 0 },{ -1, 0 },{ 1, 1 },{ -1, 1 } },
-		{ 0, 5, 10, 20, 40 }
-	},
-	// Второе множество действий
-	{
-		{ { 0, 0 },{ 1, 0 },{ -1, 0 },{ 1, 1 },{ -1, 1 } },
-		{ 0, 40 }
-	},
-	// Третье множество действий
-	{
-		{ { 1, 0 },{ -1, 0 } },
-		{ 0, 40 }
-	},
-	// Четвёртое действие - просто ехать по прямой (пока не упрёмся в maxTick)
-	{
-		{ { 0, 0 } },
-		{ 1000 }
-	}
-};
+static CMyMove findMove(const CMyWorld& world, int carId)
+{
+	CMyMove m;
+	m.Engine = 1;
+	m.Turn = world.Cars[carId].WheelTurn;
+	return m;
+}
 
 CBestMoveFinder::CBestMoveFinder(
 	const CMyWorld& startWorld,
@@ -107,7 +92,7 @@ CBestMoveFinder::CBestMoveFinder(
 	}
 }
 
-CBestMoveFinder::CResult CBestMoveFinder::Process()
+CBestMoveFinder::CResult CBestMoveFinder::Process(bool checkRear)
 {
 	simulationTicks = 0;
 	bestScore = INT_MIN;
@@ -118,7 +103,7 @@ CBestMoveFinder::CResult CBestMoveFinder::Process()
 
 	CResult result;
 	processPreviousMoveList();
-	processMoveIndex(0, vector<CMoveWithDuration>());
+	processMoveIndex(0, vector<CMoveWithDuration>(), checkRear);
 	if (bestMoveList.size() == 0) {
 		result.Success = false;
 		return result;
@@ -151,13 +136,17 @@ CBestMoveFinder::CResult CBestMoveFinder::Process()
 	for (int tick = 0; tick < simulationEnd; tick++) {
 		CMyMove moves[4];
 		moves[0] = findMove(tick, bestMoveList);
-		if (hasAlly) moves[1] = findMove(tick, allyMoveList);
+		if (hasAlly) moves[1] = findMove(tick, allyMoveList); else moves[1] = findMove(simWorld, 1);
+		moves[2] = findMove(simWorld, 2);
+		moves[3] = findMove(simWorld, 3);
 		setSimulatorMode(tick);
 		simWorld = CWorldSimulator::Instance().Simulate(simWorld, moves);
 		//int color = min(200, 100 + tick);
 		//simWorld.Draw(0xFF00FF + 0x000100 * color);
 		CDrawPlugin::Instance().FillCircle(simWorld.Cars[0].Position.X, simWorld.Cars[0].Position.Y, 5, 0x0000FF);
 		CDrawPlugin::Instance().FillCircle(simWorld.Cars[1].Position.X, simWorld.Cars[1].Position.Y, 5, 0x00FF00);
+		CDrawPlugin::Instance().FillCircle(simWorld.Cars[2].Position.X, simWorld.Cars[2].Position.Y, 5, 0xFF0000);
+		CDrawPlugin::Instance().FillCircle(simWorld.Cars[3].Position.X, simWorld.Cars[3].Position.Y, 5, 0xFF0000);
 	}
 #endif
 
@@ -185,7 +174,9 @@ void CBestMoveFinder::processPreviousMoveList()
 	for (current.Tick = 0; current.Tick < simulationEnd; current.Tick++) {
 		CMyMove moves[4];
 		moves[0] = findMove(current.Tick, correctedPreviousMoveList);
-		if (hasAlly) moves[1] = findMove(current.Tick, allyMoveList);
+		if (hasAlly) moves[1] = findMove(current.Tick, allyMoveList); else moves[1] = findMove(current.World, 1);
+		moves[2] = findMove(current.World, 2);
+		moves[3] = findMove(current.World, 3);
 		setSimulatorMode(current.Tick);
 		current.World = CWorldSimulator::Instance().Simulate(current.World, moves);
 		simulationTicks++;
@@ -205,7 +196,7 @@ void CBestMoveFinder::processPreviousMoveList()
 				bestMoveList = correctedPreviousMoveList;
 				// Обрезка
 				size_t mi = 0;
-				for (mi; mi < bestMoveList.size(); mi++) {
+				for (; mi < bestMoveList.size(); mi++) {
 					const CMoveWithDuration& m = bestMoveList[mi];
 					if (current.Tick >= m.Start && current.Tick < m.End) {
 						break;
@@ -218,53 +209,57 @@ void CBestMoveFinder::processPreviousMoveList()
 	}
 }
 
-void CBestMoveFinder::processMoveIndex(size_t moveIndex, const std::vector<CMoveWithDuration>& prevMoveList)
+void CBestMoveFinder::processMoveIndex(size_t moveIndex, const std::vector<CMoveWithDuration>& prevMoveList, bool checkRear)
 {
-	//bool lastMove = moveIndex == allMovesWithLengths.size() - 1;
-	//const vector<CMyMove>& moveArray = allMovesWithLengths[moveIndex].first;
-	//const vector<int>& lengthsArray = allMovesWithLengths[moveIndex].second;
 	vector<CMyMove> moveArray;
 	vector<int> lengthsArray;
-	bool lastMove = moveIndex == 3;
+	bool lastMove;
 
+	lastMove = moveIndex == 3;
+	double engine = checkRear ? -1 : 1;
 	if (moveIndex == 0) {
-		moveArray.push_back({ 0, 0 });
-		if (chance(50)) {
-			moveArray.push_back({ 1, 0 });
-			if (chance(50)) moveArray.push_back({ 1, 1 });
-		} else {
-			moveArray.push_back({ -1, 0 });
-			if (chance(50)) moveArray.push_back({ -1, 1 });
-		}
+		moveArray.push_back({ 0, 0, engine });
 		lengthsArray.push_back(0);
+		if (chance(50)) {
+			moveArray.push_back({ 1, 0, engine });
+			moveArray.push_back({ 1, 1, engine });
+			//if (chance(50)) moveArray.push_back({ 1, 1, engine });
+		} else {
+			moveArray.push_back({ -1, 0, engine });
+			moveArray.push_back({ -1, 1, engine });
+			//if (chance(50)) moveArray.push_back({ -1, 1, engine });
+		}
 		lengthsArray.push_back(uniform(4, 12));
 		lengthsArray.push_back(uniform(12, 30));
 		lengthsArray.push_back(uniform(30, 50));
+		lengthsArray.push_back(uniform(50, 70));
 		sort(lengthsArray.begin(), lengthsArray.end());
 	} else if (moveIndex == 1) {
-		moveArray.push_back({ 0, 0 });
-		if (chance(50)) {
-			moveArray.push_back({ 1, 0 });
-			if (chance(50)) moveArray.push_back({ 1, 1 });
-		} else {
-			moveArray.push_back({ -1, 0 });
-			if (chance(50)) moveArray.push_back({ -1, 1 });
-		}
+		moveArray.push_back({ 0, 0, engine });
 		lengthsArray.push_back(0);
+		if (chance(50)) {
+			moveArray.push_back({ 1, 0, engine });
+			//moveArray.push_back({ 1, 1, engine });
+			if (chance(50)) moveArray.push_back({ 1, 1, engine });
+		} else {
+			moveArray.push_back({ -1, 0, engine });
+			//moveArray.push_back({ -1, 1, engine });
+			if (chance(50)) moveArray.push_back({ -1, 1, engine });
+		}
 		lengthsArray.push_back(uniform(30, 50));
 		sort(lengthsArray.begin(), lengthsArray.end());
 	} else if (moveIndex == 2) {
-		moveArray.push_back({ 0, 0 });
-		if (chance(50)) {
-			moveArray.push_back({ 1, 0 });
-		} else {
-			moveArray.push_back({ -1, 0 });
-		}
+		moveArray.push_back({ 0, 0, engine });
 		lengthsArray.push_back(0);
+		if (chance(50)) {
+			moveArray.push_back({ 1, 0, engine });
+		} else {
+			moveArray.push_back({ -1, 0, engine });
+		}
 		lengthsArray.push_back(uniform(30, 50));
 		sort(lengthsArray.begin(), lengthsArray.end());
 	} else if (moveIndex == 3) {
-		moveArray.push_back({ 0, 0 });
+		moveArray.push_back({ 0, 0, engine });
 		lengthsArray.push_back(1000);
 		sort(lengthsArray.begin(), lengthsArray.end());
 	}
@@ -288,7 +283,9 @@ void CBestMoveFinder::processMoveIndex(size_t moveIndex, const std::vector<CMove
 			assert(current.Tick <= end); // Проверка правильного порядка в массиве lenghtsArray
 			// Продолжаем симулировать с того места, откуда закончили в предыдущий раз.
 			for (; current.Tick < end; current.Tick++) {
-				if (hasAlly) moves[1] = findMove(current.Tick, allyMoveList);
+				if (hasAlly) moves[1] = findMove(current.Tick, allyMoveList); else moves[1] = findMove(current.World, 1);
+				moves[2] = findMove(current.World, 2);
+				moves[3] = findMove(current.World, 3);
 				setSimulatorMode(current.Tick);
 				current.World = CWorldSimulator::Instance().Simulate(current.World, moves);
 				simulationTicks++;
@@ -320,7 +317,7 @@ void CBestMoveFinder::processMoveIndex(size_t moveIndex, const std::vector<CMove
 				vector<CMoveWithDuration> moveList = prevMoveList;
 				moveList.push_back({ move, start, end });
 				stateCache.push_back(current);
-				processMoveIndex(moveIndex + 1, moveList);
+				processMoveIndex(moveIndex + 1, moveList, checkRear);
 				stateCache.pop_back();
 			}
 
@@ -339,7 +336,7 @@ void CBestMoveFinder::processRouteScore(CState& state, bool firstTickBrake)
 
 	// Штраф за торможение в самом начале.
 	if (firstTickBrake) {
-		state.RouteScore -= 400;
+		state.RouteScore -= 200;
 	}
 
 	// Штраф за въезд в лужу. Растёт от скорости.
@@ -352,19 +349,48 @@ double CBestMoveFinder::evaluate(const CState& state) const
 {
 	const CMyCar& startCar = startWorld.Cars[0];
 	const CMyCar& car = state.World.Cars[0];
-	const double dist = CWaypointDistanceMap::Instance().Query(
-		car.Position.X, car.Position.Y, car.Angle, car.NextWaypointIndex);
-		//car.Position.X, car.Position.Y, car.Speed.GetAngle(), car.NextWaypointIndex);
+	bool rearIsBetterNotUsed = false;
+	double dist = CWaypointDistanceMap::Instance().Query(car, rearIsBetterNotUsed);
 	double score = state.RouteScore;
-	if (dist >= 0) {
-		score -= dist;
-	} else {
-		//assert(false);
-		score += -1000000;
-	}
+	score -= dist;
 
-	if (car.IsStartWPCrossed) {
-		score += CWaypointDistanceMap::Instance().LapScore();
+	if (CMyWorld::PlayersCount == 2) {
+		bool notUsed;
+		const CMyCar& allyCar = state.World.Cars[1];
+		double allyDist = CWaypointDistanceMap::Instance().Query(allyCar, notUsed);
+		const CMyCar& enemy1Car = state.World.Cars[2];
+		double enemy1Dist = CWaypointDistanceMap::Instance().Query(enemy1Car, notUsed);
+		const CMyCar& enemy2Car = state.World.Cars[2];
+		double enemy2Dist = CWaypointDistanceMap::Instance().Query(enemy2Car, notUsed);
+		score += enemy1Dist;
+		score += enemy2Dist;
+		score -= allyDist;
+
+		if (enemy1Dist < dist) {
+			score -= 1000;
+		}
+		if (enemy2Dist < dist) {
+			score -= 1000;
+		}
+
+		const CMyCar& enemy1StartCar = startWorld.Cars[2];
+		const CMyCar& enemy2StartCar = startWorld.Cars[2];
+		const double enemy1DurabilityDif = enemy1Car.Durability - enemy1StartCar.Durability;
+		const double enemy2DurabilityDif = enemy2Car.Durability - enemy2StartCar.Durability;
+		if (enemy1DurabilityDif < 0) {
+			if (enemy1Car.Durability < 1e-7) {
+				score += 10000;
+			} else {
+				score += 1000 * sqrt(1 / enemy1Car.Durability);
+			}
+		}
+		if (enemy2DurabilityDif < 0) {
+			if (enemy2Car.Durability < 1e-7) {
+				score += 10000;
+			} else {
+				score += 1000 * sqrt(1 / enemy2Car.Durability);
+			}
+		}
 	}
 
 	// Штраф за потерю хп.
@@ -373,8 +399,8 @@ double CBestMoveFinder::evaluate(const CState& state) const
 		if (car.Durability < 1e-7) {
 			score += -1000000;
 		} else {
-			// == -20000 при durability == 1 и == -200000 при durability == 0.01
-			score += -20000 * sqrt(1 / car.Durability);
+			// == -5000 при durability == 1 и == -50000 при durability == 0.01
+			score += -5000 * sqrt(1 / car.Durability);
 		}
 	}
 
@@ -385,11 +411,11 @@ double CBestMoveFinder::evaluate(const CState& state) const
 	const int moneyDifPositive = max(0, car.MoneyCount - startCar.MoneyCount);
 	//int scoreDif = state.World.Players[0].Score - startWorld.Players[0].Score;
 
-	score += durabilityDifPositive * durabilityDifPositive * 5000;
+	score += durabilityDifPositive * durabilityDifPositive * 3000;
 	score += ammoDifPositive * 400;
-	score += nitroDifPositive * 1000;
+	score += nitroDifPositive * 800;
 	score += oilDifPositive * 200;
-	score += moneyDifPositive * 1500;
+	score += moneyDifPositive * 1200;
 	//score += scoreDif * 15;
 
 	return score;
@@ -407,7 +433,9 @@ void CBestMoveFinder::postProcess(CResult& result)
 	for (current.Tick = 0; current.Tick < simulationEndLong; current.Tick++) {
 		CMyMove moves[4];
 		moves[0] = findMove(current.Tick, bestMoveList);
-		if (hasAlly) moves[1] = findMove(current.Tick, allyMoveList);
+		if (hasAlly) moves[1] = findMove(current.Tick, allyMoveList); else moves[1] = findMove(current.World, 1);
+		moves[2] = findMove(current.World, 2);
+		moves[3] = findMove(current.World, 3);
 		current.World = CWorldSimulator::Instance().Simulate(current.World, moves);
 		if (current.Tick == simulationEndShort - 1) {
 			beforeShort = current;
@@ -450,7 +478,9 @@ void CBestMoveFinder::postProcessShooting(const CState& before, CResult& result)
 	for (current.Tick = 0; current.Tick < simulationEnd; current.Tick++) {
 		CMyMove moves[4];
 		moves[0] = findMove(current.Tick, bestMoveList);
-		if (hasAlly) moves[1] = findMove(current.Tick, allyMoveList);
+		if (hasAlly) moves[1] = findMove(current.Tick, allyMoveList); moves[1] = findMove(current.World, 1);
+		moves[2] = findMove(current.World, 2);
+		moves[3] = findMove(current.World, 3);
 		if (current.Tick == 0) {
 			moves[0].Shoot = true;
 		}
@@ -517,7 +547,9 @@ void CBestMoveFinder::postProcessOil(const CState& before, CResult& result)
 	for (current.Tick = 0; current.Tick < simulationEnd; current.Tick++) {
 		CMyMove moves[4];
 		moves[0] = findMove(current.Tick, bestMoveList);
-		if (hasAlly) moves[1] = findMove(current.Tick, allyMoveList);
+		if (hasAlly) moves[1] = findMove(current.Tick, allyMoveList); else moves[1] = findMove(current.World, 1);
+		moves[2] = findMove(current.World, 2);
+		moves[3] = findMove(current.World, 3);
 		if (current.Tick == 0) {
 			moves[0].Oil = true;
 		}
@@ -551,7 +583,7 @@ void CBestMoveFinder::postProcessOil(const CState& before, CResult& result)
 void CBestMoveFinder::postProcessNitro(const CState& before, CResult& result)
 {
 	const auto& car = startWorld.Cars[0];
-	if (car.NitroCount == 0 || car.NitroCooldown > 0 || result.CurrentMove.Brake == true) {
+	if (car.NitroCount == 0 || car.NitroCooldown > 0 || result.CurrentMove.Brake == true || result.CurrentMove.Engine < 0) {
 		return;
 	}
 
@@ -563,7 +595,9 @@ void CBestMoveFinder::postProcessNitro(const CState& before, CResult& result)
 	for (current.Tick = 0; current.Tick < simulationEnd; current.Tick++) {
 		CMyMove moves[4];
 		moves[0] = findMove(current.Tick, bestMoveList);
-		if (hasAlly) moves[1] = findMove(current.Tick, allyMoveList);
+		if (hasAlly) moves[1] = findMove(current.Tick, allyMoveList); else moves[1] = findMove(current.World, 1);
+		moves[2] = findMove(current.World, 2);
+		moves[3] = findMove(current.World, 3);
 		if (current.Tick == 0) {
 			moves[0].Nitro = true;
 		}

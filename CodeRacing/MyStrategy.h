@@ -11,7 +11,6 @@
 #include "MyCar.h"
 #include "MyTile.h"
 #include "MyWorld.h"
-#include "TileRouteFinder.h"
 #include "Vec2D.h"
 #include "WaypointsDistanceMap.h"
 
@@ -32,10 +31,8 @@ private:
 	int currentTick;
 	static long long randomSeed;
 
-	CTileRouteFinder tileRouteFinder;
 	std::vector<CMyTile> waypointTiles;
 	CMyTile currentTile;
-	std::vector<CMyTile> tileRoute;
 	int nextWaypointIndex;
 
 	CMyWorld previousPredictedWorld;
@@ -47,13 +44,16 @@ private:
 	static int allyResultTick[2];
 	
 	int rear;
+	CVec2D stoppedPosition;
+	int stoppedTicks;
+	static const double stoppedLengthThreshold;
+	static const int stoppedTicksThreshold;
 
 	int rear = 0;
 
 	MyStrategy& operator = (const MyStrategy&) { return *this; }
 
 	void updateWaypoints();
-	void findTileRoute();
 	void makeMove();
 	void predictObjects();
 	void processShooting();
@@ -62,6 +62,7 @@ private:
 	void predict();
 	void doLog();
 	void doDraw();
+	void saveMap();
 };
 
 #endif

@@ -4,6 +4,7 @@
 #include <functional>
 #include <queue>
 #include <vector>
+#include "MyCar.h"
 #include "MyTile.h"
 #include "Tools.h"
 
@@ -12,7 +13,7 @@ public:
 	static const int tileSize = 800;
 	static const int step = 400;
 	static const int undefinedCoordinate = -1;
-	static const int undefinedDistance = -1;
+	static const double undefinedDistance;
 	static const int undefinedScore = -1;
 
 	///////////////////////
@@ -46,8 +47,8 @@ public:
 	}
 
 	void Initialize(const std::vector<CMyTile>& waypoints);
-	double Query(double x, double y, double angle, int waypointIndex, bool draw = false);
-	double LapScore();
+	double Query(const CMyCar& car, bool& rearIsBetter, bool draw = false);
+	void GetLRTiles(const CMyCar& car, CLowResTile& current, CLowResTile& next, bool& rearIsBetter);
 
 private:
 	///////////////////////
@@ -74,7 +75,9 @@ private:
 
 	CWaypointDistanceMap() {}
 
+	double query(double x, double y, double angle, int waypointIndex, bool& rearIsBetter, bool draw = false);
+	double lapScore();
 	double findDistance(int xt, int yt, TDirection dirt, CData& data);
-	void processNeighbor(const CLowResTile& from, const CLowResTile& to, CData& data);
+	void processNeighbor(const CLowResTile& from, const std::pair<CLowResTile, double>& toD, CData& data);
 
 };

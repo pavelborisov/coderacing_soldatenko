@@ -33,7 +33,7 @@ p4-name=
 swap-car-types=false
 disable-car-collision=false
 map={0}
-base-adapter-port=31001
+base-adapter-port=31101
 seed=0
 plugins-directory=..\\local-runner\\plugins
 """
@@ -76,7 +76,7 @@ def run_game_single(mapname, p1name, p1exec):
     print('Map: ', mapname)
     local_runner_p = subprocess.Popen(['javaw', '-jar', local_runner_path, properties_filename], shell=True)
     time.sleep(1)
-    p1_p = subprocess.Popen([p1exec, '127.0.0.1', '31001', '0000000000000000'])
+    p1_p = subprocess.Popen([p1exec, '127.0.0.1', '31101', '0000000000000000'])
     start = time.clock()
     local_runner_p.wait()
     p1_p.wait()
@@ -89,15 +89,15 @@ def run_game_single(mapname, p1name, p1exec):
     print('------')
 
 def run_game_duel(mapname, p1name, p1exec, p2name, p2exec):
-    result_filename = '{}_{}_{}.result'.format(mapname)
-    log_filename = '{}_{}_{}.log'.format(mapname)
-    properties_filename = create_properties(mapname, p1name, p2name, 'Local')
+    result_filename = '{}_{}_{}.result'.format(mapname, p1name, p2name)
+    log_filename = '{}_{}_{}.log'.format(mapname, p1name, p2name)
+    properties_filename = create_properties(mapname, p1name, p2name, 'Local', result_filename, log_filename)
     print('Map, P1Name, P2Name: ', mapname, p1name, p2name)
     local_runner_p = subprocess.Popen(['javaw', '-jar', local_runner_path, properties_filename], shell=True)
     time.sleep(1)
-    p1_p = subprocess.Popen([p1exec, '127.0.0.1', '31001', '0000000000000000'])
+    p1_p = subprocess.Popen([p1exec, '127.0.0.1', '31101', '0000000000000000'])
     time.sleep(1)
-    p2_p = subprocess.Popen([p2exec, '127.0.0.1', '31002', '0000000000000000'])
+    p2_p = subprocess.Popen([p2exec, '127.0.0.1', '31102', '0000000000000000'])
     start = time.clock()
     local_runner_p.wait()
     p1_p.wait()

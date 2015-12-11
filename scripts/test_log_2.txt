@@ -1,0 +1,150 @@
+Map:  default
+Time:  23.6802247022
+Player scores:  [5045, 47]
+Car finish ticks:  [2098, 1985, -1, -1]
+Player crashed ticks:  [-1, -1]
+------
+Map:  map01
+Time:  28.2634114972
+Player scores:  [5181, 103]
+Car finish ticks:  [2052, 2114, -1, -1]
+Player crashed ticks:  [-1, -1]
+------
+Map:  map02
+Time:  49.9304989533
+Player scores:  [5387, 2]
+Car finish ticks:  [3771, 3642, -1, -1]
+Player crashed ticks:  [-1, -1]
+------
+Map:  map03
+Time:  28.6812473079
+Player scores:  [4993, 110]
+Car finish ticks:  [2319, 2479, -1, -1]
+Player crashed ticks:  [-1, -1]
+------
+Map:  map04
+Time:  47.7903652163
+Player scores:  [5101, 2]
+Car finish ticks:  [3675, 3746, -1, -1]
+Player crashed ticks:  [-1, -1]
+------
+Map:  map05
+Time:  74.4748908869
+Player scores:  [5467, 17]
+Car finish ticks:  [5883, 6118, -1, -1]
+Player crashed ticks:  [-1, -1]
+------
+Map:  map06
+Time:  64.7267248001
+Player scores:  [5563, 16]
+Car finish ticks:  [4134, 4823, -1, -1]
+Player crashed ticks:  [-1, -1]
+------
+Map:  map07
+Time:  45.399505113
+Player scores:  [5282, 142]
+Car finish ticks:  [3086, 2991, -1, -1]
+Player crashed ticks:  [-1, -1]
+------
+Map:  map08
+Time:  59.974867995
+Player scores:  [5377, 6]
+Car finish ticks:  [4369, 4338, -1, -1]
+Player crashed ticks:  [-1, -1]
+------
+Map:  map09
+Time:  85.0053762858
+Player scores:  [5436, 0]
+Car finish ticks:  [5930, 5321, -1, -1]
+Player crashed ticks:  [-1, -1]
+------
+Map:  map10
+Time:  146.187607042
+Player scores:  [5434, 7]
+Car finish ticks:  [9461, 9237, -1, -1]
+Player crashed ticks:  [-1, -1]
+------
+Map:  map11
+Time:  97.8967445293
+Player scores:  [5417, 4]
+Car finish ticks:  [7659, 7393, -1, -1]
+Player crashed ticks:  [-1, -1]
+------
+Map:  map12
+Time:  76.4196891519
+Player scores:  [5162, 0]
+Car finish ticks:  [4941, 5628, -1, -1]
+Player crashed ticks:  [-1, -1]
+------
+Map:  map13
+Time:  128.428368801
+Player scores:  [5636, 0]
+Car finish ticks:  [7456, 7187, -1, -1]
+Player crashed ticks:  [-1, -1]
+------
+Map:  map14
+Time:  111.292240546
+Player scores:  [5360, 0]
+Car finish ticks:  [7953, 6464, -1, -1]
+Player crashed ticks:  [-1, -1]
+------
+Map:  map15
+Time:  56.050536002
+Player scores:  [5382, 1]
+Car finish ticks:  [4551, 4672, -1, -1]
+Player crashed ticks:  [-1, -1]
+------
+Map:  map16
+Time:  172.123054263
+Player scores:  [7075, 11]
+Car finish ticks:  [9212, 9089, -1, -1]
+Player crashed ticks:  [-1, -1]
+------
+Map:  map17
+Time:  100.614036958
+Player scores:  [5578, 0]
+Car finish ticks:  [7084, 7399, -1, -1]
+Player crashed ticks:  [-1, -1]
+------
+Map:  map18
+Time:  120.885375382
+Player scores:  [5862, 0]
+Car finish ticks:  [8316, 8055, -1, -1]
+Player crashed ticks:  [-1, -1]
+------
+Map:  map19
+Time:  38.3077718038
+Player scores:  [5177, 0]
+Car finish ticks:  [2954, 3066, -1, -1]
+Player crashed ticks:  [-1, -1]
+------
+Map:  map20
+Time:  107.205157307
+Player scores:  [5546, 0]
+Car finish ticks:  [8850, 9148, -1, -1]
+Player crashed ticks:  [-1, -1]
+------
+Map:  map21
+Time:  74.7319357219
+Player scores:  [5401, 3]
+Car finish ticks:  [5641, 5449, -1, -1]
+Player crashed ticks:  [-1, -1]
+------
+Map:  _fdoke
+Time:  67.5439036732
+Player scores:  [5208, 41]
+Car finish ticks:  [4642, 4942, -1, -1]
+Player crashed ticks:  [-1, -1]
+------
+Map:  _tyamgin
+Time:  66.907277218
+Player scores:  [5452, 1]
+Car finish ticks:  [5103, 4815, -1, -1]
+Player crashed ticks:  [-1, -1]
+------
+Map:  _ud1
+Time:  124.332616455
+Player scores:  [6146, 0]
+Car finish ticks:  [7347, 7492, -1, -1]
+Player crashed ticks:  [-1, -1]
+------
