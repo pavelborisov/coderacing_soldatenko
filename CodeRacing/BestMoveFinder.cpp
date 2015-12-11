@@ -198,7 +198,7 @@ void CBestMoveFinder::processPreviousMoveList()
 				bestMoveList = correctedPreviousMoveList;
 				// Обрезка
 				size_t mi = 0;
-				for (mi; mi < bestMoveList.size(); mi++) {
+				for (; mi < bestMoveList.size(); mi++) {
 					const CMoveWithDuration& m = bestMoveList[mi];
 					if (current.Tick >= m.Start && current.Tick < m.End) {
 						break;

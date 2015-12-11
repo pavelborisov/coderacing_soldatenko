@@ -71,16 +71,16 @@ CMyCar::CMyCar() :
 	PlayerId(0),
 	CollisionsDetected(0),
 	CollisionDeltaSpeed(0),
-	IsStartWPCrossed(false),
 	IsFinished(false),
+	IsStartWPCrossed(false),
 	Initialized(false)
 {
 }
 
 CMyCar::CMyCar(const CMyCar& car) :
 	Position(car.Position),
-	RotatedRect(car.RotatedRect),
 	Angle(car.Angle),
+	RotatedRect(car.RotatedRect),
 	Speed(car.Speed),
 	AngularSpeed(car.AngularSpeed),
 	MedianAngularSpeed(car.MedianAngularSpeed),
@@ -102,8 +102,8 @@ CMyCar::CMyCar(const CMyCar& car) :
 	PlayerId(car.PlayerId),
 	CollisionsDetected(car.CollisionsDetected),
 	CollisionDeltaSpeed(car.CollisionDeltaSpeed),
-	IsStartWPCrossed(car.IsStartWPCrossed),
 	IsFinished(car.IsFinished),
+	IsStartWPCrossed(car.IsStartWPCrossed),
 	Initialized(car.Initialized)
 {
 }
@@ -115,8 +115,8 @@ CMyCar::CMyCar(const model::Car& car) :
 
 CMyCar::CMyCar(const model::Car& car, int playerId) :
 	Position(car.getX(), car.getY()),
-	Speed(car.getSpeedX(), car.getSpeedY()),
 	Angle(car.getAngle()),
+	Speed(car.getSpeedX(), car.getSpeedY()),
 	AngularSpeed(car.getAngularSpeed()),
 	MedianAngularSpeed(UndefinedMedianAngularSpeed), // »гра не даЄт таких данных
 	EnginePower(car.getEnginePower()),
@@ -137,8 +137,8 @@ CMyCar::CMyCar(const model::Car& car, int playerId) :
 	PlayerId(playerId),
 	CollisionsDetected(0),
 	CollisionDeltaSpeed(0),
-	IsStartWPCrossed(false),
 	IsFinished(car.isFinishedTrack()),
+	IsStartWPCrossed(false),
 	Initialized(true)
 {
 	MedianAngularSpeed = MedianAngularSpeedHistory[HistoryId(PlayerId, Type)];
