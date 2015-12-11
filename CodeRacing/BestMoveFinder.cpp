@@ -9,7 +9,7 @@
 
 using namespace std;
 
-static const int maxCollisionsDetected = 5;
+static const int maxCollisionsDetected = 1;
 //static const double veryBadScoreDif = -10000;
 static const double veryBadScoreDif = -1000000;
 //static const int carSimulationSubticksCount = 2;
@@ -224,23 +224,28 @@ void CBestMoveFinder::processMoveIndex(size_t moveIndex, const std::vector<CMove
 		lengthsArray.push_back(0);
 		if (chance(50)) {
 			moveArray.push_back({ 1, 0, engine });
+			//moveArray.push_back({ 1, 1, engine });
 			if (chance(50)) moveArray.push_back({ 1, 1, engine });
 		} else {
 			moveArray.push_back({ -1, 0, engine });
+			//moveArray.push_back({ -1, 1, engine });
 			if (chance(50)) moveArray.push_back({ -1, 1, engine });
 		}
 		lengthsArray.push_back(uniform(4, 12));
 		lengthsArray.push_back(uniform(12, 30));
 		lengthsArray.push_back(uniform(30, 50));
+		//lengthsArray.push_back(uniform(50, 70));
 		sort(lengthsArray.begin(), lengthsArray.end());
 	} else if (moveIndex == 1) {
 		moveArray.push_back({ 0, 0, engine });
 		lengthsArray.push_back(0);
 		if (chance(50)) {
 			moveArray.push_back({ 1, 0, engine });
+			//moveArray.push_back({ 1, 1, engine });
 			if (chance(50)) moveArray.push_back({ 1, 1, engine });
 		} else {
 			moveArray.push_back({ -1, 0, engine });
+			//moveArray.push_back({ -1, 1, engine });
 			if (chance(50)) moveArray.push_back({ -1, 1, engine });
 		}
 		lengthsArray.push_back(uniform(30, 50));
@@ -333,7 +338,7 @@ void CBestMoveFinder::processRouteScore(CState& state, bool firstTickBrake)
 
 	// Штраф за торможение в самом начале.
 	if (firstTickBrake) {
-		state.RouteScore -= 400;
+		state.RouteScore -= 200;
 	}
 
 	// Штраф за въезд в лужу. Растёт от скорости.
@@ -349,8 +354,8 @@ double CBestMoveFinder::evaluate(const CState& state) const
 	bool rearIsBetterNotUsed = false;
 	double dist = CWaypointDistanceMap::Instance().Query(
 		car.Position.X, car.Position.Y, car.Angle, car.NextWaypointIndex, rearIsBetterNotUsed);
-		//car.Position.X, car.Position.Y, car.Speed.GetAngle(), car.NextWaypointIndex);
-	dist -= CWaypointDistanceMap::Instance().LapScore();
+		//car.Position.X, car.Position.Y, car.Speed.GetAngle(), car.NextWaypointIndex, rearIsBetterNotUsed);
+	if(car.IsStartWPCrossed) dist -= CWaypointDistanceMap::Instance().LapScore();
 	double score = state.RouteScore;
 	score -= dist;
 

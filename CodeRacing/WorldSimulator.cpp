@@ -815,7 +815,7 @@ void CWorldSimulator::collideCarWithWalls(CMyCar& car) const
 	const double durabilityChange = durabilityFactor * collisionDeltaSpeed;
 	if (collisionDeltaSpeed > 0) {
 		car.CollisionDeltaSpeed += collisionDeltaSpeed;
-		car.CollisionsDetected += 1;
+		if(stopCollisions) car.CollisionsDetected += 1;
 	}
 	if (durabilityChange >= durabilityEps) {
 		car.Durability = max(0.0, car.Durability - durabilityChange);
