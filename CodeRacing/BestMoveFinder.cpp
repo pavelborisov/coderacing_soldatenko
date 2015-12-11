@@ -262,9 +262,6 @@ void CBestMoveFinder::processMoveIndex(size_t moveIndex, const std::vector<CMove
 		sort(lengthsArray.begin(), lengthsArray.end());
 	} else if (moveIndex == 3) {
 		moveArray.push_back({ 0, 0, engine });
-		if (prevMoveList[2].Move.Turn != 0) {
-			moveArray.push_back({ prevMoveList[2].Move.Turn, 0, engine });
-		}
 		lengthsArray.push_back(1000);
 		sort(lengthsArray.begin(), lengthsArray.end());
 	}
