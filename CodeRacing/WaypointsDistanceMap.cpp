@@ -343,7 +343,32 @@ static TDirection angleToDirection(double angle)
 	return D_Undefined;
 }
 
-double CWaypointDistanceMap::Query(double x, double y, double angle, int waypointIndex, bool& rearIsBetter, bool draw)
+double CWaypointDistanceMap::Query(const CMyCar& car, bool& rearIsBetter, bool draw)
+{
+	double dist = query(car.Position.X, car.Position.Y, car.Angle, car.NextWaypointIndex, rearIsBetter, draw);
+	if (car.LapsCount > 0) dist -= car.LapsCount * lapScore();
+	return dist;
+}
+
+
+void CWaypointDistanceMap::GetLRTiles(const CMyCar& car, CLowResTile& current, CLowResTile& next, bool& rearIsBetter)
+{
+	const double xLowRes = car.Position.X / step;
+	const double yLowRes = car.Position.Y / step;
+	const int xLowResInt = static_cast<int>(xLowRes);
+	const int yLowResInt = static_cast<int>(yLowRes);
+	const TDirection dir = angleToDirection(car.Angle);
+	current = CLowResTile(xLowResInt, yLowResInt, dir, 0U);
+	CLowResTile n = dataByWp[car.NextWaypointIndex].CameFrom[xLowResInt][yLowResInt][dir];
+	next = n;
+	{
+		const int dx = MaskDX[dir];
+		const int dy = MaskDY[dir];
+		rearIsBetter = (xLowResInt - dx) == next.X && (yLowResInt - dy) == next.Y;
+	}
+}
+
+double CWaypointDistanceMap::query(double x, double y, double angle, int waypointIndex, bool& rearIsBetter, bool draw)
 {
 	const double xLowRes = x / step;
 	const double yLowRes = y / step;
@@ -402,7 +427,7 @@ double CWaypointDistanceMap::Query(double x, double y, double angle, int waypoin
 			CDrawPlugin::Instance().Rect(lr.X * 400, lr.Y * 400, (lr.X + 1) * 400, (lr.Y + 1) * 400, rear ? 0x808000 : 0xFF0000);
 			CDrawPlugin::Instance().Text(lr.X * 400 + 200, lr.Y * 400 + 200, to_string(d).c_str(), rear ? 0x808000 : 0xFF0000);
 			CDrawPlugin::Instance().Line(lr.X * 400 + 200, lr.Y * 400 + 200, lr.X * 400 + dx * 200 + 200, lr.Y * 400 + dy * 200 + 200, rear ? 0x808000 : 0xFF0000);
-			
+
 			lr = data.CameFrom[lr.X][lr.Y][lr.Direction];
 			if (lr == CLowResTile()) break;
 			int nwpi = (wpi + 1) % waypoints.size();
@@ -415,24 +440,7 @@ double CWaypointDistanceMap::Query(double x, double y, double angle, int waypoin
 	return dist == undefinedDistance ? undefinedDistance : step * (dist + offset);
 }
 
-void CWaypointDistanceMap::GetLRTiles(const CMyCar& car, CLowResTile& current, CLowResTile& next, bool& rearIsBetter)
-{
-	const double xLowRes = car.Position.X / step;
-	const double yLowRes = car.Position.Y / step;
-	const int xLowResInt = static_cast<int>(xLowRes);
-	const int yLowResInt = static_cast<int>(yLowRes);
-	const TDirection dir = angleToDirection(car.Angle);
-	current = CLowResTile(xLowResInt, yLowResInt, dir, 0U);
-	CLowResTile n = dataByWp[car.NextWaypointIndex].CameFrom[xLowResInt][yLowResInt][dir];
-	next = n;
-	{
-		const int dx = MaskDX[dir];
-		const int dy = MaskDY[dir];
-		rearIsBetter = (xLowResInt - dx) == next.X && (yLowResInt - dy) == next.Y;
-	}
-}
-
-double CWaypointDistanceMap::LapScore()
+double CWaypointDistanceMap::lapScore()
 {
 	double angle = 0;
 	switch (CMyWorld::StartDirection) {
@@ -452,7 +460,7 @@ double CWaypointDistanceMap::LapScore()
 		assert(false);
 	}
 	bool rearIsBetterNotUsed;
-	return Query(waypoints[0].X * 800 + 400, waypoints[0].Y * 800 + 400, angle, 1, rearIsBetterNotUsed) + 400;
+	return query(waypoints[0].X * 800 + 400, waypoints[0].Y * 800 + 400, angle, 1, rearIsBetterNotUsed) + 400;
 }
 
 double CWaypointDistanceMap::findDistance(int xt, int yt, TDirection dirt, CData& data)

@@ -121,7 +121,7 @@ void logStats(const MAP& m, const char* name, std::basic_ostream< char, std::cha
 void MyStrategy::makeMove()
 {
 	bool rearIsBetter = false;
-	CWaypointDistanceMap::Instance().Query(currentCar.Position.X, currentCar.Position.Y, currentCar.Angle, currentCar.NextWaypointIndex, rearIsBetter, false);
+	CWaypointDistanceMap::Instance().Query(currentCar, rearIsBetter, false);
 	CWaypointDistanceMap::CLowResTile lrTileCur;
 	CWaypointDistanceMap::CLowResTile lrTileNext;
 	bool risb = false;
@@ -223,7 +223,7 @@ void MyStrategy::doDraw()
 	draw.FillCircle(nextWaypoint.X, nextWaypoint.Y, 50, 0xFF0000);
 
 	bool rearIsBetter = false;
-	CWaypointDistanceMap::Instance().Query(currentCar.Position.X, currentCar.Position.Y, currentCar.Angle, currentCar.NextWaypointIndex, rearIsBetter, true);
+	CWaypointDistanceMap::Instance().Query(currentCar, rearIsBetter, true);
 #endif
 }
 

@@ -350,10 +350,7 @@ double CBestMoveFinder::evaluate(const CState& state) const
 	const CMyCar& startCar = startWorld.Cars[0];
 	const CMyCar& car = state.World.Cars[0];
 	bool rearIsBetterNotUsed = false;
-	double dist = CWaypointDistanceMap::Instance().Query(
-		car.Position.X, car.Position.Y, car.Angle, car.NextWaypointIndex, rearIsBetterNotUsed);
-		//car.Position.X, car.Position.Y, car.Speed.GetAngle(), car.NextWaypointIndex, rearIsBetterNotUsed);
-	if (car.LapsCount > 0) dist -= car.LapsCount * CWaypointDistanceMap::Instance().LapScore();
+	double dist = CWaypointDistanceMap::Instance().Query(car, rearIsBetterNotUsed);
 	double score = state.RouteScore;
 	score -= dist;
 
