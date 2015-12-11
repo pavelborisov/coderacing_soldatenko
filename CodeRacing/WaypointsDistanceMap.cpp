@@ -109,8 +109,8 @@ static vector<pair<CWaypointDistanceMap::CLowResTile, double>> findNeighbors(
 
 	static const double forwardStraight = 1;
 	static const double forwardDiag = 1 * sqrt(2);
-	static const double rearStraight = 8;
-	static const double rearDiag = 8 * sqrt(2);
+	static const double rearStraight = 2;
+	static const double rearDiag = 2 * sqrt(2);
 	switch(lrTile.Direction) {
 	case D_Right:
 		// forward
@@ -354,9 +354,9 @@ double CWaypointDistanceMap::Query(double x, double y, double angle, int waypoin
 	const double dist = findDistance(xLowResInt, yLowResInt, dir, dataByWp[waypointIndex]);
 	const CLowResTile& next = dataByWp[waypointIndex].CameFrom[xLowResInt][yLowResInt][dir];
 	{
-		const int dx = MaskDX[next.Direction];
-		const int dy = MaskDY[next.Direction];
-		rearIsBetter = (next.X + dx) == xLowResInt && (next.Y + dy) == yLowResInt;
+		const int dx = MaskDX[dir];
+		const int dy = MaskDY[dir];
+		rearIsBetter = (xLowResInt - dx) == next.X && (yLowResInt - dy) == next.Y;
 	}
 
 	double offset = 0;
@@ -399,9 +399,9 @@ double CWaypointDistanceMap::Query(double x, double y, double angle, int waypoin
 			int dx = MaskDX[lr.Direction];
 			int dy = MaskDY[lr.Direction];
 			bool rear = (data.CameFrom[lr.X][lr.Y][lr.Direction].X + dx) == lr.X && (data.CameFrom[lr.X][lr.Y][lr.Direction].Y + dy) == lr.Y;
-			CDrawPlugin::Instance().Rect(lr.X * 400, lr.Y * 400, (lr.X + 1) * 400, (lr.Y + 1) * 400, rear ? 0xFFFF00 : 0xFF0000);
-			CDrawPlugin::Instance().Text(lr.X * 400 + 200, lr.Y * 400 + 200, to_string(d).c_str(), rear ? 0xFFFF00 : 0xFF0000);
-			CDrawPlugin::Instance().Line(lr.X * 400 + 200, lr.Y * 400 + 200, lr.X * 400 + dx * 200 + 200, lr.Y * 400 + dy * 200 + 200, rear ? 0xFFFF00 : 0xFF0000);
+			CDrawPlugin::Instance().Rect(lr.X * 400, lr.Y * 400, (lr.X + 1) * 400, (lr.Y + 1) * 400, rear ? 0x808000 : 0xFF0000);
+			CDrawPlugin::Instance().Text(lr.X * 400 + 200, lr.Y * 400 + 200, to_string(d).c_str(), rear ? 0x808000 : 0xFF0000);
+			CDrawPlugin::Instance().Line(lr.X * 400 + 200, lr.Y * 400 + 200, lr.X * 400 + dx * 200 + 200, lr.Y * 400 + dy * 200 + 200, rear ? 0x808000 : 0xFF0000);
 			
 			lr = data.CameFrom[lr.X][lr.Y][lr.Direction];
 			if (lr == CLowResTile()) break;
@@ -426,9 +426,9 @@ void CWaypointDistanceMap::GetLRTiles(const CMyCar& car, CLowResTile& current, C
 	CLowResTile n = dataByWp[car.NextWaypointIndex].CameFrom[xLowResInt][yLowResInt][dir];
 	next = n;
 	{
-		const int dx = MaskDX[next.Direction];
-		const int dy = MaskDY[next.Direction];
-		rearIsBetter = (next.X + dx) == xLowResInt && (next.Y + dy) == yLowResInt;
+		const int dx = MaskDX[dir];
+		const int dy = MaskDY[dir];
+		rearIsBetter = (xLowResInt - dx) == next.X && (yLowResInt - dy) == next.Y;
 	}
 }
 

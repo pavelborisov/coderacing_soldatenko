@@ -122,6 +122,13 @@ void MyStrategy::makeMove()
 {
 	bool rearIsBetter = false;
 	CWaypointDistanceMap::Instance().Query(currentCar.Position.X, currentCar.Position.Y, currentCar.Angle, currentCar.NextWaypointIndex, rearIsBetter, false);
+	CWaypointDistanceMap::CLowResTile lrTileCur;
+	CWaypointDistanceMap::CLowResTile lrTileNext;
+	bool risb = false;
+	CWaypointDistanceMap::Instance().GetLRTiles(currentCar, lrTileCur, lrTileNext, risb);
+	CLog::Instance().Stream() << "lrTileCur :" << lrTileCur.X << " " << lrTileCur.Y << " " << lrTileCur.Direction << endl;
+	CLog::Instance().Stream() << "lrTileNext :" << lrTileNext.X << " " << lrTileNext.Y << " " << lrTileNext.Direction << endl;
+	CLog::Instance().Stream() << "rearIsBetter :" << rearIsBetter << endl;
 
 	if (currentTick < game->getInitialFreezeDurationTicks()) {
 		resultMove->setEnginePower(rearIsBetter ? -1.0 : 1.0);
@@ -155,11 +162,6 @@ void MyStrategy::makeMove()
 	}
 
 	// Тупой задний ход
-	CWaypointDistanceMap::CLowResTile lrTileCur;
-	CWaypointDistanceMap::CLowResTile lrTileNext;
-	bool risb;
-	CWaypointDistanceMap::Instance().GetLRTiles(currentCar, lrTileCur, lrTileNext, risb);
-	//double angleToTarget = lrTileNext.Direction * PI / 4;
 	double angleToTarget = lrTileCur.Direction * PI / 4;
 	double angle = angleToTarget - currentCar.Angle;
 	normalizeAngle(angle);
@@ -181,15 +183,9 @@ void MyStrategy::makeMove()
 		resultMove->setUseNitro(false);
 		resultMove->setBrake(false);
 		CDrawPlugin::Instance().FillCircle(currentCar.Position.X, currentCar.Position.Y, 50, 0x880088);
-		//if (rear < 40) {
-		//	resultMove->setEnginePower(0);
-		//	resultMove->setBrake(true);
-		//	resultMove->setWheelTurn(0);
-		//} else {
-			if (currentCar.EnginePower > 0) resultMove->setBrake(true);
-			resultMove->setEnginePower(-1.0);
-			resultMove->setWheelTurn(angle > 0 ? -1 : 1);
-		//}
+		if (currentCar.EnginePower > 0) resultMove->setBrake(true);
+		resultMove->setEnginePower(-1.0);
+		resultMove->setWheelTurn(angle > 0 ? -1 : 1);
 		rear--;
 		if (rear == 0) rear = -120;
 		stoppedTicks = 0;
@@ -226,19 +222,8 @@ void MyStrategy::doDraw()
 	CVec2D nextWaypoint = waypointTiles[nextWaypointIndex].ToVec();
 	draw.FillCircle(nextWaypoint.X, nextWaypoint.Y, 50, 0xFF0000);
 
-	//const double angle = currentCar.Angle;
-	//const int nwp = currentCar.NextWaypointIndex;
-	//for (int xs = 0; xs < 2 * CMyTile::SizeX(); xs++) {
-	//	for (int ys = 0; ys < 2 * CMyTile::SizeY(); ys++) {
-	//		const double x = xs * 400 + 200;
-	//		const double y = ys * 400 + 200;
-	//		const double dist = CWaypointDistanceMap::Instance().Query(x, y, angle, nwp);
-	//		CDrawPlugin::Instance().Text(x, y, to_string(dist).c_str(), 0x000000);
-	//	}
-	//}
 	bool rearIsBetter = false;
 	CWaypointDistanceMap::Instance().Query(currentCar.Position.X, currentCar.Position.Y, currentCar.Angle, currentCar.NextWaypointIndex, rearIsBetter, true);
-	//CWaypointDistanceMap::Instance().Query(currentCar.Position.X, currentCar.Position.Y, currentCar.Speed.GetAngle(), currentCar.NextWaypointIndex, true);
 #endif
 }
 

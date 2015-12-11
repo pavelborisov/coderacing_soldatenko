@@ -92,7 +92,7 @@ CBestMoveFinder::CBestMoveFinder(
 	}
 }
 
-CBestMoveFinder::CResult CBestMoveFinder::Process(bool /*checkRear*/)
+CBestMoveFinder::CResult CBestMoveFinder::Process(bool checkRear)
 {
 	simulationTicks = 0;
 	bestScore = INT_MIN;
@@ -103,9 +103,7 @@ CBestMoveFinder::CResult CBestMoveFinder::Process(bool /*checkRear*/)
 
 	CResult result;
 	processPreviousMoveList();
-	processMoveIndex(0, vector<CMoveWithDuration>(), false);
-	//if (checkRear) processMoveIndex(0, vector<CMoveWithDuration>(), true);
-	//processMoveIndex(0, vector<CMoveWithDuration>(), checkRear);
+	processMoveIndex(0, vector<CMoveWithDuration>(), checkRear);
 	if (bestMoveList.size() == 0) {
 		result.Success = false;
 		return result;
