@@ -4,6 +4,7 @@
 #include <functional>
 #include <queue>
 #include <vector>
+#include "MyCar.h"
 #include "MyTile.h"
 #include "Tools.h"
 
@@ -47,6 +48,7 @@ public:
 
 	void Initialize(const std::vector<CMyTile>& waypoints);
 	double Query(double x, double y, double angle, int waypointIndex, bool& rearIsBetter, bool draw = false);
+	void GetLRTiles(const CMyCar& car, CLowResTile& current, CLowResTile& next, bool& rearIsBetter);
 	double LapScore();
 
 private:

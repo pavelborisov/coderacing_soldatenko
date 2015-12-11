@@ -415,6 +415,23 @@ double CWaypointDistanceMap::Query(double x, double y, double angle, int waypoin
 	return dist == undefinedDistance ? undefinedDistance : step * (dist + offset);
 }
 
+void CWaypointDistanceMap::GetLRTiles(const CMyCar& car, CLowResTile& current, CLowResTile& next, bool& rearIsBetter)
+{
+	const double xLowRes = car.Position.X / step;
+	const double yLowRes = car.Position.Y / step;
+	const int xLowResInt = static_cast<int>(xLowRes);
+	const int yLowResInt = static_cast<int>(yLowRes);
+	const TDirection dir = angleToDirection(car.Angle);
+	current = CLowResTile(xLowResInt, yLowResInt, dir, 0U);
+	CLowResTile n = dataByWp[car.NextWaypointIndex].CameFrom[xLowResInt][yLowResInt][dir];
+	next = n;
+	{
+		const int dx = MaskDX[next.Direction];
+		const int dy = MaskDY[next.Direction];
+		rearIsBetter = (next.X + dx) == xLowResInt && (next.Y + dy) == yLowResInt;
+	}
+}
+
 double CWaypointDistanceMap::LapScore()
 {
 	double angle = 0;

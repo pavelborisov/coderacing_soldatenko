@@ -20,7 +20,7 @@ long long MyStrategy::randomSeed = 0;
 CBestMoveFinder::CResult MyStrategy::allyResult[2];
 int MyStrategy::allyResultTick[2] = { -1, -1 };
 const double MyStrategy::stoppedLengthThreshold = 10;
-const int MyStrategy::stoppedTicksThreshold = 40;
+const int MyStrategy::stoppedTicksThreshold = 60;
 
 MyStrategy::MyStrategy() :
 	log(CLog::Instance()),
@@ -176,7 +176,12 @@ void MyStrategy::makeMove()
 	}
 
 	// Тупой задний ход
-	double angleToTarget = (tileRoute[1].ToVec() - currentCar.Position).GetAngle();
+	CWaypointDistanceMap::CLowResTile lrTileCur;
+	CWaypointDistanceMap::CLowResTile lrTileNext;
+	bool risb;
+	CWaypointDistanceMap::Instance().GetLRTiles(currentCar, lrTileCur, lrTileNext, risb);
+	//double angleToTarget = lrTileNext.Direction * PI / 4;
+	double angleToTarget = lrTileCur.Direction * PI / 4;
 	double angle = angleToTarget - currentCar.Angle;
 	normalizeAngle(angle);
 	// Когда симулятор хз что делать.
@@ -189,7 +194,7 @@ void MyStrategy::makeMove()
 		if (self->getDurability() == 0) {
 			rear = -game->getCarReactivationTimeTicks() - 50;
 		} else if (world->getTick() > 200 && currentCar.Speed.Length() < 1 && stoppedTicks > stoppedTicksThreshold) {
-			rear = 120 + static_cast<int>(self->getEnginePower() / game->getCarEnginePowerChangePerTick());
+			rear = 80 + static_cast<int>(self->getEnginePower() / game->getCarEnginePowerChangePerTick());
 		}
 	} else if (rear < 0) {
 		rear++;
@@ -197,15 +202,15 @@ void MyStrategy::makeMove()
 		resultMove->setUseNitro(false);
 		resultMove->setBrake(false);
 		CDrawPlugin::Instance().FillCircle(currentCar.Position.X, currentCar.Position.Y, 50, 0x880088);
-		if (rear < 40) {
-			resultMove->setEnginePower(0);
-			resultMove->setBrake(true);
-			resultMove->setWheelTurn(0);
-		} else {
+		//if (rear < 40) {
+		//	resultMove->setEnginePower(0);
+		//	resultMove->setBrake(true);
+		//	resultMove->setWheelTurn(0);
+		//} else {
 			if (currentCar.EnginePower > 0) resultMove->setBrake(true);
 			resultMove->setEnginePower(-1.0);
 			resultMove->setWheelTurn(angle > 0 ? -1 : 1);
-		}
+		//}
 		rear--;
 		if (rear == 0) rear = -120;
 		stoppedTicks = 0;
