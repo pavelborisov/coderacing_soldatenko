@@ -63,7 +63,7 @@ private:
 	std::vector<CMoveWithDuration> bestMoveList;
 	std::vector<CState> stateCache;
 
-	static const int maxTick = 140;
+	static const int maxTick = 120;
 
 	void processPreviousMoveList();
 	void processMoveIndex(size_t moveIndex, const std::vector<CMoveWithDuration>& prevMoveList, bool checkRear);
