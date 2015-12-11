@@ -354,47 +354,47 @@ double CBestMoveFinder::evaluate(const CState& state) const
 	double score = state.RouteScore;
 	score -= dist;
 
-	if (CMyWorld::PlayersCount == 2) {
-		bool notUsed;
-		const CMyCar& allyCar = state.World.Cars[1];
-		double allyDist = CWaypointDistanceMap::Instance().Query(allyCar.Position.X, allyCar.Position.Y, allyCar.Angle, allyCar.NextWaypointIndex, notUsed);
-		if(allyCar.IsStartWPCrossed) allyDist -= CWaypointDistanceMap::Instance().LapScore();
-		const CMyCar& enemy1Car = state.World.Cars[2];
-		double enemy1Dist = CWaypointDistanceMap::Instance().Query(enemy1Car.Position.X, enemy1Car.Position.Y, enemy1Car.Angle, enemy1Car.NextWaypointIndex, notUsed);
-		if (enemy1Car.IsStartWPCrossed) enemy1Dist -= CWaypointDistanceMap::Instance().LapScore();
-		const CMyCar& enemy2Car = state.World.Cars[2];
-		double enemy2Dist = CWaypointDistanceMap::Instance().Query(enemy2Car.Position.X, enemy2Car.Position.Y, enemy2Car.Angle, enemy2Car.NextWaypointIndex, notUsed);
-		if (enemy2Car.IsStartWPCrossed) enemy2Dist -= CWaypointDistanceMap::Instance().LapScore();
-		score += enemy1Dist;
-		score += enemy2Dist;
-		score -= allyDist;
+	//if (CMyWorld::PlayersCount == 2) {
+	//	bool notUsed;
+	//	const CMyCar& allyCar = state.World.Cars[1];
+	//	double allyDist = CWaypointDistanceMap::Instance().Query(allyCar.Position.X, allyCar.Position.Y, allyCar.Angle, allyCar.NextWaypointIndex, notUsed);
+	//	if(allyCar.IsStartWPCrossed) allyDist -= CWaypointDistanceMap::Instance().LapScore();
+	//	const CMyCar& enemy1Car = state.World.Cars[2];
+	//	double enemy1Dist = CWaypointDistanceMap::Instance().Query(enemy1Car.Position.X, enemy1Car.Position.Y, enemy1Car.Angle, enemy1Car.NextWaypointIndex, notUsed);
+	//	if (enemy1Car.IsStartWPCrossed) enemy1Dist -= CWaypointDistanceMap::Instance().LapScore();
+	//	const CMyCar& enemy2Car = state.World.Cars[2];
+	//	double enemy2Dist = CWaypointDistanceMap::Instance().Query(enemy2Car.Position.X, enemy2Car.Position.Y, enemy2Car.Angle, enemy2Car.NextWaypointIndex, notUsed);
+	//	if (enemy2Car.IsStartWPCrossed) enemy2Dist -= CWaypointDistanceMap::Instance().LapScore();
+	//	score += enemy1Dist;
+	//	score += enemy2Dist;
+	//	score -= allyDist;
 
-		if (enemy1Dist < dist) {
-			score -= 1000;
-		}
-		if (enemy2Dist < dist) {
-			score -= 1000;
-		}
+	//	if (enemy1Dist < dist) {
+	//		score -= 1000;
+	//	}
+	//	if (enemy2Dist < dist) {
+	//		score -= 1000;
+	//	}
 
-		const CMyCar& enemy1StartCar = startWorld.Cars[2];
-		const CMyCar& enemy2StartCar = startWorld.Cars[2];
-		const double enemy1DurabilityDif = enemy1Car.Durability - enemy1StartCar.Durability;
-		const double enemy2DurabilityDif = enemy2Car.Durability - enemy2StartCar.Durability;
-		if (enemy1DurabilityDif < 0) {
-			if (enemy1Car.Durability < 1e-7) {
-				score += 10000;
-			} else {
-				score += 1000 * sqrt(1 / enemy1Car.Durability);
-			}
-		}
-		if (enemy2DurabilityDif < 0) {
-			if (enemy2Car.Durability < 1e-7) {
-				score += 10000;
-			} else {
-				score += 1000 * sqrt(1 / enemy2Car.Durability);
-			}
-		}
-	}
+	//	const CMyCar& enemy1StartCar = startWorld.Cars[2];
+	//	const CMyCar& enemy2StartCar = startWorld.Cars[2];
+	//	const double enemy1DurabilityDif = enemy1Car.Durability - enemy1StartCar.Durability;
+	//	const double enemy2DurabilityDif = enemy2Car.Durability - enemy2StartCar.Durability;
+	//	if (enemy1DurabilityDif < 0) {
+	//		if (enemy1Car.Durability < 1e-7) {
+	//			score += 10000;
+	//		} else {
+	//			score += 1000 * sqrt(1 / enemy1Car.Durability);
+	//		}
+	//	}
+	//	if (enemy2DurabilityDif < 0) {
+	//		if (enemy2Car.Durability < 1e-7) {
+	//			score += 10000;
+	//		} else {
+	//			score += 1000 * sqrt(1 / enemy2Car.Durability);
+	//		}
+	//	}
+	//}
 
 	// Øענאפ חא ןמעונ‏ ץן.
 	const double durabilityDif = car.Durability - startCar.Durability;
