@@ -353,7 +353,7 @@ double CBestMoveFinder::evaluate(const CState& state) const
 	double dist = CWaypointDistanceMap::Instance().Query(
 		car.Position.X, car.Position.Y, car.Angle, car.NextWaypointIndex, rearIsBetterNotUsed);
 		//car.Position.X, car.Position.Y, car.Speed.GetAngle(), car.NextWaypointIndex, rearIsBetterNotUsed);
-	if(car.IsStartWPCrossed) dist -= CWaypointDistanceMap::Instance().LapScore();
+	if (car.LapsCount > 0) dist -= car.LapsCount * CWaypointDistanceMap::Instance().LapScore();
 	double score = state.RouteScore;
 	score -= dist;
 

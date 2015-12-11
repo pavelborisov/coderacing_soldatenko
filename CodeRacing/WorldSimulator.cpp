@@ -179,7 +179,7 @@ CMyWorld CWorldSimulator::Simulate(const CMyWorld& startWorld, const CMyMove mov
 		if (carTileX == nextWPTile.X && carTileY == nextWPTile.Y) {
 			car.NextWaypointIndex = (car.NextWaypointIndex + 1) % CMyWorld::WaypointTiles.size();
 			if (car.NextWaypointIndex == 1) {
-				car.IsStartWPCrossed = true;
+				car.LapsCount += 1;
 			}
 		}
 	}
