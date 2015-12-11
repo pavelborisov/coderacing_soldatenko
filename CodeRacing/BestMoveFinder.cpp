@@ -224,17 +224,17 @@ void CBestMoveFinder::processMoveIndex(size_t moveIndex, const std::vector<CMove
 		lengthsArray.push_back(0);
 		if (chance(50)) {
 			moveArray.push_back({ 1, 0, engine });
-			//moveArray.push_back({ 1, 1, engine });
-			if (chance(50)) moveArray.push_back({ 1, 1, engine });
+			moveArray.push_back({ 1, 1, engine });
+			//if (chance(50)) moveArray.push_back({ 1, 1, engine });
 		} else {
 			moveArray.push_back({ -1, 0, engine });
-			//moveArray.push_back({ -1, 1, engine });
-			if (chance(50)) moveArray.push_back({ -1, 1, engine });
+			moveArray.push_back({ -1, 1, engine });
+			//if (chance(50)) moveArray.push_back({ -1, 1, engine });
 		}
 		lengthsArray.push_back(uniform(4, 12));
 		lengthsArray.push_back(uniform(12, 30));
 		lengthsArray.push_back(uniform(30, 50));
-		//lengthsArray.push_back(uniform(50, 70));
+		lengthsArray.push_back(uniform(50, 70));
 		sort(lengthsArray.begin(), lengthsArray.end());
 	} else if (moveIndex == 1) {
 		moveArray.push_back({ 0, 0, engine });

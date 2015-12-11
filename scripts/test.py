@@ -9,7 +9,7 @@ maps = ['default', 'map01', 'map02', 'map03', 'map04', 'map05', 'map06', 'map07'
 #maps = ['default', 'map01']
 players = [
     ['current', '..\\CodeRacing\\ReleaseNoLogging\\cpp-cgdk_vs12.exe'],
-    ['previous', '..\\ReleaseNoLogging\\cpp-cgdk_vs12.exe']
+    #['previous', '..\\ReleaseNoLogging\\cpp-cgdk_vs12.exe']
 ]
 local_runner_path = '..\\local-runner\\local-runner.jar'
 
