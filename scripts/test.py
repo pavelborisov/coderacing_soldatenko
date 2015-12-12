@@ -4,7 +4,7 @@ import subprocess
 import time
 
 #maps = ['default', 'map01', 'map02', 'map03', 'map04', 'map05', 'map06', 'map07', 'map08', 'map09', 'map10', 'map11', 'map12', 'map13', 'map14', 'map15', 'map16', 'map17', 'map18', 'map19', 'map20', 'map21', '_fdoke', '_tyamgin', '_ud1']
-maps = ['map16']
+maps = ['412275', '412282', '412498', '414362', '415059']
 players = [
     ['current', '..\\CodeRacing\\ReleaseNoLogging\\cpp-cgdk_vs12.exe'],
     #['previous', '..\\ReleaseNoLogging\\cpp-cgdk_vs12.exe']

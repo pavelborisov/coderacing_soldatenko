@@ -109,8 +109,8 @@ static vector<pair<CWaypointDistanceMap::CLowResTile, double>> findNeighbors(
 
 	static const double forwardStraight = 1;
 	static const double forwardDiag = 1 * sqrt(2);
-	static const double rearStraight = 2;
-	static const double rearDiag = 2 * sqrt(2);
+	static const double rearStraight = 15;
+	static const double rearDiag = 15 * sqrt(2);
 	switch(lrTile.Direction) {
 	case D_Right:
 		// forward
