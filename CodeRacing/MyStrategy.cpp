@@ -139,8 +139,8 @@ void MyStrategy::makeMove()
 	CBestMoveFinder::CResult result;
 	if (world->getPlayers().size() == 2) {
 		const int allyType = 1 - currentCar.Type;
-		//CBestMoveFinder::TMode mode = currentTick % 2 == 0 ? CBestMoveFinder::M_Normal : CBestMoveFinder::M_OnlyPrevious;
-		CBestMoveFinder::TMode mode = CBestMoveFinder::M_Normal;
+		CBestMoveFinder::TMode mode = currentTick % 2 == 0 ? CBestMoveFinder::M_Normal : CBestMoveFinder::M_OnlyPrevious;
+		//CBestMoveFinder::TMode mode = CBestMoveFinder::M_Normal;
 		CBestMoveFinder bestMoveFinder(currentWorld, waypointTiles, previousResult,
 			allyResult[allyType], allyResultTick[allyType] != currentTick, mode);
 		result = bestMoveFinder.Process(rearIsBetter);
@@ -149,8 +149,8 @@ void MyStrategy::makeMove()
 		allyResultTick[currentCar.Type] = currentTick;
 		*resultMove = result.CurrentMove.Convert();
 	} else {
-		//CBestMoveFinder::TMode mode = currentTick % 2 == 0 ? CBestMoveFinder::M_Normal : CBestMoveFinder::M_OnlyPrevious;
-		CBestMoveFinder::TMode mode = CBestMoveFinder::M_Normal;
+		CBestMoveFinder::TMode mode = currentTick % 2 == 0 ? CBestMoveFinder::M_Normal : CBestMoveFinder::M_OnlyPrevious;
+		//CBestMoveFinder::TMode mode = CBestMoveFinder::M_Normal;
 		CBestMoveFinder bestMoveFinder(currentWorld, waypointTiles, previousResult, mode);
 		result = bestMoveFinder.Process(rearIsBetter);
 		previousResult = result;
