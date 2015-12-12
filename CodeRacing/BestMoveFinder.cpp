@@ -50,10 +50,12 @@ static CMyMove findMove(const CMyWorld& world, int carId)
 CBestMoveFinder::CBestMoveFinder(
 	const CMyWorld& startWorld,
 	const std::vector<CMyTile>& waypointTiles,
-	const CBestMoveFinder::CResult& previousResult) :
+	const CBestMoveFinder::CResult& previousResult,
+	TMode mode) :
 	startWorld(startWorld),
 	waypointTiles(waypointTiles),
-	hasAlly(false)
+	hasAlly(false),
+	mode(mode)
 {
 	correctedPreviousMoveList = previousResult.MoveList;
 
@@ -73,8 +75,9 @@ CBestMoveFinder::CBestMoveFinder(
 	const std::vector<CMyTile>& waypointTiles,
 	const CBestMoveFinder::CResult& previousResult,
 	const CBestMoveFinder::CResult& allyResult,
-	bool correctAllyResult) :
-	CBestMoveFinder(startWorld, waypointTiles, previousResult)
+	bool correctAllyResult,
+	TMode mode) :
+	CBestMoveFinder(startWorld, waypointTiles, previousResult, mode)
 {
 	allyMoveList = allyResult.MoveList;
 	hasAlly = true;
@@ -103,7 +106,9 @@ CBestMoveFinder::CResult CBestMoveFinder::Process(bool checkRear)
 
 	CResult result;
 	processPreviousMoveList();
-	processMoveIndex(0, vector<CMoveWithDuration>(), checkRear);
+	if (mode != M_OnlyPrevious) {
+		processMoveIndex(0, vector<CMoveWithDuration>(), checkRear);
+	}
 	if (bestMoveList.size() == 0) {
 		result.Success = false;
 		return result;
@@ -117,7 +122,9 @@ CBestMoveFinder::CResult CBestMoveFinder::Process(bool checkRear)
 		}
 	}
 	result.Score = bestScore;
-	postProcess(result);
+	if (mode != M_OnlyPrevious) {
+		postProcess(result);
+	}
 
 #ifdef LOGGING
 	/////////////////////////////// log
