@@ -3,10 +3,8 @@ import os
 import subprocess
 import time
 
-maps = ['default', 'map01', 'map02', 'map03', 'map04', 'map05', 'map06', 'map07', 'map08',
- 'map09', 'map10', 'map11', 'map12', 'map13', 'map14', 'map15', 'map16', 'map17', 'map18',
- 'map19', 'map20', 'map21', '_fdoke', '_tyamgin', '_ud1']
-#maps = ['default', 'map01']
+#maps = ['default', 'map01', 'map02', 'map03', 'map04', 'map05', 'map06', 'map07', 'map08', 'map09', 'map10', 'map11', 'map12', 'map13', 'map14', 'map15', 'map16', 'map17', 'map18', 'map19', 'map20', 'map21', '_fdoke', '_tyamgin', '_ud1']
+maps = ['map16']
 players = [
     ['current', '..\\CodeRacing\\ReleaseNoLogging\\cpp-cgdk_vs12.exe'],
     #['previous', '..\\ReleaseNoLogging\\cpp-cgdk_vs12.exe']
@@ -83,9 +81,11 @@ def run_game_single(mapname, p1name, p1exec):
     end = time.clock()
     print('Time: ', end - start)
     player_scores, finished_ticks, player_crashed = analyze_log(log_filename)
+    avgTimePerTick = (end - start) / (finished_ticks[0] + finished_ticks[1])
     print('Player scores: ', player_scores)
     print('Car finish ticks: ', finished_ticks)
     print('Player crashed ticks: ', player_crashed)
+    print('Avg time per tick: ', avgTimePerTick)
     print('------')
 
 def run_game_duel(mapname, p1name, p1exec, p2name, p2exec):

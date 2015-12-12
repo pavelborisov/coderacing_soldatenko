@@ -140,7 +140,7 @@ CBestMoveFinder::CResult CBestMoveFinder::Process(bool checkRear)
 		moves[2] = findMove(simWorld, 2);
 		moves[3] = findMove(simWorld, 3);
 		setSimulatorMode(tick);
-		simWorld = CWorldSimulator::Instance().Simulate(simWorld, moves);
+		CWorldSimulator::Instance().Simulate(simWorld, moves);
 		//int color = min(200, 100 + tick);
 		//simWorld.Draw(0xFF00FF + 0x000100 * color);
 		CDrawPlugin::Instance().FillCircle(simWorld.Cars[0].Position.X, simWorld.Cars[0].Position.Y, 5, 0x0000FF);
@@ -178,7 +178,7 @@ void CBestMoveFinder::processPreviousMoveList()
 		moves[2] = findMove(current.World, 2);
 		moves[3] = findMove(current.World, 3);
 		setSimulatorMode(current.Tick);
-		current.World = CWorldSimulator::Instance().Simulate(current.World, moves);
+		CWorldSimulator::Instance().Simulate(current.World, moves);
 		simulationTicks++;
 
 		processRouteScore(current, current.Tick == 0 && moves[0].Brake == true);
@@ -287,7 +287,7 @@ void CBestMoveFinder::processMoveIndex(size_t moveIndex, const std::vector<CMove
 				moves[2] = findMove(current.World, 2);
 				moves[3] = findMove(current.World, 3);
 				setSimulatorMode(current.Tick);
-				current.World = CWorldSimulator::Instance().Simulate(current.World, moves);
+				CWorldSimulator::Instance().Simulate(current.World, moves);
 				simulationTicks++;
 
 				processRouteScore(current, current.Tick == 0 && move.Brake == 1);
@@ -436,7 +436,7 @@ void CBestMoveFinder::postProcess(CResult& result)
 		if (hasAlly) moves[1] = findMove(current.Tick, allyMoveList); else moves[1] = findMove(current.World, 1);
 		moves[2] = findMove(current.World, 2);
 		moves[3] = findMove(current.World, 3);
-		current.World = CWorldSimulator::Instance().Simulate(current.World, moves);
+		CWorldSimulator::Instance().Simulate(current.World, moves);
 		if (current.Tick == simulationEndShort - 1) {
 			beforeShort = current;
 		}
@@ -484,7 +484,7 @@ void CBestMoveFinder::postProcessShooting(const CState& before, CResult& result)
 		if (current.Tick == 0) {
 			moves[0].Shoot = true;
 		}
-		current.World = CWorldSimulator::Instance().Simulate(current.World, moves);
+		CWorldSimulator::Instance().Simulate(current.World, moves);
 		simulationTicks++;
 	}
 
@@ -553,7 +553,7 @@ void CBestMoveFinder::postProcessOil(const CState& before, CResult& result)
 		if (current.Tick == 0) {
 			moves[0].Oil = true;
 		}
-		current.World = CWorldSimulator::Instance().Simulate(current.World, moves);
+		CWorldSimulator::Instance().Simulate(current.World, moves);
 		simulationTicks++;
 	}
 
@@ -604,7 +604,7 @@ void CBestMoveFinder::postProcessNitro(const CState& before, CResult& result)
 		if (moves[0].Brake) {
 			brakeTicks++;
 		}
-		current.World = CWorldSimulator::Instance().Simulate(current.World, moves);
+		CWorldSimulator::Instance().Simulate(current.World, moves);
 		simulationTicks++;
 	}
 

@@ -17,7 +17,7 @@ public:
 	void SetPrecision(int subtickCount);
 	void SetOptions(bool stopCollisions, bool ignoreProjectiles, bool ignoreOtherCars);
 
-	CMyWorld Simulate(const CMyWorld& startWorld, const CMyMove moves[CMyWorld::MaxCars]) const;
+	void Simulate(CMyWorld& world, const CMyMove moves[CMyWorld::MaxCars]) const;
 
 private:
 	struct CCarInfo {

@@ -201,7 +201,8 @@ void MyStrategy::predict()
 	moves[3].Engine = 0;
 	CWorldSimulator::Instance().SetPrecision(10);
 	CWorldSimulator::Instance().SetOptions(false, false, false);
-	predictedWorld = CWorldSimulator::Instance().Simulate(currentWorld, moves);
+	predictedWorld = currentWorld;
+	CWorldSimulator::Instance().Simulate(predictedWorld, moves);
 }
 
 void MyStrategy::doLog()
