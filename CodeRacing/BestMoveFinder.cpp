@@ -239,7 +239,7 @@ void CBestMoveFinder::processMoveIndex(size_t moveIndex, const std::vector<CMove
 		lengthsArray.push_back(uniform(4, 12));
 		lengthsArray.push_back(uniform(12, 30));
 		lengthsArray.push_back(uniform(30, 50));
-		//lengthsArray.push_back(uniform(50, 70));
+		lengthsArray.push_back(uniform(50, 70));
 		sort(lengthsArray.begin(), lengthsArray.end());
 	} else if (moveIndex == 1) {
 		moveArray.push_back({ 0, 0, engine });
@@ -481,7 +481,7 @@ void CBestMoveFinder::postProcessShooting(const CState& before, CResult& result)
 	}
 
 	CState current(startWorld, 0, 0);
-	const int simulationEnd = before.Tick;
+	const int simulationEnd = before.Tick + 1;
 	for (current.Tick = 0; current.Tick < simulationEnd; current.Tick++) {
 		CMyMove moves[4];
 		moves[0] = findMove(current.Tick, bestMoveList);
@@ -550,7 +550,7 @@ void CBestMoveFinder::postProcessOil(const CState& before, CResult& result)
 	}
 
 	CState current(startWorld, 0, 0);
-	const int simulationEnd = before.Tick;
+	const int simulationEnd = before.Tick + 1;
 	for (current.Tick = 0; current.Tick < simulationEnd; current.Tick++) {
 		CMyMove moves[4];
 		moves[0] = findMove(current.Tick, bestMoveList);
@@ -597,7 +597,7 @@ void CBestMoveFinder::postProcessNitro(const CState& before, CResult& result)
 	double scoreBefore = evaluate(before);
 
 	CState current(startWorld, 0, 0);
-	const int simulationEnd = before.Tick;
+	const int simulationEnd = before.Tick + 1;
 	int brakeTicks = 0;
 	for (current.Tick = 0; current.Tick < simulationEnd; current.Tick++) {
 		CMyMove moves[4];
@@ -623,7 +623,7 @@ void CBestMoveFinder::postProcessNitro(const CState& before, CResult& result)
 	// TODO: Нитро на старте лучше почти всегда нажимать. Но в середине игры, наверное, надо как-то оставлять его на обгоны...
 	double scoreAfter = evaluate(current);
 
-	static const double nitroScoreDifThreshold = 200;
+	static const double nitroScoreDifThreshold = 400;
 	if (scoreAfter - scoreBefore > nitroScoreDifThreshold) {
 		result.CurrentMove.Nitro = true;
 	}
