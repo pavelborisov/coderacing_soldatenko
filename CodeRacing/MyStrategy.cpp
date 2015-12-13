@@ -140,8 +140,12 @@ void MyStrategy::makeMove()
 	if (world->getPlayers().size() == 2) {
 		const int allyType = 1 - currentCar.Type;
 		CBestMoveFinder::TMode mode = CBestMoveFinder::M_Normal;
-		if (currentTick > game->getTickCount() / 2 && currentTick % 2 == 0) {
-			mode = CBestMoveFinder::M_OnlyPrevious;
+		if (currentTick > 3 * game->getTickCount() / 4) {
+			if (currentTick % 4 != 0) mode = CBestMoveFinder::M_OnlyPrevious;
+			CLog::Instance().Stream() << "Super throttling! " << mode << endl;
+		} else if (currentTick > game->getTickCount() / 2) {
+			if (currentTick % 2 == 0) mode = CBestMoveFinder::M_OnlyPrevious;
+			CLog::Instance().Stream() << "Throttling!" << mode << endl;
 		}
 		CBestMoveFinder bestMoveFinder(currentWorld, waypointTiles, previousResult,
 			allyResult[allyType], allyResultTick[allyType] != currentTick, mode);
@@ -152,8 +156,12 @@ void MyStrategy::makeMove()
 		*resultMove = result.CurrentMove.Convert();
 	} else {
 		CBestMoveFinder::TMode mode = CBestMoveFinder::M_Normal;
-		if (currentTick > game->getTickCount() / 2 && currentTick % 2 == 0) {
-			mode = CBestMoveFinder::M_OnlyPrevious;
+		if (currentTick > 3 * game->getTickCount() / 4) {
+			if (currentTick % 4 != 0) mode = CBestMoveFinder::M_OnlyPrevious;
+			CLog::Instance().Stream() << "Super throttling! " << mode << endl;
+		} else if (currentTick > game->getTickCount() / 2) {
+			if (currentTick % 2 == 0) mode = CBestMoveFinder::M_OnlyPrevious;
+			CLog::Instance().Stream() << "Throttling!" << mode << endl;
 		}
 		CBestMoveFinder bestMoveFinder(currentWorld, waypointTiles, previousResult, mode);
 		result = bestMoveFinder.Process(rearIsBetter);
