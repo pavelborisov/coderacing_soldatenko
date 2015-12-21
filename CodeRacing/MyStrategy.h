@@ -49,8 +49,6 @@ private:
 	static const double stoppedLengthThreshold;
 	static const int stoppedTicksThreshold;
 
-	int rear = 0;
-
 	MyStrategy& operator = (const MyStrategy&) { return *this; }
 
 	void updateWaypoints();
