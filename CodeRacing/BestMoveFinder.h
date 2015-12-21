@@ -9,6 +9,11 @@
 
 class CBestMoveFinder {
 public:
+	enum TMode {
+		M_Normal = 0,
+		M_OnlyPrevious
+	};
+
 	// Действие и его время действия - первый и последний(не включительно) тики
 	struct CMoveWithDuration{
 		CMyMove Move;
@@ -31,13 +36,15 @@ public:
 	CBestMoveFinder(
 		const CMyWorld& startWorld,
 		const std::vector<CMyTile>& waypointTiles,
-		const CBestMoveFinder::CResult& previousResult);
+		const CBestMoveFinder::CResult& previousResult,
+		TMode mode);
 	CBestMoveFinder(
 		const CMyWorld& startWorld,
 		const std::vector<CMyTile>& waypointTiles,
 		const CBestMoveFinder::CResult& previousResult,
 		const CBestMoveFinder::CResult& allyResult,
-		bool correctAllyResult);
+		bool correctAllyResult,
+		TMode mode);
 	
 	CResult Process(bool checkRear);
 
@@ -56,6 +63,7 @@ private:
 	std::vector<CMoveWithDuration> correctedPreviousMoveList;
 	std::vector<CMoveWithDuration> allyMoveList;
 	bool hasAlly;
+	TMode mode;
 
 	int simulationTicks = 0;
 	double startScore = INT_MIN;

@@ -52,4 +52,4 @@ ReleaseNoLogging
 /scripts/*.properties
 /scripts/*.result
 /CodeRacing/dump.map
-/ReleaseNoLogging_v26
+/ReleaseNoLogging*

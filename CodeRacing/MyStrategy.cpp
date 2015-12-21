@@ -43,6 +43,7 @@ void MyStrategy::move(const Car& _self, const World& _world, const Game& _game, 
 		randomSeed = game->getRandomSeed();
 		CLog::Instance().Stream() << "getRandomSeed() == " << randomSeed << endl;
 		srand(static_cast<unsigned int>(randomSeed));
+		CLog::Instance().Stream() << "getTickCount() == " << game->getTickCount() << endl;
 	}
 
 	if (self->isFinishedTrack()) {
@@ -138,15 +139,31 @@ void MyStrategy::makeMove()
 	CBestMoveFinder::CResult result;
 	if (world->getPlayers().size() == 2) {
 		const int allyType = 1 - currentCar.Type;
+		CBestMoveFinder::TMode mode = CBestMoveFinder::M_Normal;
+		if (currentTick > 3 * game->getTickCount() / 4) {
+			if (currentTick % 4 != 0) mode = CBestMoveFinder::M_OnlyPrevious;
+			CLog::Instance().Stream() << "Super throttling! " << mode << endl;
+		} else if (currentTick > game->getTickCount() / 2) {
+			if (currentTick % 2 == 0) mode = CBestMoveFinder::M_OnlyPrevious;
+			CLog::Instance().Stream() << "Throttling!" << mode << endl;
+		}
 		CBestMoveFinder bestMoveFinder(currentWorld, waypointTiles, previousResult,
-			allyResult[allyType], allyResultTick[allyType] != currentTick);
+			allyResult[allyType], allyResultTick[allyType] != currentTick, mode);
 		result = bestMoveFinder.Process(rearIsBetter);
 		previousResult = result;
 		allyResult[currentCar.Type] = result;
 		allyResultTick[currentCar.Type] = currentTick;
 		*resultMove = result.CurrentMove.Convert();
 	} else {
-		CBestMoveFinder bestMoveFinder(currentWorld, waypointTiles, previousResult);
+		CBestMoveFinder::TMode mode = CBestMoveFinder::M_Normal;
+		if (currentTick > 3 * game->getTickCount() / 4) {
+			if (currentTick % 4 != 0) mode = CBestMoveFinder::M_OnlyPrevious;
+			CLog::Instance().Stream() << "Super throttling! " << mode << endl;
+		} else if (currentTick > game->getTickCount() / 2) {
+			if (currentTick % 2 == 0) mode = CBestMoveFinder::M_OnlyPrevious;
+			CLog::Instance().Stream() << "Throttling!" << mode << endl;
+		}
+		CBestMoveFinder bestMoveFinder(currentWorld, waypointTiles, previousResult, mode);
 		result = bestMoveFinder.Process(rearIsBetter);
 		previousResult = result;
 		*resultMove = result.CurrentMove.Convert();
@@ -201,7 +218,8 @@ void MyStrategy::predict()
 	moves[3].Engine = 0;
 	CWorldSimulator::Instance().SetPrecision(10);
 	CWorldSimulator::Instance().SetOptions(false, false, false);
-	predictedWorld = CWorldSimulator::Instance().Simulate(currentWorld, moves);
+	predictedWorld = currentWorld;
+	CWorldSimulator::Instance().Simulate(predictedWorld, moves);
 }
 
 void MyStrategy::doLog()

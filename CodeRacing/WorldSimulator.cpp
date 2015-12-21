@@ -57,10 +57,8 @@ void CWorldSimulator::SetOptions(bool _stopCollisions, bool _ignoreProjectiles, 
 	ignoreOtherCars = _ignoreOtherCars;
 }
 
-CMyWorld CWorldSimulator::Simulate(const CMyWorld& startWorld, const CMyMove moves[CMyWorld::MaxCars]) const
+void CWorldSimulator::Simulate(CMyWorld& world, const CMyMove moves[CMyWorld::MaxCars]) const
 {
-	CMyWorld world = startWorld;
-
 	CCarInfo carInfos[CMyWorld::MaxCars];
 	for (int i = 0; i < CMyWorld::MaxCars; i++) {
 		if (!world.Cars[i].IsValid() || world.Cars[i].IsFinished) {
@@ -183,8 +181,6 @@ CMyWorld CWorldSimulator::Simulate(const CMyWorld& startWorld, const CMyMove mov
 			}
 		}
 	}
-
-	return world;
 }
 
 void CWorldSimulator::updateCar(const CMyMove& move, CMyCar& car, CCarInfo& carInfo, CMyWorld& world) const
